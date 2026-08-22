@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>サイドプロジェクト on blog.taikiito.com</title><link>https://blog.taikiito.com/tags/%E3%82%B5%E3%82%A4%E3%83%89%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88/</link><description>Recent content in サイドプロジェクト on blog.taikiito.com</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sat, 22 Aug 2026 09:00:00 +0800</lastBuildDate><atom:link href="https://blog.taikiito.com/tags/%E3%82%B5%E3%82%A4%E3%83%89%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88/index.xml" rel="self" type="application/rss+xml"/><item><title>このブログにはてな風カレンダーを作ったら、JSONを自分で閉じ込めていた</title><link>https://blog.taikiito.com/posts/2026-08-22-sidebar-calendar/</link><pubDate>Sat, 22 Aug 2026 09:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-22-sidebar-calendar/</guid><description>はてなブログ風のカレンダー・タグクラウド・月別ボタンをこのブログ自体のサイドバーに実装した記録。Hugoのhtml/templateによる自動エスケープでJSONが壊れ、カレンダーが描画されなくなったバグの原因調査も含む。</description><content:encoded><![CDATA[<p>前回、ブログと一緒にシングリッシュ用語集サイトも公開した話を書いた。今回はまたこのブログ自体の話に戻る。サイドバーを作った記録だ。</p>
+<h2 id="記事一覧とアーカイブだけでは物足りなかった">記事一覧とアーカイブだけでは物足りなかった</h2>
+<p>Hugo + PaperMod で組んだこのブログは、最初はヘッダーに「記事一覧」「アーカイブ」の2つのメニューがあるだけだった。記事数が増えてくると、日付やタグから辿れた方が使いやすい。PaperModはシングルカラムのテーマで、サイドバーという概念自体がない。ただ、コンテンツ幅(<code>--nav-width: 1024px</code>)は画面中央に固定されているので、広い画面では左右に何もない余白ができる。ここに何か置けるはずだと考えた。</p>
+<h2 id="まずはボタンだけ置いてみた">まずはボタンだけ置いてみた</h2>
+<p>PaperModには <code>extend_footer.html</code> という空のフック(パーシャル)が用意されていて、上書きするだけでフッター末尾に任意のHTMLを差し込める。CSSも <code>assets/css/extended/*.css</code> に置いたファイルが自動で本体CSSに連結される仕組みがあるので、これを使って、画面右端に固定表示する丸ボタンを2つ置いてみた。「📅 日付別」は <code>/archives/</code> へ、「🏷️ タグ別」は <code>/tags/</code> へのリンクだけの、ただのショートカットだ。</p>
+<h2 id="はてなブログを見て作り直すことにした">はてなブログを見て、作り直すことにした</h2>
+<p>ボタンだけでは芸がない。はてなブログのサイドバーにあるような、実際にカレンダーの月表示が出て投稿日がハイライトされるもの、タグも名前と件数がその場に並ぶものにしたいと思った。</p>
+<p>タグクラウドの方は簡単だった。PaperMod自身の <code>/tags/</code> ページ(<code>taxonomy.html</code>)が既に同じことをしていたので、そのロジックをそのまま借りた。</p>
+<pre tabindex="0"><code class="language-gotemplate" data-lang="gotemplate">{{ range $tagsPage.Data.Terms.Alphabetical }}
+  {{ with site.GetPage (printf &#34;/tags/%s&#34; .Name) }}
+    &lt;a href=&#34;{{ .Permalink }}&#34;&gt;{{ .LinkTitle }} ({{ $count }})&lt;/a&gt;
+  {{ end }}
+{{ end }}
+</code></pre><p>カレンダーは静的サイトジェネレータなので少し工夫が要る。ビルド時に、その言語の全記事の日付・タイトル・URLをJSONとしてページに埋め込み(<code>{{ $calItems | jsonify }}</code>)、バニラJSで月表示のグリッドを描画する方式にした。外部ライブラリは使っていない。</p>
+<h2 id="カレンダーが何も表示されなかった">カレンダーが、何も表示されなかった</h2>
+<p>書き終えてデプロイしたら、タグクラウドは正しく出るのに、カレンダー部分だけが空白だった。前後の月ボタン(‹ ›)だけが表示されて、日付のマス目もタイトルも出ない。</p>
+<p>ブラウザの開発者ツールで実際のHTMLを見て気づいた。埋め込んだはずのJSONが、こうなっていた。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">script</span> <span class="na">type</span><span class="o">=</span><span class="s">&#34;application/json&#34;</span> <span class="na">id</span><span class="o">=</span><span class="s">&#34;quick-cal-data&#34;</span><span class="p">&gt;</span><span class="s2">&#34;[{\&#34;date\&#34;:\&#34;2026-08-21\&#34;,\&#34;...\&#34;}]&#34;</span><span class="p">&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+</span></span></code></pre></div><p>配列全体が、エスケープされた<strong>文字列として</strong>二重にクオートで包まれている。<code>JSON.parse()</code> にこれを渡すと、配列ではなく1本の文字列が返ってくる。直後の <code>.forEach()</code> はもちろん文字列には存在しないので、その場でエラーが起きてスクリプト全体が止まっていた。</p>
+<p>原因はHugoのテンプレートエンジン(<code>html/template</code>)の仕様だった。<code>&lt;script&gt;</code> タグの中に値を差し込むと、Hugoは自動的にそれをJSの文字列リテラルとして安全にエスケープしようとする。<code>jsonify</code> が返すのはただの <code>string</code> 型なので、信頼できない値として扱われ、丸ごとクオートで包まれてしまっていた。</p>
+<p>直したのは1箇所、<code>safeJS</code> を挟んで「このJSは安全だから素通ししてくれ」と明示するだけだった。</p>
+<pre tabindex="0"><code class="language-gotemplate" data-lang="gotemplate">{{ $calItems | jsonify | safeJS }}
+</code></pre><p>これでJSONがそのまま配列として埋め込まれるようになり、カレンダーが動くようになった。</p>
+<h2 id="月別ボタンも追加した">月別ボタンも追加した</h2>
+<p>カレンダーが動くようになったところで、月ごとにジャンプできるボタンも欲しくなった。前後の月を1つずつ辿るだけでは、記事が増えてきたときに不便になる。投稿のある年月を新しい順にリストアップし、クリックするとページ遷移なしでカレンダーがその月に切り替わる仕組みを、既存のカレンダーの状態管理に乗せる形で追加した。</p>
+<h2 id="今の状態">今の状態</h2>
+<p>このブログ自体が、動かしながら直したものの記録になった。カレンダー・月別ボタン・タグクラウドがサイドバーに揃った状態で、次は中身の記事を増やしていく番だ。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>ブログを立てた勢いで、シングリッシュ用語集サイトも作った</title><link>https://blog.taikiito.com/posts/2026-08-22-singlish-lah/</link><pubDate>Sat, 22 Aug 2026 08:30:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-22-singlish-lah/</guid><description>ブログと同じ日に公開した小さいサイドプロジェクトの記録。ビルドツールなしの素のHTML/CSS/JSで作ったシングリッシュ用語集と、後の別プロジェクトでも使い回すことになるサブドメイン+リポジトリのパターンについて。</description><content:encoded><![CDATA[<p>前回、このブログの器を作った話を書いた。同じ日に、勢いでもう一つ小さいサイトを公開した。シンガポールの日常会話に出てくるシングリッシュ表現をまとめた、日本語話者向けの用語集だ。</p>
+<h2 id="あえて違うスタックにした">あえて違うスタックにした</h2>
+<p>ブログはHugoだが、こちらはビルドツールなしの素のHTML/CSS/JSにした。ポートフォリオとして公開するなら、同じスタックばかりより手数の幅を見せた方がいい、という考えからだ。データは <code>terms.json</code> に切り出し、検索とカテゴリ絞り込みのUIをその上に乗せた。公開時点で33語、5カテゴリ(定番表現、感情・リアクション、食・生活、人間関係・呼び方、仕事・現場で聞いた表現)。</p>
+<p>内容は一般的によく知られたシングリッシュ表現に加えて、実際に自分が生活の中で聞いた表現もいくつか混ぜてある。今後も会話の中で拾ったものを <code>terms.json</code> に足していく運用にするつもりだ。</p>
+<h2 id="サブドメインのパターンが確立した">サブドメインのパターンが確立した</h2>
+<p>ドメインとリポジトリの組み方も、このタイミングで型として固まった。プロジェクトごとに専用のGitHubリポジトリを作り、<code>&lt;プロジェクト名&gt;.taikiito.com</code> のサブドメインをCloudflareのCNAMEで紐付ける。GitHub Pages側の自動HTTPS証明書発行を妨げないよう、CNAMEは必ずProxyなし(DNSのみ)にする、というのも今回学んだ点だった。Proxyを有効にしたままだと証明書の発行が遅れる、あるいは失敗する。</p>
+<h2 id="一言添えるかどうかで迷った">一言添えるかどうかで迷った</h2>
+<p>フッターの文言は2回書き直した。最初は「誰かの役に立てばいいなと思って作っています」という一文を入れていたが、書いてみて少し押しつけがましく感じ、「ニッチすぎて誰得だけど、自分用に作ったのでついでに公開してます」という自虐寄りの言い回しに変えた。それも見返して、結局どちらも要らないという結論になり、最終的には何も足さずに削除した。何を作ったかだけを書けば十分で、なぜ作ったかは読む人が決めることだ、と考え直した形だ。</p>
+<h2 id="同じ日に器が2つ増えた">同じ日に、器が2つ増えた</h2>
+<p>ブログとこの用語集サイト、同じ日に公開した2つが、どちらも同じサブドメインのパターンに乗っている。次に何を作るにしても、この型に乗せれば早い。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>このブログを作ることにして、まずGitHubのユーザー名から変えた</title><link>https://blog.taikiito.com/posts/2026-08-22-building-this-blog/</link><pubDate>Sat, 22 Aug 2026 08:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-22-building-this-blog/</guid><description>ここまでの試行錯誤を公開の日記として書き残すことにした経緯。Hugo(i18n)+PaperMod、GitHub Actions経由のGitHub Pagesデプロイ、非公開ソースリポジトリから公開用リポジトリへforce pushする2リポジトリ構成、そしてついでに行ったGitHubユーザー名の変更まで。</description><content:encoded><![CDATA[<p>前回はRSSリーダーを作って同じ日に壊した話を書いた。同じ頃、もう少し大きい決断もしていた。ここまでやってきたことを、公開の場に書き残すことだ。今読んでいるこのブログ自体を、その日に立ち上げた。</p>
+<h2 id="きっかけ">きっかけ</h2>
+<p>中島聡さんのニュースレター経由で以前MulmoClaudeを知ったのと同じように、彼のニュースレターで「エンジニアを目指すなら、まず実物をGitHubに公開するといい」という趣旨のアドバイスを目にしていた。ドメイン運用やセルフホスティング、メールまわりで試行錯誤してきたことが、同じ問題にぶつかった誰かの検索結果に引っかかれば十分だと思い、公開することにした。</p>
+<h2 id="形式は時系列の日記にした">形式は「時系列の日記」にした</h2>
+<p>最初はテーマ別のハウツー記事にしようかと考えたが、途中で「実際に起きた順番のまま書く日記形式」に変更した。うまくいかなかったこと、迷ったこと、あとから直したことも含めて、そのまま時系列で残す方が実態に近い。</p>
+<h2 id="スタックを決める">スタックを決める</h2>
+<p>静的サイトジェネレータはHugoにした。決め手は多言語対応(i18n)が標準で入っていること。テーマはPaperMod。GitHub Actionsでビルドし、GitHub Pagesにデプロイ、独自ドメイン <code>blog.taikiito.com</code> をCloudflareのCNAMEで割り当てた。</p>
+<p>リポジトリは2つに分けた。実際に編集するHugoのソース一式(<code>blog-source</code>)は非公開、ビルド後の静的ファイルだけを別リポジトリ(<code>blog</code>)にforce pushで公開する構成にしている。GitHub Actionsの1ジョブの中で、ビルド→出力先リポジトリへのpushまで完結させた。ソース側の編集履歴や下書きを外に出さずに、成果物だけを公開できるのが気に入っている。</p>
+<h2 id="ついでにユーザー名も変えた">ついでにユーザー名も変えた</h2>
+<p>GitHubのユーザー名も、このタイミングで変えた。もともと登録したときに深く考えず入れた生年月日由来の文字列が入っていて、前から気に入っていなかった。理想の名前は既に他の人に使われていたので、末尾に<code>-dev</code>を足した形に落ち着いた。公開リポジトリがまだ0個の状態だったので、切り替えのコストは低かった。</p>
+<p>合わせて、ユーザー名と同じ名前のリポジトリを作ると自動でプロフィールページに表示される、GitHubのプロフィールREADME機能も使った。中身は最小限、2行だけ。</p>
+<blockquote>
+<p>Tinkering with computers on the side. Hoping it helps someone.</p>
+</blockquote>
+<h2 id="ここから">ここから</h2>
+<p>ブログの器と、公開用のGitHubアカウントが整った。中身の記事は、実際に起きたことをこうして後から書き足していく形になる。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>自分用のRSSリーダーを作って、同じ日に壊した</title><link>https://blog.taikiito.com/posts/2026-08-21-rss-reader-teardown/</link><pubDate>Fri, 21 Aug 2026 10:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-21-rss-reader-teardown/</guid><description>MulmoClaudeと同じサーバーにMinifluxを自前で立てて、ニュースをジャンル別に集約しようとした話。同じ日のうちに『情報過多になりそう』と判断してDocker一式を全部削除した。</description><content:encoded><![CDATA[<p>前回はメールの送信者評判の話で終わった。技術的に打てる手は尽きて、あとは時間待ちの状態になっていた。その待ち時間に、別のことを試してみることにした。ニュースやブログをまとめて読むための、自分専用のRSSリーダーだ。</p>
+<h2 id="minifluxを選んだ理由">Minifluxを選んだ理由</h2>
+<p>候補はいくつかあったが、軽量でセルフホストしやすいという理由でMinifluxに決めた。構成はDocker Compose1本で、Miniflux本体とPostgreSQLのコンテナを立てるだけ。アクセスはMulmoClaudeと同じパターンで、手前にCloudflare Accessの認証ゲートを置いた。</p>
+<p>対象はSingapore Straits Times、NYT、その他いくつかのブログをジャンル別に分類する構想だった。TwitterやXは2023年以降無料のRSSフィードを廃止しているので、これは最初から対象外にした。</p>
+<h2 id="フィードを繋いでみて分かったこと">フィードを繋いでみて分かったこと</h2>
+<p>実際にフィードを購読してみると、いくつか想定外のことが分かった。</p>
+<ul>
+<li>NHKのフィードは8月8日付でサイレントにブロックされていた。理由の開示はなく、クラウド事業者のIPレンジ自体が対象になっている可能性が高い。</li>
+<li>Straits TimesとNYTのフィード自体は生きていたが、どちらも本文はペイウォールの手前、見出しと要約までしか取得できない。</li>
+</ul>
+<p>技術的には一通り動く状態まで持っていけた。</p>
+<h2 id="それでもやめることにした">それでも、やめることにした</h2>
+<p>一通り動くようになったところで、少し立ち止まって考えた。ジャンルを分けて集約する、という構想自体は悪くないが、実際に運用したら未読が積み上がっていく「情報過多」の受け皿になるだけではないか、という懸念の方が強くなった。読む量を増やすためではなく、読む量をコントロールするために始めた話のはずだった。</p>
+<p>結局、同じ日のうちにDockerコンテナ、nginxの設定、DNSレコード、Cloudflare Accessのアプリ設定まで、一式をすべて削除した。作ってから壊すまで、24時間もかかっていない。</p>
+<h2 id="動くものを作ることと使い続けることは別">動くものを作ることと、使い続けることは別</h2>
+<p>技術的に動くところまで持っていくのと、それを実際に自分の生活に組み込んで使い続けるのとは、別の話だと分かった一件だった。作って終わりにする判断も、悪い結果ではないと思っている。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>ドメインが動き出したので、その日のうちに自分のデジタル名刺も作った</title><link>https://blog.taikiito.com/posts/2026-08-19-digital-business-card/</link><pubDate>Wed, 19 Aug 2026 10:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-19-digital-business-card/</guid><description>ドメインが使えるようになった勢いで作った、静的HTML1枚だけのデジタル名刺の記録。vCardダウンロードとWhatsAppのクリック・トゥ・チャットボタン、そしてCloudflareのメールアドレス難読化にハマった小話。</description><content:encoded><![CDATA[<p>前回、<code>taikiito.com</code> というドメインを確保し、自分のパソコンからブラウザ経由で自分のMulmoClaudeにアクセスできるところまで整えた。せっかくドメインの下にサブドメインを作れる状態になったので、その日のうちにもう一つ別のものを作ることにした。デジタル名刺だ。</p>
+<h2 id="サブドメインを1つ切って静的ページだけを置く">サブドメインを1つ切って、静的ページだけを置く</h2>
+<p><code>card.taikiito.com</code> というサブドメインを新しく作り、Lightsailの同じサーバー上にnginxのserver blockをもう1つ追加する形で対応した。ポイントは、MulmoClaude本体のNode.jsアプリとは完全に切り離したこと。<code>proxy_pass</code> は使わず、ただの静的HTMLファイル1枚を配信するだけの設定にしたので、名刺ページのアクセスがMulmoClaude本体の負荷に影響することはない。</p>
+<p>中身は実際に普段使っている名刺の情報をそのまま移した。ボタンは2つだけに絞った。</p>
+<ul>
+<li>「連絡先に保存」— クリックするとJSのBlobで <code>.vcf</code> ファイルをその場で生成し、スマホの連絡先追加シートを開く</li>
+<li>「WhatsApp」— <code>wa.me</code> のクリック・トゥ・チャットのディープリンクを踏むだけ</li>
+</ul>
+<p>最初はメール送信ボタンも用意していたが、後で削って情報行(<code>mailto:</code>リンク)だけに縮小した。ボタンは絞れるだけ絞った方が結局使いやすい。</p>
+<h2 id="色で少し迷った">色で少し迷った</h2>
+<p>配色は最初からネイビーで作っていたが、比較のために白黒版も一度作ってみた。並べて見て、結局ネイビーの方が良いという結論に落ち着き、白黒版は削除した。</p>
+<h2 id="地味なハマりどころ">地味なハマりどころ</h2>
+<p>公開直後、このアプリ自体に埋め込んだプレビュー用のiframe内でカードを確認したところ、メールアドレスの表示が記号だけの謎の文字列になっていた。最初は自分のミスかと疑ったが、正体はCloudflareの「メールアドレス難読化」機能(Scrape Shield)だった。ページ内のメールアドレスをスパム避けのため自動でエンコードして表示する仕組みで、通常のブラウザではJSが実際のアドレスに戻して表示するが、このアプリのプレビュー用iframe内ではそのデコード用スクリプトが動かなかった、というだけの話だった。ゾーン全体の設定なので個別にOFFにはせず、実際のブラウザでは問題なく表示されることを確認して終わりにした。</p>
+<h2 id="名前のドメインはこう転がっていく">名前のドメインは、こう転がっていく</h2>
+<p>自分の名前をドメインにした瞬間から、こういう小さいサブドメインを次々に切れるようになった。この後もいくつか同じパターンで増やしていくことになる。</p>
+<p>つづく。</p>
+]]></content:encoded></item></channel></rss>

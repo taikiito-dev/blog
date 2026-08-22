@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>MulmoClaude on blog.taikiito.com</title><link>https://blog.taikiito.com/tags/mulmoclaude/</link><description>Recent content in MulmoClaude on blog.taikiito.com</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Mon, 17 Aug 2026 09:00:00 +0800</lastBuildDate><atom:link href="https://blog.taikiito.com/tags/mulmoclaude/index.xml" rel="self" type="application/rss+xml"/><item><title>MulmoClaudeを常時稼働にしたら、裏側の自動処理が無限ループしていた</title><link>https://blog.taikiito.com/posts/2026-08-17-journal-loop-bug/</link><pubDate>Mon, 17 Aug 2026 09:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-17-journal-loop-bug/</guid><description>常時稼働サーバーに移行した翌日、バックグラウンドの自動処理(journal機能)が特定セッションを延々とリトライし続けるバグを追いかけた記録。原因はPythonとNode.js間のミリ秒精度のズレだった。</description><content:encoded><![CDATA[<p>前回、MulmoClaudeをAWS Lightsailの常時稼働サーバーに移行したところまで書いた。移行自体は終わったが、次の日、今度は裏側の自動処理がおかしくなっていることに気づいた。</p>
+<h2 id="何が起きていたか">何が起きていたか</h2>
+<p>MulmoClaudeには、会話ログから日々の要約を自動生成する <code>journal</code> という裏側の機能がある。この処理が、毎時間動くたびに異常に時間がかかるようになっていた。1回あたり25〜90秒かかっている回もあった。裏で何度もリトライが走っている感触があり、消費されるトークン量も明らかに増えていた。</p>
+<h2 id="原因を追う">原因を追う</h2>
+<p>調べていくと、直前の移行作業(前回の記事参照)で発生した大量のセッション(625個)が、未処理のまま残留していることが分かった。毎時間動く自動処理は、この残留分を毎回すべて処理しようとしてリトライを繰り返していた。処理が終わらない→次の時間にまた同じ分をやり直す、という無限ループに近い状態になっていた。</p>
+<p>さらに掘ると、根っこにはもう一段深い原因があった。処理済みかどうかを判定するタイムスタンプの比較で、Python側とNode.js側でミリ秒の扱いが微妙に食い違っていた。片方は切り捨て、もう片方は四捨五入、というようなズレがあり、本来「処理済み」と判定されるべきセッションが毎回「未処理」に見えてしまっていた。何度か修正を試したが、このズレそのものを直さない限り再発する状態だった。</p>
+<h2 id="応急処置と本修正">応急処置と本修正</h2>
+<p>まず <code>journal</code> 機能そのものを一時的にOFFにして、それ以上の消費を止めた。そのうえで、タイムスタンプ精度の扱いを両言語で揃える形に修正。修正後、<code>daysSkipped: 0</code> で毎時処理の所要時間が2〜3ミリ秒まで落ちたのを確認できた。</p>
+<p>設定も見直して、<code>journal</code> は日次1回(<code>dailyIntervalHours: 24</code>)に固定。毎時のスケジューラーチェック自体は軽い処理だけに留めるようにした。</p>
+<h2 id="学んだこと">学んだこと</h2>
+<p>常時稼働にするというのは、動いているアプリ本体だけでなく、裏側で静かに回り続けている自動処理まで含めて「壊れない」ようにする、ということだと分かった一件だった。表からは全く見えない場所で、地味に一番コストがかかっていたりする。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>正体不明のエラーとの追いかけっこの末、引っ越した</title><link>https://blog.taikiito.com/posts/2026-08-16-moving-to-a-server/</link><pubDate>Sun, 16 Aug 2026 09:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-16-moving-to-a-server/</guid><description>MulmoClaudeをAWS Lightsailに移行した記録。CSRFのtrusted originエラー、Docker Desktop/Docker Engineのネットワークの違いによる原因不明のエラー、メモリ増設と縮小の顛末まで。</description><content:encoded><![CDATA[<p>前回までの続き。MulmoClaudeはローカルのMacBookで動かしていたので、閉じたり持ち歩いたりすると使えなくなる。外出先や自宅以外の場所からも、ちゃんとしたWeb UIでアクセスしたい場面が増えていた。Telegram botは複数スレッドの並行やMarkdown表示が弱く、そろそろ限界を感じていた。</p>
+<h2 id="選択肢を比べてみた">選択肢を比べてみた</h2>
+<p>ローカルを24時間つけっぱなしにする案は電気代と持ち運びの都合で却下。自分のマシンから直接SSHで繋ぐ案も、企業ネットワークは outbound の port 22(SSH)をブロックしていることが多いので早々に除外した。代わりに、HTTPS越しにドメイン経由でアクセスし、手前に認証ゲート(Cloudflare Access)を置く構成にした。ログインはGoogleアカウント、加えてアプリ自体の共有シークレット(<code>MULMOCLAUDE_AUTH_TOKEN</code>)による二重の認証にした。</p>
+<p>クラウド事業者はさくらのクラウドと迷ったが、Singaporeリージョンのレイテンシを取ってAWS Lightsailを選択。最初は $7/mo(1GB RAM、2 vCPU、40GB SSD)のバンドルから始め、足りなければ後から上げる方針にした。</p>
+<h2 id="csrfのtrusted-originで送信が無音失敗">CSRFのtrusted originで送信が無音失敗</h2>
+<p>移行作業自体は完了したが、実際にブラウザからメッセージを送ると失敗する。エラーメッセージも出ず、ただ無反応になるだけだった。</p>
+<p>原因は、アプリ内蔵のCSRFガードが <code>Origin</code> ヘッダーをチェックしていて、新しいドメインが <code>.env</code> の <code>MULMOCLAUDE_TRUSTED_ORIGINS</code> に追加されていなかったこと。ここに <code>https://mulmoclaude-taiki.com</code> を追加して <code>systemctl restart mulmoclaude.service</code> したら直った。MulmoClaudeを自分でセルフホストしていて、公開ドメインからの送信だけ無言で失敗する場合は、まずここを疑うといい。</p>
+<h2 id="原因不明の-network-error-calling--を追いかけた">原因不明の &ldquo;Network error calling &hellip;&rdquo; を追いかけた</h2>
+<p>数日後、<code>presentForm</code> や <code>manageCollection</code> など内部のMCPブリッジ呼び出しが断続的に &ldquo;Network error calling &hellip;: fetch failed&rdquo; で落ちるようになった。</p>
+<p>最初は <code>/proc/meminfo</code> を見てメモリ不足を疑った。実際 <code>MemAvailable</code> は少なめで、swapも埋まっていた。<code>zram-tools</code> を入れて圧縮swap(<code>/dev/zram0</code>)を作り、<code>vm.swappiness=10</code> に下げてみたが、症状は改善しなかった。念のためLightsailのプランも $7/mo(1GB)から $12/mo(2GB)に上げてみたが、それでも同じエラーが100%の確率で再現した。</p>
+<p>結局、アプリのソース(<code>server/index.ts</code>)を読んで根本原因が分かった。アプリは <code>app.listen(port, &quot;127.0.0.1&quot;, ...)</code> で <strong>loopbackにしかbindしない</strong> 設計になっている。サンドボックス内のエージェントは <code>host.docker.internal</code> 経由でホストにアクセスするが、<strong>Docker Desktop(Mac)ではこれがhypervisor越しにloopbackへ届く</strong>のに対し、<strong>Docker Engine(Linux)では単に <code>docker0</code> ブリッジの実IP(このケースでは <code>172.17.0.1</code>)に解決される</strong>。127.0.0.1にしかbindしていないアプリは、この別インターフェースからの接続を受け付けない。Macでは気づかなかった潜在バグが、Linux移行で初めて表に出た形だ。</p>
+<p>修正は、<code>socat</code> でブリッジ側からloopbackへのTCPリレーを1本立てるだけだった。</p>
+<pre tabindex="0"><code>ExecStart=/usr/bin/socat TCP-LISTEN:3001,bind=172.17.0.1,fork,reuseaddr TCP:127.0.0.1:3001
+</code></pre><p>これをsystemdサービスとして登録したら、<code>curl http://host.docker.internal:3001/</code> が200を返すようになり、<code>presentForm</code>/<code>manageCollection</code> も即座に正常化した。メモリ・zramの対応は完全に的外れだったわけではないが(実際に空きは増えた)、このエラーの直接原因ではなかった。</p>
+<h2 id="12mo2gbに戻した理由">$12/mo(2GB)に戻した理由</h2>
+<p>原因が判明した後、節約のために元の $7/mo(1GB)へのダウングレードを試みた。ところがLightsailは<strong>スナップショット経由でのプラン縮小に対応しておらず</strong>、1GBインスタンスをゼロから作り直す必要があった。作り直したインスタンスは、Dockerのサンドボックスイメージビルドなど負荷がかかるタイミングで繰り返しハングし、SSHもLightsailのブラウザコンソールも反応しなくなる、ということが複数回起きた。</p>
+<p>1GBではこのワークロード(MulmoClaude本体 + Dockerサンドボックス + Telegram bridge)を安定して支えきれないと判断し、$12/mo(2GB)を最終プランとして確定した。安さより安定性を優先した形だ。</p>
+<h2 id="常時稼働にしてみて">常時稼働にしてみて</h2>
+<p>いくつかのつまずきを経て、今はこのサーバーが24時間動き続けている。自分のパソコンの状態に関係なく、いつでもどこからでも使える。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>プログラミングができない人間が、AIアシスタントを一から作ってみた</title><link>https://blog.taikiito.com/posts/2026-07-25-mulmoclaude-genesis/</link><pubDate>Sat, 25 Jul 2026 09:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-07-25-mulmoclaude-genesis/</guid><description>サラリーマンをしながら趣味でパソコンをいじっている自分が、個人用のAIアシスタント環境を一から構築し、実際に使える状態にするまでの記録。ERR_MODULE_NOT_FOUNDのつまずきも含む。</description><content:encoded><![CDATA[<p>サラリーマンをしながら、趣味でパソコンをいじっている。エンジニアではないが、このブログでは、そのなかでやったことを起きた順番のまま記録していきたい。「私にもできるかもしれない」と思っていただけたら嬉しい。</p>
+<p>その第一歩として、そもそもの始まりの話から書く。</p>
+<h2 id="きっかけ">きっかけ</h2>
+<p>中島聡さんのニュースレターで「MulmoClaude」というものを知った。ChatGPTやClaudeのようなAIアシスタントを、SaaSとしてではなく自分のマシン上でセルフホストできるOSSプロジェクトで、会話履歴や記憶させた情報が全部ローカルのファイルとして自分の手元に残る、という点に惹かれた。試しに自分のMacBookに導入してみることにした。環境は Node.js v24.18.0、git 2.50.1、Claude Code CLI v2.1.220。</p>
+<h2 id="最初のつまずき-err_module_not_found">最初のつまずき: <code>ERR_MODULE_NOT_FOUND</code></h2>
+<p>導入方法はいくつかあり、最初は <code>receptron/mulmoclaude</code> を <code>git clone</code> する開発者向けの方法を選んだ。<code>yarn install</code> して <code>yarn dev</code> で起動しようとしたところ、<code>ERR_MODULE_NOT_FOUND</code> のビルドエラーで起動しなかった。原因は、パッケージ群のビルドが済んでいない状態で <code>dev</code> を起動しようとしていたこと。<code>yarn build:packages:dev</code> を先に実行してからだと、あっさり起動した。同じエラーで詰まっている人がいたら、まずこの順番を疑ってみてほしい。</p>
+<p>動くようにはなったが、調べると公式が推奨しているのは <code>npx mulmoclaude@latest</code> というもっとシンプルな方法だった。ビルドの手間もgit cloneの管理も不要で、同じ日のうちに乗り換えた。ポートも <code>git clone</code>/<code>yarn dev</code> 版の <code>5173</code> から、npx版の <code>3001</code> に変わった。今もこのnpx版をベースに使い続けている。最初からこちらを選んでいれば、<code>ERR_MODULE_NOT_FOUND</code> にも遭遇しなかったはずだ。</p>
+<h2 id="実際に使える環境に仕上げる">実際に使える環境に仕上げる</h2>
+<p>動くようになってからは、日常的に使えるように何点か手を加えた。まず、パソコンの前にいないときにも使いたかったので、Telegramのbot(<code>taiki_mulmoclaude_bot</code>)をBotFather経由で作成し、公式のTelegram Bot APIの手順どおりに連携させた。外出先からでもチャットできるのは地味に便利だった。</p>
+<p>あわせて、それまで公式のClaudeアプリで会話してきた蓄積(仕事の話、住んでいる場所、興味関心、日々の記録など)を、この新しい環境の「記憶」(ローカルのMarkdownファイルとして蓄積される仕組み)として移行した。ゼロから育てるのではなく、これまでの会話の続きから始められたのは大きかった。</p>
+<p>最後に、ローカル環境が壊れたら全部消える、というのは避けたかったので、早い段階でGitHubにprivateリポジトリを作り、<code>git push</code> による定期的な自動バックアップの仕組みを整えた。この習慣は今も続いていて、後々サーバー移行を決める安心材料にもなった。</p>
+<p>ここまでで、パソコンの中にMulmoClaudeを構築し、Telegram経由でも使えて、データもGitHubで守られている状態になった。次は、これを常時稼働のクラウドサーバーへ引っ越した話に続く。</p>
+]]></content:encoded></item></channel></rss>

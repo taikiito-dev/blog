@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>デバッグ記録 on blog.taikiito.com</title><link>https://blog.taikiito.com/tags/%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E8%A8%98%E9%8C%B2/</link><description>Recent content in デバッグ記録 on blog.taikiito.com</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sat, 22 Aug 2026 09:00:00 +0800</lastBuildDate><atom:link href="https://blog.taikiito.com/tags/%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E8%A8%98%E9%8C%B2/index.xml" rel="self" type="application/rss+xml"/><item><title>このブログにはてな風カレンダーを作ったら、JSONを自分で閉じ込めていた</title><link>https://blog.taikiito.com/posts/2026-08-22-sidebar-calendar/</link><pubDate>Sat, 22 Aug 2026 09:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-22-sidebar-calendar/</guid><description>はてなブログ風のカレンダー・タグクラウド・月別ボタンをこのブログ自体のサイドバーに実装した記録。Hugoのhtml/templateによる自動エスケープでJSONが壊れ、カレンダーが描画されなくなったバグの原因調査も含む。</description><content:encoded><![CDATA[<p>前回、ブログと一緒にシングリッシュ用語集サイトも公開した話を書いた。今回はまたこのブログ自体の話に戻る。サイドバーを作った記録だ。</p>
+<h2 id="記事一覧とアーカイブだけでは物足りなかった">記事一覧とアーカイブだけでは物足りなかった</h2>
+<p>Hugo + PaperMod で組んだこのブログは、最初はヘッダーに「記事一覧」「アーカイブ」の2つのメニューがあるだけだった。記事数が増えてくると、日付やタグから辿れた方が使いやすい。PaperModはシングルカラムのテーマで、サイドバーという概念自体がない。ただ、コンテンツ幅(<code>--nav-width: 1024px</code>)は画面中央に固定されているので、広い画面では左右に何もない余白ができる。ここに何か置けるはずだと考えた。</p>
+<h2 id="まずはボタンだけ置いてみた">まずはボタンだけ置いてみた</h2>
+<p>PaperModには <code>extend_footer.html</code> という空のフック(パーシャル)が用意されていて、上書きするだけでフッター末尾に任意のHTMLを差し込める。CSSも <code>assets/css/extended/*.css</code> に置いたファイルが自動で本体CSSに連結される仕組みがあるので、これを使って、画面右端に固定表示する丸ボタンを2つ置いてみた。「📅 日付別」は <code>/archives/</code> へ、「🏷️ タグ別」は <code>/tags/</code> へのリンクだけの、ただのショートカットだ。</p>
+<h2 id="はてなブログを見て作り直すことにした">はてなブログを見て、作り直すことにした</h2>
+<p>ボタンだけでは芸がない。はてなブログのサイドバーにあるような、実際にカレンダーの月表示が出て投稿日がハイライトされるもの、タグも名前と件数がその場に並ぶものにしたいと思った。</p>
+<p>タグクラウドの方は簡単だった。PaperMod自身の <code>/tags/</code> ページ(<code>taxonomy.html</code>)が既に同じことをしていたので、そのロジックをそのまま借りた。</p>
+<pre tabindex="0"><code class="language-gotemplate" data-lang="gotemplate">{{ range $tagsPage.Data.Terms.Alphabetical }}
+  {{ with site.GetPage (printf &#34;/tags/%s&#34; .Name) }}
+    &lt;a href=&#34;{{ .Permalink }}&#34;&gt;{{ .LinkTitle }} ({{ $count }})&lt;/a&gt;
+  {{ end }}
+{{ end }}
+</code></pre><p>カレンダーは静的サイトジェネレータなので少し工夫が要る。ビルド時に、その言語の全記事の日付・タイトル・URLをJSONとしてページに埋め込み(<code>{{ $calItems | jsonify }}</code>)、バニラJSで月表示のグリッドを描画する方式にした。外部ライブラリは使っていない。</p>
+<h2 id="カレンダーが何も表示されなかった">カレンダーが、何も表示されなかった</h2>
+<p>書き終えてデプロイしたら、タグクラウドは正しく出るのに、カレンダー部分だけが空白だった。前後の月ボタン(‹ ›)だけが表示されて、日付のマス目もタイトルも出ない。</p>
+<p>ブラウザの開発者ツールで実際のHTMLを見て気づいた。埋め込んだはずのJSONが、こうなっていた。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-html" data-lang="html"><span class="line"><span class="cl"><span class="p">&lt;</span><span class="nt">script</span> <span class="na">type</span><span class="o">=</span><span class="s">&#34;application/json&#34;</span> <span class="na">id</span><span class="o">=</span><span class="s">&#34;quick-cal-data&#34;</span><span class="p">&gt;</span><span class="s2">&#34;[{\&#34;date\&#34;:\&#34;2026-08-21\&#34;,\&#34;...\&#34;}]&#34;</span><span class="p">&lt;/</span><span class="nt">script</span><span class="p">&gt;</span>
+</span></span></code></pre></div><p>配列全体が、エスケープされた<strong>文字列として</strong>二重にクオートで包まれている。<code>JSON.parse()</code> にこれを渡すと、配列ではなく1本の文字列が返ってくる。直後の <code>.forEach()</code> はもちろん文字列には存在しないので、その場でエラーが起きてスクリプト全体が止まっていた。</p>
+<p>原因はHugoのテンプレートエンジン(<code>html/template</code>)の仕様だった。<code>&lt;script&gt;</code> タグの中に値を差し込むと、Hugoは自動的にそれをJSの文字列リテラルとして安全にエスケープしようとする。<code>jsonify</code> が返すのはただの <code>string</code> 型なので、信頼できない値として扱われ、丸ごとクオートで包まれてしまっていた。</p>
+<p>直したのは1箇所、<code>safeJS</code> を挟んで「このJSは安全だから素通ししてくれ」と明示するだけだった。</p>
+<pre tabindex="0"><code class="language-gotemplate" data-lang="gotemplate">{{ $calItems | jsonify | safeJS }}
+</code></pre><p>これでJSONがそのまま配列として埋め込まれるようになり、カレンダーが動くようになった。</p>
+<h2 id="月別ボタンも追加した">月別ボタンも追加した</h2>
+<p>カレンダーが動くようになったところで、月ごとにジャンプできるボタンも欲しくなった。前後の月を1つずつ辿るだけでは、記事が増えてきたときに不便になる。投稿のある年月を新しい順にリストアップし、クリックするとページ遷移なしでカレンダーがその月に切り替わる仕組みを、既存のカレンダーの状態管理に乗せる形で追加した。</p>
+<h2 id="今の状態">今の状態</h2>
+<p>このブログ自体が、動かしながら直したものの記録になった。カレンダー・月別ボタン・タグクラウドがサイドバーに揃った状態で、次は中身の記事を増やしていく番だ。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>全部正しく設定したのに、メールは静かに消えていく</title><link>https://blog.taikiito.com/posts/2026-08-21-mail-delivery-reputation/</link><pubDate>Fri, 21 Aug 2026 09:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-21-mail-delivery-reputation/</guid><description>SPF/DKIM/DMARCを教科書通り全部揃えても、それでも届かないメールがある。原因は設定ミスではなく、ドメインの送信履歴(センダーレピュテーション)だった。</description><content:encoded><![CDATA[<p>前回、<code>taikiito.com</code>でメールを使えるようにしたところまで書いた。SPF/DKIM/DMARCを設定し、テスト送信もした。そして「一部の宛先に届かない」というオチで終わっていた。今回はその続き、というか顛末。</p>
+<h2 id="dmarcを足してもまだ消える">DMARCを足しても、まだ消える</h2>
+<p>前回の時点ではDMARCを設定していなかったので、まずそこを埋めた。</p>
+<ul>
+<li><strong>DMARC</strong>(TXT、<code>_dmarc.taikiito.com</code>): <code>v=DMARC1; p=none; rua=mailto:(レポート送付先)</code></li>
+</ul>
+<p>外部のDNSチェッカーで反映を確認し、伝播も待って、満を持して再送。……届かない。バウンスも一切なし。エラーもない。ただ、何事もなかったかのように消える。ポストに投函した手紙が、配達員ごと蒸発したような感覚だった。</p>
+<p>SPF・DKIM・DMARC、教科書通り全部揃えたのに、というのがこの時点のモヤモヤ。原因は認証の失敗ではなく、<strong>センダーレピュテーション</strong>(そのドメインがどれだけ送信履歴を積んで信頼されているか)だと分かった。フィルタが厳しい受信サーバーほど強く効くらしい。SPF/DKIM/DMARCは「なりすましでないこと」の証明であって、「信頼できる送信元であること」の証明ではない。似ているようで全然別物、というのをここで痛感した。打てる手はもう無く、あとは時間が積み上がるのを待つだけ。地味に一番効かないタイプの「解決策」だ。</p>
+<h2 id="icloudのカスタムドメインメールで運用することにした">iCloud+のカスタムドメインメールで運用することにした</h2>
+<p>土台はApple iCloud+の「カスタムメールドメイン」機能。必要なレコードはMX・SPF・DKIMの3つだけで、Appleの設定ウィザードが値をそのまま出してくれるので、ほぼコピペ作業だった。</p>
+<ul>
+<li><strong>MX</strong>: <code>mx01.mail.icloud.com</code> / <code>mx02.mail.icloud.com</code></li>
+<li><strong>SPF</strong>(TXT): <code>v=spf1 include:icloud.com ~all</code></li>
+<li><strong>DKIM</strong>(CNAME): <code>sig1._domainkey</code> → <code>sig1.dkim.taikiito.com.at.icloudmailadmin.com</code></li>
+</ul>
+<h2 id="fastmailと迷ったが思い込みが一つ崩れた">Fastmailと迷ったが、思い込みが一つ崩れた</h2>
+<p>有名な対抗馬としてFastmailがある。料金以外の軸で比較してみた: 標準プロトコル対応、Apple以外の端末での使い勝手、ドメイン・エイリアスの上限(iCloud+はApple ID一つにつき数個、Fastmailはほぼ無制限+catch-all)、サーバー側のフィルタルール、送信ドメインとしての評判、データの持ち出しやすさ。</p>
+<p>比較の途中で、自分の思い込みが一つ崩れた。iCloud MailはApple製品専用だとばかり思っていたが、実際には<code>imap.mail.me.com</code> / <code>smtp.mail.me.com</code>にアプリ専用パスワードでアクセスすれば、Thunderbirdのような普通のIMAP/SMTPクライアントからも使える。Apple Mailの「書き出す」機能で<code>.mbox</code>形式のバックアップも取れる。「ロックインされて出られなくなる」という一番の懸念は、調べてみたらほぼ杞憂だった。</p>
+<p>結局、iPhoneのバックアップ用に元々iCloud+を契約しているので、カスタムドメインのメールボックスを足しても実質タダ(容量を共有するだけ)。ロックインの心配もほぼ無いと分かった以上、今Fastmailに乗り換える動機はない。Apple以外の端末がメインになるとか、エイリアスを大量に使うようになったら、その時また考える。</p>
+<p>完璧に設定しても、ドメインの「信頼」だけは時間でしか買えない。今回学んだのはそこに尽きる。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>MulmoClaudeを常時稼働にしたら、裏側の自動処理が無限ループしていた</title><link>https://blog.taikiito.com/posts/2026-08-17-journal-loop-bug/</link><pubDate>Mon, 17 Aug 2026 09:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-17-journal-loop-bug/</guid><description>常時稼働サーバーに移行した翌日、バックグラウンドの自動処理(journal機能)が特定セッションを延々とリトライし続けるバグを追いかけた記録。原因はPythonとNode.js間のミリ秒精度のズレだった。</description><content:encoded><![CDATA[<p>前回、MulmoClaudeをAWS Lightsailの常時稼働サーバーに移行したところまで書いた。移行自体は終わったが、次の日、今度は裏側の自動処理がおかしくなっていることに気づいた。</p>
+<h2 id="何が起きていたか">何が起きていたか</h2>
+<p>MulmoClaudeには、会話ログから日々の要約を自動生成する <code>journal</code> という裏側の機能がある。この処理が、毎時間動くたびに異常に時間がかかるようになっていた。1回あたり25〜90秒かかっている回もあった。裏で何度もリトライが走っている感触があり、消費されるトークン量も明らかに増えていた。</p>
+<h2 id="原因を追う">原因を追う</h2>
+<p>調べていくと、直前の移行作業(前回の記事参照)で発生した大量のセッション(625個)が、未処理のまま残留していることが分かった。毎時間動く自動処理は、この残留分を毎回すべて処理しようとしてリトライを繰り返していた。処理が終わらない→次の時間にまた同じ分をやり直す、という無限ループに近い状態になっていた。</p>
+<p>さらに掘ると、根っこにはもう一段深い原因があった。処理済みかどうかを判定するタイムスタンプの比較で、Python側とNode.js側でミリ秒の扱いが微妙に食い違っていた。片方は切り捨て、もう片方は四捨五入、というようなズレがあり、本来「処理済み」と判定されるべきセッションが毎回「未処理」に見えてしまっていた。何度か修正を試したが、このズレそのものを直さない限り再発する状態だった。</p>
+<h2 id="応急処置と本修正">応急処置と本修正</h2>
+<p>まず <code>journal</code> 機能そのものを一時的にOFFにして、それ以上の消費を止めた。そのうえで、タイムスタンプ精度の扱いを両言語で揃える形に修正。修正後、<code>daysSkipped: 0</code> で毎時処理の所要時間が2〜3ミリ秒まで落ちたのを確認できた。</p>
+<p>設定も見直して、<code>journal</code> は日次1回(<code>dailyIntervalHours: 24</code>)に固定。毎時のスケジューラーチェック自体は軽い処理だけに留めるようにした。</p>
+<h2 id="学んだこと">学んだこと</h2>
+<p>常時稼働にするというのは、動いているアプリ本体だけでなく、裏側で静かに回り続けている自動処理まで含めて「壊れない」ようにする、ということだと分かった一件だった。表からは全く見えない場所で、地味に一番コストがかかっていたりする。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>正体不明のエラーとの追いかけっこの末、引っ越した</title><link>https://blog.taikiito.com/posts/2026-08-16-moving-to-a-server/</link><pubDate>Sun, 16 Aug 2026 09:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-16-moving-to-a-server/</guid><description>MulmoClaudeをAWS Lightsailに移行した記録。CSRFのtrusted originエラー、Docker Desktop/Docker Engineのネットワークの違いによる原因不明のエラー、メモリ増設と縮小の顛末まで。</description><content:encoded><![CDATA[<p>前回までの続き。MulmoClaudeはローカルのMacBookで動かしていたので、閉じたり持ち歩いたりすると使えなくなる。外出先や自宅以外の場所からも、ちゃんとしたWeb UIでアクセスしたい場面が増えていた。Telegram botは複数スレッドの並行やMarkdown表示が弱く、そろそろ限界を感じていた。</p>
+<h2 id="選択肢を比べてみた">選択肢を比べてみた</h2>
+<p>ローカルを24時間つけっぱなしにする案は電気代と持ち運びの都合で却下。自分のマシンから直接SSHで繋ぐ案も、企業ネットワークは outbound の port 22(SSH)をブロックしていることが多いので早々に除外した。代わりに、HTTPS越しにドメイン経由でアクセスし、手前に認証ゲート(Cloudflare Access)を置く構成にした。ログインはGoogleアカウント、加えてアプリ自体の共有シークレット(<code>MULMOCLAUDE_AUTH_TOKEN</code>)による二重の認証にした。</p>
+<p>クラウド事業者はさくらのクラウドと迷ったが、Singaporeリージョンのレイテンシを取ってAWS Lightsailを選択。最初は $7/mo(1GB RAM、2 vCPU、40GB SSD)のバンドルから始め、足りなければ後から上げる方針にした。</p>
+<h2 id="csrfのtrusted-originで送信が無音失敗">CSRFのtrusted originで送信が無音失敗</h2>
+<p>移行作業自体は完了したが、実際にブラウザからメッセージを送ると失敗する。エラーメッセージも出ず、ただ無反応になるだけだった。</p>
+<p>原因は、アプリ内蔵のCSRFガードが <code>Origin</code> ヘッダーをチェックしていて、新しいドメインが <code>.env</code> の <code>MULMOCLAUDE_TRUSTED_ORIGINS</code> に追加されていなかったこと。ここに <code>https://mulmoclaude-taiki.com</code> を追加して <code>systemctl restart mulmoclaude.service</code> したら直った。MulmoClaudeを自分でセルフホストしていて、公開ドメインからの送信だけ無言で失敗する場合は、まずここを疑うといい。</p>
+<h2 id="原因不明の-network-error-calling--を追いかけた">原因不明の &ldquo;Network error calling &hellip;&rdquo; を追いかけた</h2>
+<p>数日後、<code>presentForm</code> や <code>manageCollection</code> など内部のMCPブリッジ呼び出しが断続的に &ldquo;Network error calling &hellip;: fetch failed&rdquo; で落ちるようになった。</p>
+<p>最初は <code>/proc/meminfo</code> を見てメモリ不足を疑った。実際 <code>MemAvailable</code> は少なめで、swapも埋まっていた。<code>zram-tools</code> を入れて圧縮swap(<code>/dev/zram0</code>)を作り、<code>vm.swappiness=10</code> に下げてみたが、症状は改善しなかった。念のためLightsailのプランも $7/mo(1GB)から $12/mo(2GB)に上げてみたが、それでも同じエラーが100%の確率で再現した。</p>
+<p>結局、アプリのソース(<code>server/index.ts</code>)を読んで根本原因が分かった。アプリは <code>app.listen(port, &quot;127.0.0.1&quot;, ...)</code> で <strong>loopbackにしかbindしない</strong> 設計になっている。サンドボックス内のエージェントは <code>host.docker.internal</code> 経由でホストにアクセスするが、<strong>Docker Desktop(Mac)ではこれがhypervisor越しにloopbackへ届く</strong>のに対し、<strong>Docker Engine(Linux)では単に <code>docker0</code> ブリッジの実IP(このケースでは <code>172.17.0.1</code>)に解決される</strong>。127.0.0.1にしかbindしていないアプリは、この別インターフェースからの接続を受け付けない。Macでは気づかなかった潜在バグが、Linux移行で初めて表に出た形だ。</p>
+<p>修正は、<code>socat</code> でブリッジ側からloopbackへのTCPリレーを1本立てるだけだった。</p>
+<pre tabindex="0"><code>ExecStart=/usr/bin/socat TCP-LISTEN:3001,bind=172.17.0.1,fork,reuseaddr TCP:127.0.0.1:3001
+</code></pre><p>これをsystemdサービスとして登録したら、<code>curl http://host.docker.internal:3001/</code> が200を返すようになり、<code>presentForm</code>/<code>manageCollection</code> も即座に正常化した。メモリ・zramの対応は完全に的外れだったわけではないが(実際に空きは増えた)、このエラーの直接原因ではなかった。</p>
+<h2 id="12mo2gbに戻した理由">$12/mo(2GB)に戻した理由</h2>
+<p>原因が判明した後、節約のために元の $7/mo(1GB)へのダウングレードを試みた。ところがLightsailは<strong>スナップショット経由でのプラン縮小に対応しておらず</strong>、1GBインスタンスをゼロから作り直す必要があった。作り直したインスタンスは、Dockerのサンドボックスイメージビルドなど負荷がかかるタイミングで繰り返しハングし、SSHもLightsailのブラウザコンソールも反応しなくなる、ということが複数回起きた。</p>
+<p>1GBではこのワークロード(MulmoClaude本体 + Dockerサンドボックス + Telegram bridge)を安定して支えきれないと判断し、$12/mo(2GB)を最終プランとして確定した。安さより安定性を優先した形だ。</p>
+<h2 id="常時稼働にしてみて">常時稼働にしてみて</h2>
+<p>いくつかのつまずきを経て、今はこのサーバーが24時間動き続けている。自分のパソコンの状態に関係なく、いつでもどこからでも使える。</p>
+<p>つづく。</p>
+]]></content:encoded></item></channel></rss>

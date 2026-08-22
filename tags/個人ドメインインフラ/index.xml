@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>個人ドメイン・インフラ on blog.taikiito.com</title><link>https://blog.taikiito.com/tags/%E5%80%8B%E4%BA%BA%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E3%82%A4%E3%83%B3%E3%83%95%E3%83%A9/</link><description>Recent content in 個人ドメイン・インフラ on blog.taikiito.com</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sat, 22 Aug 2026 08:00:00 +0800</lastBuildDate><atom:link href="https://blog.taikiito.com/tags/%E5%80%8B%E4%BA%BA%E3%83%89%E3%83%A1%E3%82%A4%E3%83%B3%E3%82%A4%E3%83%B3%E3%83%95%E3%83%A9/index.xml" rel="self" type="application/rss+xml"/><item><title>このブログを作ることにして、まずGitHubのユーザー名から変えた</title><link>https://blog.taikiito.com/posts/2026-08-22-building-this-blog/</link><pubDate>Sat, 22 Aug 2026 08:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-22-building-this-blog/</guid><description>ここまでの試行錯誤を公開の日記として書き残すことにした経緯。Hugo(i18n)+PaperMod、GitHub Actions経由のGitHub Pagesデプロイ、非公開ソースリポジトリから公開用リポジトリへforce pushする2リポジトリ構成、そしてついでに行ったGitHubユーザー名の変更まで。</description><content:encoded><![CDATA[<p>前回はRSSリーダーを作って同じ日に壊した話を書いた。同じ頃、もう少し大きい決断もしていた。ここまでやってきたことを、公開の場に書き残すことだ。今読んでいるこのブログ自体を、その日に立ち上げた。</p>
+<h2 id="きっかけ">きっかけ</h2>
+<p>中島聡さんのニュースレター経由で以前MulmoClaudeを知ったのと同じように、彼のニュースレターで「エンジニアを目指すなら、まず実物をGitHubに公開するといい」という趣旨のアドバイスを目にしていた。ドメイン運用やセルフホスティング、メールまわりで試行錯誤してきたことが、同じ問題にぶつかった誰かの検索結果に引っかかれば十分だと思い、公開することにした。</p>
+<h2 id="形式は時系列の日記にした">形式は「時系列の日記」にした</h2>
+<p>最初はテーマ別のハウツー記事にしようかと考えたが、途中で「実際に起きた順番のまま書く日記形式」に変更した。うまくいかなかったこと、迷ったこと、あとから直したことも含めて、そのまま時系列で残す方が実態に近い。</p>
+<h2 id="スタックを決める">スタックを決める</h2>
+<p>静的サイトジェネレータはHugoにした。決め手は多言語対応(i18n)が標準で入っていること。テーマはPaperMod。GitHub Actionsでビルドし、GitHub Pagesにデプロイ、独自ドメイン <code>blog.taikiito.com</code> をCloudflareのCNAMEで割り当てた。</p>
+<p>リポジトリは2つに分けた。実際に編集するHugoのソース一式(<code>blog-source</code>)は非公開、ビルド後の静的ファイルだけを別リポジトリ(<code>blog</code>)にforce pushで公開する構成にしている。GitHub Actionsの1ジョブの中で、ビルド→出力先リポジトリへのpushまで完結させた。ソース側の編集履歴や下書きを外に出さずに、成果物だけを公開できるのが気に入っている。</p>
+<h2 id="ついでにユーザー名も変えた">ついでにユーザー名も変えた</h2>
+<p>GitHubのユーザー名も、このタイミングで変えた。もともと登録したときに深く考えず入れた生年月日由来の文字列が入っていて、前から気に入っていなかった。理想の名前は既に他の人に使われていたので、末尾に<code>-dev</code>を足した形に落ち着いた。公開リポジトリがまだ0個の状態だったので、切り替えのコストは低かった。</p>
+<p>合わせて、ユーザー名と同じ名前のリポジトリを作ると自動でプロフィールページに表示される、GitHubのプロフィールREADME機能も使った。中身は最小限、2行だけ。</p>
+<blockquote>
+<p>Tinkering with computers on the side. Hoping it helps someone.</p>
+</blockquote>
+<h2 id="ここから">ここから</h2>
+<p>ブログの器と、公開用のGitHubアカウントが整った。中身の記事は、実際に起きたことをこうして後から書き足していく形になる。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>全部正しく設定したのに、メールは静かに消えていく</title><link>https://blog.taikiito.com/posts/2026-08-21-mail-delivery-reputation/</link><pubDate>Fri, 21 Aug 2026 09:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-21-mail-delivery-reputation/</guid><description>SPF/DKIM/DMARCを教科書通り全部揃えても、それでも届かないメールがある。原因は設定ミスではなく、ドメインの送信履歴(センダーレピュテーション)だった。</description><content:encoded><![CDATA[<p>前回、<code>taikiito.com</code>でメールを使えるようにしたところまで書いた。SPF/DKIM/DMARCを設定し、テスト送信もした。そして「一部の宛先に届かない」というオチで終わっていた。今回はその続き、というか顛末。</p>
+<h2 id="dmarcを足してもまだ消える">DMARCを足しても、まだ消える</h2>
+<p>前回の時点ではDMARCを設定していなかったので、まずそこを埋めた。</p>
+<ul>
+<li><strong>DMARC</strong>(TXT、<code>_dmarc.taikiito.com</code>): <code>v=DMARC1; p=none; rua=mailto:(レポート送付先)</code></li>
+</ul>
+<p>外部のDNSチェッカーで反映を確認し、伝播も待って、満を持して再送。……届かない。バウンスも一切なし。エラーもない。ただ、何事もなかったかのように消える。ポストに投函した手紙が、配達員ごと蒸発したような感覚だった。</p>
+<p>SPF・DKIM・DMARC、教科書通り全部揃えたのに、というのがこの時点のモヤモヤ。原因は認証の失敗ではなく、<strong>センダーレピュテーション</strong>(そのドメインがどれだけ送信履歴を積んで信頼されているか)だと分かった。フィルタが厳しい受信サーバーほど強く効くらしい。SPF/DKIM/DMARCは「なりすましでないこと」の証明であって、「信頼できる送信元であること」の証明ではない。似ているようで全然別物、というのをここで痛感した。打てる手はもう無く、あとは時間が積み上がるのを待つだけ。地味に一番効かないタイプの「解決策」だ。</p>
+<h2 id="icloudのカスタムドメインメールで運用することにした">iCloud+のカスタムドメインメールで運用することにした</h2>
+<p>土台はApple iCloud+の「カスタムメールドメイン」機能。必要なレコードはMX・SPF・DKIMの3つだけで、Appleの設定ウィザードが値をそのまま出してくれるので、ほぼコピペ作業だった。</p>
+<ul>
+<li><strong>MX</strong>: <code>mx01.mail.icloud.com</code> / <code>mx02.mail.icloud.com</code></li>
+<li><strong>SPF</strong>(TXT): <code>v=spf1 include:icloud.com ~all</code></li>
+<li><strong>DKIM</strong>(CNAME): <code>sig1._domainkey</code> → <code>sig1.dkim.taikiito.com.at.icloudmailadmin.com</code></li>
+</ul>
+<h2 id="fastmailと迷ったが思い込みが一つ崩れた">Fastmailと迷ったが、思い込みが一つ崩れた</h2>
+<p>有名な対抗馬としてFastmailがある。料金以外の軸で比較してみた: 標準プロトコル対応、Apple以外の端末での使い勝手、ドメイン・エイリアスの上限(iCloud+はApple ID一つにつき数個、Fastmailはほぼ無制限+catch-all)、サーバー側のフィルタルール、送信ドメインとしての評判、データの持ち出しやすさ。</p>
+<p>比較の途中で、自分の思い込みが一つ崩れた。iCloud MailはApple製品専用だとばかり思っていたが、実際には<code>imap.mail.me.com</code> / <code>smtp.mail.me.com</code>にアプリ専用パスワードでアクセスすれば、Thunderbirdのような普通のIMAP/SMTPクライアントからも使える。Apple Mailの「書き出す」機能で<code>.mbox</code>形式のバックアップも取れる。「ロックインされて出られなくなる」という一番の懸念は、調べてみたらほぼ杞憂だった。</p>
+<p>結局、iPhoneのバックアップ用に元々iCloud+を契約しているので、カスタムドメインのメールボックスを足しても実質タダ(容量を共有するだけ)。ロックインの心配もほぼ無いと分かった以上、今Fastmailに乗り換える動機はない。Apple以外の端末がメインになるとか、エイリアスを大量に使うようになったら、その時また考える。</p>
+<p>完璧に設定しても、ドメインの「信頼」だけは時間でしか買えない。今回学んだのはそこに尽きる。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>ドメインが動き出したので、その日のうちに自分のデジタル名刺も作った</title><link>https://blog.taikiito.com/posts/2026-08-19-digital-business-card/</link><pubDate>Wed, 19 Aug 2026 10:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-19-digital-business-card/</guid><description>ドメインが使えるようになった勢いで作った、静的HTML1枚だけのデジタル名刺の記録。vCardダウンロードとWhatsAppのクリック・トゥ・チャットボタン、そしてCloudflareのメールアドレス難読化にハマった小話。</description><content:encoded><![CDATA[<p>前回、<code>taikiito.com</code> というドメインを確保し、自分のパソコンからブラウザ経由で自分のMulmoClaudeにアクセスできるところまで整えた。せっかくドメインの下にサブドメインを作れる状態になったので、その日のうちにもう一つ別のものを作ることにした。デジタル名刺だ。</p>
+<h2 id="サブドメインを1つ切って静的ページだけを置く">サブドメインを1つ切って、静的ページだけを置く</h2>
+<p><code>card.taikiito.com</code> というサブドメインを新しく作り、Lightsailの同じサーバー上にnginxのserver blockをもう1つ追加する形で対応した。ポイントは、MulmoClaude本体のNode.jsアプリとは完全に切り離したこと。<code>proxy_pass</code> は使わず、ただの静的HTMLファイル1枚を配信するだけの設定にしたので、名刺ページのアクセスがMulmoClaude本体の負荷に影響することはない。</p>
+<p>中身は実際に普段使っている名刺の情報をそのまま移した。ボタンは2つだけに絞った。</p>
+<ul>
+<li>「連絡先に保存」— クリックするとJSのBlobで <code>.vcf</code> ファイルをその場で生成し、スマホの連絡先追加シートを開く</li>
+<li>「WhatsApp」— <code>wa.me</code> のクリック・トゥ・チャットのディープリンクを踏むだけ</li>
+</ul>
+<p>最初はメール送信ボタンも用意していたが、後で削って情報行(<code>mailto:</code>リンク)だけに縮小した。ボタンは絞れるだけ絞った方が結局使いやすい。</p>
+<h2 id="色で少し迷った">色で少し迷った</h2>
+<p>配色は最初からネイビーで作っていたが、比較のために白黒版も一度作ってみた。並べて見て、結局ネイビーの方が良いという結論に落ち着き、白黒版は削除した。</p>
+<h2 id="地味なハマりどころ">地味なハマりどころ</h2>
+<p>公開直後、このアプリ自体に埋め込んだプレビュー用のiframe内でカードを確認したところ、メールアドレスの表示が記号だけの謎の文字列になっていた。最初は自分のミスかと疑ったが、正体はCloudflareの「メールアドレス難読化」機能(Scrape Shield)だった。ページ内のメールアドレスをスパム避けのため自動でエンコードして表示する仕組みで、通常のブラウザではJSが実際のアドレスに戻して表示するが、このアプリのプレビュー用iframe内ではそのデコード用スクリプトが動かなかった、というだけの話だった。ゾーン全体の設定なので個別にOFFにはせず、実際のブラウザでは問題なく表示されることを確認して終わりにした。</p>
+<h2 id="名前のドメインはこう転がっていく">名前のドメインは、こう転がっていく</h2>
+<p>自分の名前をドメインにした瞬間から、こういう小さいサブドメインを次々に切れるようになった。この後もいくつか同じパターンで増やしていくことになる。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>ドメインを取ったら、自分の裏口も見つけてしまった</title><link>https://blog.taikiito.com/posts/2026-08-19-domain-and-email/</link><pubDate>Wed, 19 Aug 2026 09:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-19-domain-and-email/</guid><description>自分の名前のドメインを実際に使える状態に仕上げていく中で、自分で開けてしまっていた裏口を見つけて塞いだ。SPF/DKIM/DMARCを正しく設定してもメールが届かなかった話。</description><content:encoded><![CDATA[<p>前回、<code>taikiito.com</code>という自分の名前のドメインを確保したところまで書いた。今回は、そのドメインを実際に使える状態に仕上げていく話。</p>
+<h2 id="自分で開けてしまっていた裏口">自分で開けてしまっていた裏口</h2>
+<p>アクセス周りの設定を見直している最中、ドメインではなくLightsailのオリジンIPに直接アクセスしてみたところ、普通に開けてしまうことに気づいた。</p>
+<p>これは、ドメイン経由のアクセスにはCloudflare Accessによる認証ゲートを設けていたのに、オリジンIPに直接アクセスすればそのゲートを完全にバイパスできてしまう、ということを意味していた。自分で用意した鍵が、裏口からは意味をなしていなかった、という状態だ。</p>
+<p>同日中に <code>ufw</code> を導入し、inbound の80/443番ポートを <strong>Cloudflareの公開IPレンジ(<code>https://www.cloudflare.com/ips-v4</code>)からのみ許可</strong>、それ以外はデフォルトで拒否する設定にした。SSH(22番)は明示的に <code>ufw allow OpenSSH</code> で許可を先に入れてから有効化した(この順番を間違えると、ufw有効化と同時にSSH接続自体が失われるリスクがある)。適用後、ドメイン経由のアクセスは変わらず機能し、オリジンIP直接アクセスは接続不可になった。</p>
+<h2 id="2つ目のオリジンを追加したときの522エラー">2つ目のオリジンを追加したときの522エラー</h2>
+<p>このドメインの下に、MulmoClaude用の2つ目の入り口(<code>mulmoclaude.taikiito.com</code>)と、デジタル名刺用のサブドメイン(<code>card.taikiito.com</code>)を追加した。</p>
+<p>2つ目の入り口のDNS(Aレコード)とCloudflare Accessのポリシーを設定した直後、アクセスするとCloudflareの <strong>522エラー(オリジンへの接続タイムアウト)</strong> が出た。原因は、SSL/TLSの暗号化モードがゾーン(ドメイン)ごとに個別管理されていること。新しい <code>taikiito.com</code> ゾーンはデフォルトの <strong>Full</strong> モードになっていて、Cloudflareがオリジンの443番ポートへHTTPS接続を試みるが、nginx側は80番しか listen していなかった。既存のドメインと同じ <strong>Flexible</strong> モードに変更したら、即座に解消した。</p>
+<h2 id="続けてspfdkimdmarcを設定してメールも作った">続けて、SPF/DKIM/DMARCを設定してメールも作った</h2>
+<p>ドメインを持ったので、iCloud+の <strong>Custom Email Domain</strong> 機能を使って <code>me@taikiito.com</code> を作った。追加契約は不要で、案内された通りにDNSレコードを3つ登録するだけだった。</p>
+<ul>
+<li><strong>MX</strong>: <code>mx01.mail.icloud.com</code> / <code>mx02.mail.icloud.com</code></li>
+<li><strong>SPF</strong>(TXT): <code>v=spf1 include:icloud.com ~all</code></li>
+<li><strong>DKIM</strong>(CNAME): <code>sig1._domainkey</code> → <code>sig1.dkim.taikiito.com.at.icloudmailadmin.com</code></li>
+</ul>
+<p>これらは「このメールは、なりすましではなく本当に自分のドメインから送られている」ことを証明する仕組みで、値をコピーして貼り付けるだけの単純作業だった。</p>
+<h2 id="それでも一部の宛先にだけ届かない">それでも一部の宛先にだけ届かない</h2>
+<p>設定は正しく完了したはずだったが、試しに別のメールアドレス宛に送ってみたところ、そちらには届かなかった。バウンス(エラー返信)も一切なく、静かに消えているような状態だった。</p>
+<p>念のため <strong>DMARC</strong>(TXT、<code>v=DMARC1; p=none; rua=mailto:(レポート送付先)</code>)も追加し、外部のDNSチェッカーで正しく反映されていることも確認した。それでも届かない。原因は、SPF/DKIM/DMARCがすべて正しくても解決できない、ドメインの送信履歴(センダーレピュテーション)の問題だった。フィルタが厳しいメールサーバーほど、この影響を強く受けるらしい。</p>
+<p>技術的に打てる手は尽きたので、これも時間が解決してくれるのを待つことにした。ドメインの「信頼」は、SPF/DKIM/DMARCを完璧に設定しても、技術設定だけではどうにもならない部分がある、というのは、ウェブアクセスとメールの両方で学んだことだった。</p>
+<p>つづく。</p>
+]]></content:encoded></item><item><title>空いているうちに、自分の名前を確保することにした</title><link>https://blog.taikiito.com/posts/2026-08-19-domain-motivation/</link><pubDate>Wed, 19 Aug 2026 08:00:00 +0800</pubDate><guid>https://blog.taikiito.com/posts/2026-08-19-domain-motivation/</guid><description>自分の名前がそのままドメインとして空いていることに気づいた。名前をドメインにする人たちのパターンを見比べて、今のうちに確保しておくことにした。</description><content:encoded><![CDATA[<p>サーバーを常時稼働にして(前回参照)、<code>mulmoclaude-taiki.com</code> というドメインでアクセスできるようにはなっていた。ただこれは、取れそうな名前を適当に選んだだけのドメインで、自分の名前が入っているわけではなかった。</p>
+<h2 id="自分の名前がまだ空いていた">自分の名前が、まだ空いていた</h2>
+<p>ある日、自分の名前をそのままドメインにできないか調べてみた。<code>taikiito.com</code> — 空いていた。特にひねりのない、名前をつなげただけのドメインが、まだ誰にも取られていなかった。</p>
+<p>自分の名前をドメインにしている人たちのパターンをいくつか見比べてみた。苗字だけを使う人、下の名前と苗字をそのまま一続きにする人、ニックネームをブランド化して実体は別サイトにリダイレクトさせている人。ハッカー文化だと、本名と切り離した完全に別のハンドルを使うことも多い。</p>
+<p>自分の名前を看板にするなら、変にひねらず、名前をそのまま素直に繋げる形が一番しっくりきた。苗字を先にする(<code>itotaiki.com</code>)か、ハイフンを入れる(<code>taiki-ito.com</code>)かも迷ったが、結局一番シンプルな <code>taikiito.com</code> に決めた。</p>
+<h2 id="今のうちに取っておくことにした理由">今のうちに取っておくことにした理由</h2>
+<p>ドメインは取りたてのうちは、ネットワーク製品の自動フィルタなどから「作られたばかりで分類のない(uncategorized)ドメイン」として警戒されやすい、と聞いたことがあった。これを回避する方法は基本的になく、ドメインの年齢とアクセス・送信履歴が積み上がって「信頼できるカテゴリ」に分類されるのを待つしかないらしい。</p>
+<p>だったら、本格的に使う予定が固まっていない今のうちに取っておいて、気長に信頼が育つのを待てばいい。そう考えて、Cloudflare Registrarで <code>taikiito.com</code> を取得した(実費のみ、WHOISプライバシー込み)。<code>.jp</code> や <code>.net</code> も保険で押さえておくか迷ったが、<code>.com</code> 一本で十分だと判断した。</p>
+<p>自分の名前がそのままアドレスになる、というのは、想像していたよりも気分が良かった。</p>
+<p>つづく。</p>
+]]></content:encoded></item></channel></rss>
