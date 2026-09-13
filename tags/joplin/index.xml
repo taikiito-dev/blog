@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Joplin on Off-Grid</title><link>https://offgrid.taikiito.com/tags/joplin/</link><description>Recent content in Joplin on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sun, 13 Sep 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/joplin/index.xml" rel="self" type="application/rss+xml"/><item><title>メモをiCloud NotesからJoplinに移す(で、結局移さなかった話)</title><link>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</guid><description>iCloud Notes 1,649件をJoplinに一本化しようとして、結局は「過去分は移さず、新規メモだけJoplinで書く」という決着にした記録。Nextcloud WebDAV同期の実際の設定手順、iPhone発熱問題も。</description><content:encoded><![CDATA[<p>iCloud Notesに溜まっていたメモを、自前で管理できるJoplinというソフトに移そうとした記録。結論から書くと、過去の1,649件は結局移行せず、Joplinは新規メモ専用として運用することにした。「全部きれいに移す」ことにこだわらなかった判断の話でもある。</p>
+<h2 id="前提">前提</h2>
+<p>すでにNextcloudが動いていることを前提にする。まだの場合は先に<a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a>を読んでほしい。Joplin自体は自分でサーバーを用意する必要がなく、既存のNextcloudをファイル置き場として使うだけなので、新しいDockerコンテナを立てる作業は無い。</p>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>iCloud Notesには、思いついたことをその場で書き留めたメモが1,649件溜まっていた。写真やファイルと同じく、Appleに預けっぱなしのデータを自分の手元に戻したいと考え、Joplinの導入を決めた。</p>
+<h2 id="step-1-joplinを選ぶ">Step 1: Joplinを選ぶ</h2>
+<p>メモアプリの自前ホスト選択肢もいくつかあるが、Markdown形式(見出しや箇条書きなどを簡単な記号だけで書ける、プレーンテキストに近いメモの書き方)でメモを書けること、Nextcloud WebDAV(ファイルをネットワーク越しにやり取りするための標準規格。専用サーバーソフトを別途用意しなくても、既存のNextcloudがそのまま使える)経由で同期できること、Mac・iPhone両方に公式アプリがあることを決め手にJoplinにした。</p>
+<h2 id="step-2-nextcloud側にjoplin専用フォルダとアプリパスワードを用意する">Step 2: Nextcloud側にJoplin専用フォルダとアプリパスワードを用意する</h2>
+<p>Nextcloudのブラウザ画面から、Files(ファイル)アプリで新しいフォルダ(例: <code>Joplin</code>)を作成する。</p>
+<p>次に、<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">前の記事</a>のStep 1と同じ要領で、Joplin専用のアプリパスワードを発行する。個人設定 → セキュリティ → 「新しいアプリパスワードを作成」で、名前を<code>joplin-sync</code>のように分かりやすくしておく。</p>
+<h2 id="step-3-joplinアプリ側でwebdav同期を設定する">Step 3: Joplinアプリ側でWebDAV同期を設定する</h2>
+<p>Mac・iPhoneの両方に公式Joplinアプリをインストールする。設定画面から以下の通り入力する。</p>
+<ul>
+<li>同期対象: <strong>WebDAV</strong></li>
+<li>WebDAVの URL: <code>https://drive.taikiito.com/remote.php/dav/files/admin/Joplin/</code>(<code>admin</code>の部分はNextcloudのユーザー名、末尾の<code>Joplin/</code>はStep 2で作ったフォルダ名)</li>
+<li>ユーザー名: Nextcloudのユーザー名(<code>admin</code>)</li>
+<li>パスワード: Step 2で発行したアプリパスワード</li>
+</ul>
+<p>設定後、同期ボタンを押して接続が成功することを確認する。Mac・iPhoneの両方に同じ設定を入れることで、同じNextcloudフォルダを見に行く形になる。</p>
+<p><strong>同期は「自動」ではなく「手動」に設定している。</strong> 理由は、iPhoneで自動同期(バックグラウンドでの定期的なポーリング)を有効にすると本体が発熱する症状が出たため。常時バックグラウンドで同期し続けるより、メモを書いたタイミングで自分で同期ボタンを押す運用の方が、今のところ実用上困らないと判断した。</p>
+<h2 id="step-4-過去の1649件をどうするか検討する">Step 4: 過去の1,649件をどうするか検討する</h2>
+<p>ここまで環境は整ったが、肝心の「iCloud Notesの過去メモをどうやってJoplinに移すか」で立ち止まった。</p>
+<p>エクスポート自体は可能(Macの「メモ」アプリからPDFや個別ファイルとして書き出せる)だが、実際に中身を見返してみると、大した情報が入っていないメモがほとんどだった。買い物リストの切れ端、一度きりのちょっとしたメモ、すでに用が済んでいる下書きなど。1,649件を一つ一つ精査して移す価値があるかというと、かかる手間に見合わないと判断した。</p>
+<p>最終的に、<strong>過去の1,649件はiCloud Notes側にそのまま残し、Joplinは今後書く新規メモ専用として運用する</strong>ことにした。「全部を完璧に移してから使い始める」のではなく、「新しい方から始めて、今後蓄積されるものだけを自分の手元で管理する」という割り切り方だ。ファイル移行の時の「移す理由が移さない理由に勝つものだけ移す」という基準の延長線上にある判断でもある。</p>
+<h2 id="結果">結果</h2>
+<p>Joplinは新規メモの置き場として運用中。iCloud Notesの過去メモはアーカイブとしてそのまま残しているが、能動的に見返すことはほとんどない。「完全移行」にこだわらず、価値のある部分だけを新しい仕組みに乗せる、という判断も移行の一つの形だと思っている。</p>
+<p>次は、メールをGmailから自分のドメインに移した、一番苦労した話。→ <a href="/guides/gmail-to-own-domain/">メールをGmailから自分のドメインに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: NextcloudのWebDAV同期の実際の設定手順(URL・アプリパスワード)を追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item></channel></rss>

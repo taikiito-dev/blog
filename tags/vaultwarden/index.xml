@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Vaultwarden on Off-Grid</title><link>https://offgrid.taikiito.com/tags/vaultwarden/</link><description>Recent content in Vaultwarden on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sun, 13 Sep 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/vaultwarden/index.xml" rel="self" type="application/rss+xml"/><item><title>パスワードを1PasswordからVaultwardenに移す</title><link>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</guid><description>1Passwordを解約し、自前ホストのVaultwardenにパスワードを一本化した記録。docker-composeでの構築、Cloudflare Tunnelでの公開、パスワード・パスキーそれぞれの移行手順まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>1Passwordで管理していたパスワードとパスキーを、自分のサーバー上で動かすVaultwardenというソフトに移した記録。パスワード自体の移行はエクスポート・インポートで数分で終わるが、パスキー(WebAuthnという国際標準規格で実現されている、パスワードの代わりに指紋・顔認証などでログインする仕組み)は仕組み上コピーができず、サイトごとに手作業で登録し直す必要があった。</p>
+<h2 id="前提">前提</h2>
+<p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
+<ul>
+<li>常時起動しているLinux環境(Docker Engineが使える状態)</li>
+<li>自分名義のドメイン、Cloudflare Tunnelが動いている状態(導入手順は<a href="/guides/google-drive-to-nextcloud/">前々回の記事</a>のStep 3と同じ)</li>
+</ul>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>写真(<a href="/guides/google-photos-to-immich/">前の記事</a>)やファイル(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)と同じ理由で、1Passwordに預けていたパスワードも自分の手元に戻したいと思った。加えて、1Passwordは年額のサブスクリプションなので、自前ホストに切り替えれば単純にコストも減らせる。</p>
+<h2 id="vaultwardenを選んだ理由">Vaultwardenを選んだ理由</h2>
+<p>パスワードマネージャーの自前ホスト選択肢は複数ある。</p>
+<ul>
+<li><strong>Vaultwarden</strong> — Bitwardenというサービスの非公式互換サーバー実装。公式のBitwardenアプリ・ブラウザ拡張機能がそのまま使え、UIの完成度も高い。ゼロ知識暗号化(サーバー側もマスターパスワードを知らない設計)。</li>
+<li><strong>KeePassXC</strong> — サーバーを立てず、暗号化されたファイル1つで管理するタイプ。オフラインで完結するが、複数端末間の同期を自分で用意する必要がある(クラウドストレージと組み合わせるのが一般的)。</li>
+<li><strong>Bitwarden公式のクラウド版</strong> — セルフホストではなく、Bitwarden社のサーバーに預ける形。1Passwordと似た構図になるため、今回の「自分の手元に取り戻す」という目的には合わない。</li>
+</ul>
+<p>普段使っているNextcloud・Immichと同じサーバー上に同居させられる手軽さと、公式アプリがそのまま使える点を決め手にVaultwardenにした。</p>
+<h2 id="step-1-docker-composeでvaultwardenを構築する">Step 1: docker-composeでVaultwardenを構築する</h2>
+<p>Vaultwardenは公式イメージを使えばコンテナ1つで完結し、Nextcloudのようにデータベースを別途用意する必要もない分、今回の中では一番シンプルな部類だった。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/vaultwarden <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/vaultwarden
+</span></span></code></pre></div><p><code>docker-compose.yml</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">services</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">vaultwarden</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">vaultwarden/server:latest</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l">always</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">environment</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">DOMAIN=https://vault.example.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">ADMIN_TOKEN=&lt;自分で決めた長いランダム文字列&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">SIGNUPS_ALLOWED=false</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">./vw-data:/data</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="m">127.0.0.1</span><span class="p">:</span><span class="m">8082</span><span class="p">:</span><span class="m">80</span><span class="w">
+</span></span></span></code></pre></div><p>いくつか説明が要る項目がある。</p>
+<ul>
+<li><code>DOMAIN</code> — 最終的に外部からアクセスする本物のURL(自分のドメイン)を指定する。ここがずれているとパスキー(WebAuthn)登録時にエラーになることがある。</li>
+<li><code>ADMIN_TOKEN</code> — サーバーの管理画面(<code>/admin</code>)に入るための鍵。長いランダム文字列にし、他の誰にも教えない。</li>
+<li><code>SIGNUPS_ALLOWED=false</code> — 新規アカウント登録を締め切る設定。自分専用サーバーなので、自分のアカウントを最初に1つ作ったらこれをオフにして、他人が勝手にアカウントを作れないようにする。</li>
+</ul>
+<p>起動する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker compose up -d
+</span></span><span class="line"><span class="cl">docker compose ps
+</span></span></code></pre></div><p><code>http://localhost:8082</code>にアクセスし、「Create Account」から自分のアカウントを作成する。作成が終わったら<code>docker-compose.yml</code>を編集して<code>SIGNUPS_ALLOWED=false</code>に変更し、<code>docker compose up -d</code>で反映しておく。</p>
+<h2 id="step-2-cloudflare-tunnelで公開する">Step 2: Cloudflare Tunnelで公開する</h2>
+<p>Nextcloudの時(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)と同じ要領で、<code>/etc/cloudflared/config.yml</code>にVaultwarden用の行を追記する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ingress</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">vault.taikiito.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http://localhost:8082</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># ...他のサービスの行がここに続く...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http_status:404</span><span class="w">
+</span></span></span></code></pre></div><p>編集後は<code>cloudflared tunnel ingress validate</code>で文法チェックしてから<code>sudo systemctl restart cloudflared</code>。DNS側もCloudflareの管理画面で<code>vault</code>のCNAMEレコードを<code>&lt;トンネルID&gt;.cfargotunnel.com</code>に向けておく。</p>
+<h2 id="step-3-ブラウザスマホから接続する">Step 3: ブラウザ・スマホから接続する</h2>
+<p>ブラウザはChrome・Firefoxの両方にBitwarden拡張機能を追加し、接続先の設定(拡張機能アイコン → 設定 → Self-hosted environment)に自分の<code>vault.taikiito.com</code>を入力する。スマートフォン用の公式Bitwardenアプリも同様に接続先を変更するだけで使える。</p>
+<p>パスワード自体の移行は、1Password側でエクスポートしたデータ(CSV形式など)をVaultwardenの「Import data」機能でインポートするだけで数分で終わった。ここは特につまづくところがなかった。</p>
+<h2 id="step-4-パスキーの移行">Step 4: パスキーの移行</h2>
+<p>パスワードと違い、パスキー(WebAuthn)はエクスポート・インポートで移せない仕様になっている。サイトごとに「旧パスキーを削除 → 新しいマネージャーで再登録」という地道な作業が必要だった。手元の1Passwordを棚卸ししたところ、登録済みのパスキーは全15件。</p>
+<p>作業中に見つかった落とし穴:</p>
+<ul>
+<li><strong>ブラウザ拡張機能の競合</strong>: 1Password拡張機能を有効にしたままだと、WebAuthnのリクエストを1Password側が横取りしてしまい、Bitwarden/Vaultwarden拡張機能が反応できない。<code>chrome://extensions</code>で1Password拡張機能を完全にOFFにする必要があった。</li>
+<li><strong>スマホ側の割り込み</strong>: モバイル版Bitwardenアプリでパスキーを新規登録する際、Touch ID/Face IDのようなOS標準の認証より先にBitwarden拡張機能側が割り込んでしまい、登録に失敗することがあった。</li>
+<li><strong>iCloud Keychainを使う場合の見落としがちな設定</strong>: macOSでiCloudキーチェーン経由のパスキー登録をするには、システム設定 → 一般 → AutoFill &amp; Passwords の「Passwords」トグルが事前にONになっている必要がある(初期状態はOFF)。</li>
+<li><strong>削除する前に、実際に使っているか確認する</strong>: 「もう使っていないはず」と思っていたサービスのパスキーが、実は仕事の特定システムのログインで現役だと後から判明した件があった。1Password内の一覧だけを見て「使っていなさそう」で判断せず、実際に使う場面があるかを確認してから削除する方が安全だった。</li>
+</ul>
+<p>全部をVaultwardenに寄せたわけではなく、用途によって使い分けている。<strong>会社PC(Windows)からのログインが必要なアカウント</strong>はブラウザ拡張機能のインストールが要らずQRコードでのクロスデバイス認証に対応しているiCloud Keychainへ、<strong>個人利用でデータ主権の方針に寄せたいアカウント</strong>はパスワードと同じ場所で一元管理できるVaultwardenへ、という基準にした。</p>
+<h2 id="step-5-バックアップを設定する">Step 5: バックアップを設定する</h2>
+<p>Nextcloud・Immichと同じく<code>rclone</code>でBackblaze B2へ日次バックアップする。Vaultwardenの場合はデータベース(SQLite、1ファイルにまとまった軽量なデータベース形式)がそのままフォルダの中に入っているので、フォルダごと同期するだけでよい。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/vaultwarden/vw-data <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/vaultwarden&#34;</span>
+</span></span></code></pre></div><p><strong>このバックアップの取り出し鍵自体もバックアップしておく</strong>、という一段階上の注意点がある。<code>rclone</code>の設定ファイル(<code>~/.config/rclone/rclone.conf</code>、B2に接続するための鍵が入っている)がサーバー本体にしか無いと、サーバーが完全に壊れた時にバックアップを取り出す鍵ごと失われてしまう。自分はこの設定ファイルの中身を、Vaultwarden自身にSecure Note(パスワード以外のメモも安全に保存できる機能)として複製保存しておくことで、この「鶏と卵」問題を解決した。Vaultwardenはクライアントアプリに一度ログインしておけばオフラインキャッシュが残るため、サーバーが全損してもスマホから鍵を取り出せる。</p>
+<h2 id="結果">結果</h2>
+<p>パスワード15件・パスキー15件、全て移行完了。1Passwordは解約し、年間の固定費を1本減らせた。パスワードの移行自体は簡単だが、パスキーは仕組み上コピーできないので、サイトごとの再登録作業を見込んでおくとよい。</p>
+<p>次は、連絡先とカレンダーをNextcloudに集約した話。→ <a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item></channel></rss>

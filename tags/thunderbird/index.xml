@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Thunderbird on Off-Grid</title><link>https://offgrid.taikiito.com/tags/thunderbird/</link><description>Recent content in Thunderbird on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sun, 13 Sep 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/thunderbird/index.xml" rel="self" type="application/rss+xml"/><item><title>メールをGmailから自分のドメイン(iCloud+カスタムドメイン)に移す</title><link>https://offgrid.taikiito.com/guides/gmail-to-own-domain/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/gmail-to-own-domain/</guid><description>Gmailを卒業し、自分のドメインのメールアドレス(iCloud+カスタムドメイン機能)に一本化した記録。DNSレコードの実際の設定値、Thunderbirdの3層アカウント構造でハマった話、復旧作業中に4,293件のメールを誤って喪失し原本から復元した話まで、正直に書く。</description><content:encoded><![CDATA[<p>長年使っていたGmailをやめて、自分のドメインのメールアドレスに主メールを一本化した記録。土台はiCloud+の「カスタムメールドメイン」機能で、既にiPhoneのバックアップ用にiCloud+を契約していたため追加コストはかからなかった。作業自体は数日がかりで、途中で本当にメールを失いかけた場面もあった。この記事はその過程を、うまくいかなかった所も含めて正直に書く。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>自分名義のドメイン(取得方法は各ドメインレジストラのサイトを参照。自分はCloudflare Registrarを使った)</li>
+<li>iCloud+の契約(月額サブスクリプション。iPhoneのバックアップ用など、何らかの理由ですでに契約していれば追加コストはかからない)</li>
+<li>ドメインのDNS(「<code>taikiito.com</code>というドメインは実際にはどのサーバーを指すか」をインターネット全体に教えるための住所録のような仕組み)を自分で編集できる状態(Cloudflareなど)</li>
+</ul>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>Gmailは便利だが、Googleに完全に預けているアカウントでもある。自分名義のドメインを取得したことで、自分のドメインでメールを受け取れる状態が整った。iCloud+はもともとiPhoneのバックアップ用に契約していたので、カスタムドメインのメールボックスを足しても容量を共有するだけで実質タダ。これなら移行のコストに見合うと判断した。</p>
+<h2 id="何に移すか-icloud-vs-fastmailで迷った話">何に移すか: iCloud+ vs Fastmailで迷った話</h2>
+<p>自前ドメインでメールを使う場合、有名な選択肢としてFastmailがある。料金以外の軸(標準プロトコル対応、Apple以外の端末での使い勝手、エイリアスの上限、送信ドメインとしての評判、データの持ち出しやすさ)で比較検討した。</p>
+<p>比較の途中で、自分の思い込みが一つ崩れた。iCloud MailはApple製品専用だとばかり思っていたが、実際には標準のIMAP/SMTP(メールの受信・送信をやり取りするための業界共通の通信規格。この2つに対応していれば、どのメールソフトからでも接続できる)にアプリ専用パスワードでアクセスすれば、Thunderbirdのような普通のメールクライアント(メールを読み書きするためのアプリ)からも使える。「ロックインされて出られなくなる」という一番の懸念はほぼ杞憂だった。すでに契約しているiCloud+の容量を共有できて実質無料な点も踏まえ、Fastmailへの乗り換えは見送り、iCloud+のカスタムドメイン機能を使うことにした。</p>
+<h2 id="step-1-icloudでカスタムドメインを設定する">Step 1: iCloud+でカスタムドメインを設定する</h2>
+<p>iPhoneの「設定」アプリ → 自分の名前(Apple ID) → iCloud → 「メール」→「カスタムメールドメイン」から設定を開始する(Mac版System Settingsからも同じ設定にたどり着ける)。ドメイン名(例: <code>taikiito.com</code>)を入力すると、iCloud側が必要なDNSレコードを画面に表示してくれるので、それを自分のドメインのDNS管理画面(Cloudflareなど)にそのまま追加する。実際に追加したレコードは以下の3種類だった。</p>
+<table>
+	<thead>
+			<tr>
+					<th>種類</th>
+					<th>内容</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>MX</td>
+					<td><code>mx01.mail.icloud.com</code> / <code>mx02.mail.icloud.com</code>(メールの受け取り先を指定)</td>
+			</tr>
+			<tr>
+					<td>SPF (TXTレコード)</td>
+					<td><code>v=spf1 include:icloud.com ~all</code>(このドメインからのメールはiCloud経由が正当だと示す)</td>
+			</tr>
+			<tr>
+					<td>DKIM (CNAMEレコード)</td>
+					<td><code>sig1._domainkey</code> → <code>sig1.dkim.taikiito.com.at.icloudmailadmin.com</code>(メールが改ざんされていないことを証明する電子署名の仕組み)</td>
+			</tr>
+	</tbody>
+</table>
+<p>iCloud+の設定ウィザードはこの3つだけを要求し、<strong>DMARC(後述、なりすまし対策をさらに強化するレコード)は必須ではなく任意</strong>なので、最初は追加しなくても動く。反映には数分〜数十分かかる。全て緑のチェックマークになれば、そのドメインでメールアドレス(自分の場合は<code>me@taikiito.com</code>)を作成できる。</p>
+<h2 id="step-2-会社のメール環境への到達を確認する">Step 2: 会社のメール環境への到達を確認する</h2>
+<p>自分の場合、<code>me@taikiito.com</code>からGmailへは問題なく届いたが、会社のメール(Microsoft 365ベース)には<strong>エラーも通知もなく、静かに届かない</strong>という問題が起きた。SPF/DKIMを見直しても直らなかったため、DMARC(TXTレコード)を追加した。</p>
+<pre tabindex="0"><code>_dmarc.taikiito.com  TXT  &#34;v=DMARC1; p=none; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
+</code></pre><p><code>p=none</code>はまず様子見のモード(ポリシー違反があっても何もしない、レポートだけ受け取る)。これでも解決しなかったが、SPF/DKIM/DMARCの設定自体には問題が無いことが確認できたので、<strong>原因は取得したばかりのドメインが「送信履歴の無い新規ドメイン」として会社側のメールフィルタに警戒されていることだと判断し、時間経過で解決するのを待つ方針にした</strong>。実際、数日後には特に追加の変更をしないまま届くようになった。<strong>新しく取ったドメインでメールを送る場合、最初の数日〜1週間は主要な送信先に届かないことがある</strong>と見込んでおくとよい。</p>
+<h2 id="step-3-なりすまし対策を強化するspfdmarcの締め上げ">Step 3: なりすまし対策を強化する(SPF/DMARCの締め上げ)</h2>
+<p>ドメインの送信環境が安定してきたら、なりすまし対策を強める。最終的には以下の設定にした。</p>
+<pre tabindex="0"><code>_dmarc.taikiito.com  TXT  &#34;v=DMARC1; p=reject; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
+</code></pre><p><code>p=none</code>(様子見) → <code>p=quarantine</code>(怪しいメールを迷惑メール行き) → <code>p=reject</code>(なりすましメールを完全拒否)の順に段階を踏むのが一般的だが、自分の場合は送信経路がiCloudのみでSPF/DKIMがすでに正常に機能していたため、リスク評価をした上で段階を飛ばして<code>p=reject</code>まで一気に進めた。SPFも<code>~all</code>(該当しない送信元は「疑わしい」扱い)から<code>-all</code>(該当しない送信元は「完全に拒否」)へ強化した。</p>
+<p><strong>注意</strong>: <code>p=reject</code>にすると、このドメインからのメールを送るときに使う経路(自分の場合はiCloudのみ)以外からは一切メールが届かなくなる。今後、別のメールサービスを追加で使う場合は、SPFレコードに新しい送信元を<code>include:</code>で追加し忘れないこと。</p>
+<h2 id="step-4-gmailからの引っ越しで3つハマったこと">Step 4: Gmailからの引っ越しで3つハマったこと</h2>
+<p><strong>1. Thunderbirdの「3層構造」に気づかず認証が通らなかった</strong></p>
+<p>WindowsでThunderbirdを使って移行作業をしようとしたところ、何度設定してもIMAP/SMTPの認証が通らなかった。原因は、iCloudのアカウント構造が3層になっていたこと。</p>
+<ul>
+<li>表向きのApple IDサインイン用メールアドレス</li>
+<li>実際のIMAP/SMTP認証に使う、真のiCloudアカウントアドレス(<code>@icloud.com</code>形式)</li>
+<li>送受信に使う見た目のアドレス(カスタムドメインのエイリアス)</li>
+</ul>
+<p>Thunderbirdの手動設定画面で、サーバー情報は以下のようにする。</p>
+<table>
+	<thead>
+			<tr>
+					<th>項目</th>
+					<th>値</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>受信サーバー(IMAP)</td>
+					<td><code>imap.mail.me.com</code>、ポート993、SSL/TLS</td>
+			</tr>
+			<tr>
+					<td>送信サーバー(SMTP)</td>
+					<td><code>smtp.mail.me.com</code>、ポート587、STARTTLS</td>
+			</tr>
+			<tr>
+					<td>ユーザー名</td>
+					<td><strong>真のiCloudアカウントアドレス(<code>@icloud.com</code>形式)をフルで入力</strong></td>
+			</tr>
+			<tr>
+					<td>パスワード</td>
+					<td>Apple IDの「Appleパスワード」ではなく、Apple ID管理画面で発行する「App用パスワード」</td>
+			</tr>
+	</tbody>
+</table>
+<p>ポイントは<strong>ユーザー名欄</strong>で、一番上のApple IDのアドレスでも、送受信に使うカスタムドメインのアドレスでもなく、<strong>中間層の真のiCloudアカウントアドレスをフルで入力する</strong>必要がある。これはApple公式の設定手順のどこにも明記されておらず、自力で突き止めるまで何度も認証エラーに悩まされた。</p>
+<p><strong>2. 「完了」と判断したが、実は直近1〜2ヶ月分が抜けていた</strong></p>
+<p>Gmailの全メール(46,544件)をThunderbird経由でiCloud側へ移す自作スクリプトを作り、実行した。進捗ログを見ながら待ち、件数がおおよそ一致したことを確認して「移行完了」と判断した。</p>
+<p>ところが後日、送信済みメールを見返していて、直近のメールが見当たらないことに気づいた。調べると、スクリプトは古いメールから新しいメールへ順番に処理する作りで、確認した時点では全体の約8割(37,362件/46,544件)までしか進んでおらず、<strong>直近1〜2ヶ月分がまだ移行されていない状態で「完了」と誤判断していた</strong>ことが分かった。「件数がざっくり合っている」だけでは、移行完了の確認として不十分だったという教訓。</p>
+<p><strong>3. 復旧作業中に4,293件を誤って喪失、Google Takeoutの原本から復元</strong></p>
+<p>上記の見落としを受けて調査していたところ、さらに深刻な問題が見つかった。iCloud側で重複メールを整理する作業をしていた際、<strong>4,293件のメールを誤って消してしまっていた</strong>。加えて、作業の混乱の中でThunderbirdのローカルインポートフォルダ自体も誤って削除してしまい、復元の頼みの綱を一つ失った。</p>
+<p>幸い、Gmailの公式エクスポート機能(Google Takeout、<a href="/guides/google-photos-to-immich/">写真移行の記事</a>で使ったのと同じ機能)で取得していた元データ(zipファイル、Gmailの全メールをmbox形式(メールをまとめて1つのファイルに保存する一般的な形式)で含む)がゴミ箱に残っていた。これは「Thunderbirdの中間コピー」ではなく「Gmail公式のエクスポート原本」なので、むしろ最も確実な復旧元だった。</p>
+<p>Message-ID(メール1通ごとの一意な識別子、ヘッダーに必ず含まれる)単位で「Takeoutの原本」と「今iCloud側にあるメール」を突き合わせる復旧スクリプトを書き、欠落していたメールを復元した。最終的に、iCloudの1通あたりのサイズ上限を超えている(添付ファイルが大きい)ため原理的に復元不可能な2〜3件を除いて、ほぼ完全に復旧できた。</p>
+<p><strong>このとき得た一番の教訓</strong>: 大量データの移行を「件数がだいたい合っている」だけで完了と判断しない。Message-IDで突き合わせる方式が、確実に検証する唯一の方法だった。<strong>そしてGoogle Takeoutのような「移行元の公式エクスポート」は、移行作業が終わるまで絶対に消さないこと。</strong></p>
+<h2 id="step-5-移行後の後片付け">Step 5: 移行後の後片付け</h2>
+<p>Gmail側に<code>me@taikiito.com</code>への自動転送(Forwarding、Gmailの設定 → 「メール転送とPOP/IMAP」から設定できる)を設定し、移行後にGmail宛へ届く新着メールも自動的に新しいアドレスへ流れるようにした。Google Takeoutのバックアップzipは、Backblaze B2とNextcloudの両方に保存。この3点(バックアップ済み・移行件数の整合性確認済み・新着メールの転送設定済み)を確認したうえで、Gmail側の整理に着手した。</p>
+<p>整理は、GmailのAPI(他のプログラムからGmailを操作するための窓口)や管理画面からではなく、IMAP(前述の受信用の通信規格)を直接操作する自作スクリプトで、指定日より前の全メール(49,755件)をGmailの「ゴミ箱」フォルダへ移動する処理を実行した。Gmailのゴミ箱は30日後に自動で完全削除される仕組みなので、今のところ<strong>即座に完全削除したわけではなく、猶予期間を残した状態</strong>にしてある。この記事を書いている時点では、Gmail側のメールはゴミ箱送りまで完了しているが、<strong>Googleアカウント自体はまだ削除していない</strong>。しばらく<code>me@taikiito.com</code>側の運用が安定するのを見届けてから、次の判断(アカウント自体を消すかどうか)をするつもりでいる。</p>
+<h2 id="結果">結果</h2>
+<p><code>me@taikiito.com</code>が主メールとして定着し、日常的に使っている。途中でメールを実際に失いかけた一件は、この移行作業の中で一番肝を冷やした部分だったが、Google Takeoutで原本のバックアップを取っておいたことが最終的に救いになった。<strong>大量データを移す時は、移行先だけでなく移行元の生データも別途バックアップしておく</strong>、というのが今回一番強く実感した教訓だった。</p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: DNSレコードの実際の設定値・Thunderbirdのサーバー設定項目を追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item></channel></rss>

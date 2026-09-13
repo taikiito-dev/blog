@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>ガイド on Off-Grid</title><link>https://offgrid.taikiito.com/guides/</link><description>Recent content in ガイド on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sun, 13 Sep 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/guides/index.xml" rel="self" type="application/rss+xml"/><item><title>自分の「サーバー」を持つとはどういうことか</title><link>https://offgrid.taikiito.com/guides/self-hosting-basics/</link><pubDate>Sun, 13 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/self-hosting-basics/</guid><description>他のガイドは実は『自分のサーバーが既にある』前提で書かれている。ターミナルもDockerも触ったことがない人向けに、サーバーとは何か、レンタルと自前どちらを選ぶべきか、実際に自分が何をしたかを説明する、このサイトの本当の出発点。</description><content:encoded><![CDATA[<p>正直に告白すると、<a href="/guides/google-photos-to-immich/">写真の移行</a>や<a href="/guides/google-drive-to-nextcloud/">ファイルの移行</a>など、他のガイドはすべて「ImmichやNextcloudが動くサーバーが、自分の手元に既にある」という前提で書かれている。ターミナル(文字を打ち込んで操作する黒い画面)を開いたこともない人がいきなりあの記事を読んでも、何をどこから始めればいいのか分からないはずだ。指摘を受けて、そこが一番の土台なのに書いていなかったことに気づいた。この記事は、その土台の話をする。</p>
+<h2 id="そもそもサーバーとは何か">そもそも「サーバー」とは何か</h2>
+<p>普段使っているパソコンやスマホは、使う時だけ電源を入れて、使い終わったら閉じたり寝かせたりする。<strong>サーバーとは、それと逆で、24時間365日ずっと電源が入っていて、インターネットの向こう側からいつでもアクセスできる状態のコンピュータ</strong>のことだ。</p>
+<p>Google Photosも、Gmailも、実態は「Googleが管理する巨大なサーバー群」に自分のデータを預けて、そこに常時アクセスしている状態にすぎない。「データ主権を取り戻す」とは、この「常時アクセスできる置き場所」を、Google任せではなく自分の管理下に置き換える、ということだ。そのためには、自分の管理下にある「常時起動しているコンピュータ」、つまり自分のサーバーが要る。</p>
+<h2 id="サーバーを持つ2つの道">サーバーを持つ2つの道</h2>
+<p>サーバーを持つには、大きく2つの選び方がある。</p>
+<p><strong>① レンタルサーバー(VPS)を借りる</strong> — 月額数百円〜数千円で、どこかのデータセンターにあるコンピュータの一部を間借りする方式。AWS Lightsail、さくらのVPS、カゴヤ CLOUD VPSなどが有名どころ。自分で機械を持たなくていい代わりに、月額費用がずっとかかり続ける。</p>
+<p><strong>② 自分の手元にあるPCを使う(自宅サーバー)</strong> — 使っていない古いPCや、ゲーミングPCのような性能の高いPCを、24時間つけっぱなしにして使う方式。初期投資(電気代はかかる)以外の追加費用がかからない代わりに、電源やネット回線が落ちたらサービスも止まる、という自己責任になる。</p>
+<p>自分は最初、AWS LightsailというVPSを使っていたが、途中で②の自宅サーバー(使っていたゲーミングPC)に切り替えた。理由は、写真管理ソフト(Immich)の顔認識機能がGPU(画像処理用の高性能な部品)を使うと速く動くのに、一般的なVPSにはGPUオプションが無いか、あっても高額だったため。自宅のゲーミングPCには既にGPUが載っていたので、それをそのまま活用できるほうが合理的だった。加えて、VPSの月額費用も浮いた。</p>
+<p><strong>とはいえ、どちらが正解ということはない。</strong> GPUを使う予定が無く、自宅に眠っているPCも無いなら、まずは安価なVPSを1つ借りるところから始めるほうが手軽だと思う。自分の場合はたまたま条件が噛み合って②を選んだ、という話として読んでほしい。</p>
+<h2 id="自分がどうやってこの作業を進めているか">自分がどうやってこの作業を進めているか</h2>
+<p>このサイトのガイドは、自分がターミナルに一つ一つコマンドを手打ちして進めたわけではない。実際には<strong>Claude(AIアシスタント)に「こうしたい」と会話しながら指示を出し、実際のコマンド実行やファイル編集はClaude側にやってもらう</strong>、という進め方をしている。使っているのはMulmoClaude(自分がGitHub上で公開している、Claudeを使ったAIアシスタントの土台)というソフトで、これ自体の成り立ちは<a href="/posts/">開発日誌</a>に書いている。</p>
+<p>このMulmoClaude自体も、ここまでの話と同じ「自分のサーバー」の上で動いている。<strong>最初はAWS Lightsail(レンタルサーバー)の上で動かしていたが、Immichの顔認識をGPUで速く処理したいという理由で自宅のゲーミングPC(GALLERIA)に切り替えた時、Nextcloud・VaultwardenといったほかのサービスもろともMulmoClaude自体も一緒にGALLERIA側へ引っ越した。</strong> つまり今は、この文章を書いているAI自身も含めて、全部が同じ自宅の1台のPCの上で動いている状態になっている。</p>
+<p>なので、このサイトの文章の「自分がやった」は、実際には「Claudeに頼んで、Claudeが実行した」を指していることがほとんどだと理解しておいてもらえればと思う。とはいえ、何をどうするかの判断・決断は全部自分がしているので、「作業の手を動かす部分をAIに任せている」くらいの温度感で読んでほしい。</p>
+<h2 id="出てくる専門用語を一通り">出てくる専門用語を一通り</h2>
+<p>ここから先のガイドで繰り返し出てくる言葉を、先にまとめて説明しておく。</p>
+<ul>
+<li><strong>ターミナル</strong> — マウスでクリックする代わりに、文字でコマンド(命令文)を打ち込んでコンピュータを操作するための画面。最初は怖く見えるが、実態は「決まった呪文を決まった場所にコピー&amp;ペーストするだけ」の作業がほとんどで、慣れの問題が大きい。</li>
+<li><strong>Docker(ドッカー)</strong> / <strong>docker-compose(ドッカーコンポーズ)</strong> — サーバー上でソフトを動かすための仕組み。1つ1つのソフトを「コンテナ」という隔離された箱に入れて動かすので、複数のソフトを同じサーバーに入れてもお互いが干渉しにくい。<code>docker-compose</code>は、その箱をいくつか組み合わせて一括で起動・停止するための設定ファイルの書き方。</li>
+<li><strong>ドメイン</strong> — <code>taikiito.com</code>のような、自分のサーバーにつける覚えやすい名前。年間数百円〜数千円で自分の名義で取得できる(自分はCloudflare Registrarで取得した)。</li>
+<li><strong>DNS</strong> — 「<code>taikiito.com</code>というドメインは、実際にはどのサーバーを指すか」をインターネット全体に教えるための、住所録のような仕組み。ドメインを取得したら、DNSの設定でどのサーバーに繋げるかを指定する。</li>
+<li><strong>Cloudflare Tunnel(クラウドフレア・トンネル)</strong> — 自宅のサーバーを、自宅のルーターの設定(ポート開放という、外から直接アクセスできる穴を開ける作業)をいじらずに、安全にインターネットへ公開するための仕組み。自分もこれを使っていて、ルーター側の設定は一切変更していない。ポート開放は誤って設定すると自宅のネットワーク全体が外部から丸見えになるリスクがあるため、この方式のほうが安心して扱える。</li>
+</ul>
+<p>これらのソフト自体は、すべて無料(OSS、オープンソースソフトウェア = 誰でも無料で使える公開されたソフト)で使える。かかる費用は基本的に「サーバー代(自宅の場合は電気代のみ)」と「ドメイン代(年数百円〜)」だけだ。</p>
+<h2 id="実際に手を動かす-最小構成でサーバーを1台立てる">実際に手を動かす: 最小構成でサーバーを1台立てる</h2>
+<p>ここから先は、自分が最初にやった手順そのままに、VPS(レンタルサーバー)でサーバーを1台立てるところまでを書く。<strong>自宅サーバー(Windows + WSL2)は環境依存が強すぎて万人向けに書き起こせないと判断し、まずは誰でも同じように再現できるVPSの手順に絞った。</strong> 自宅サーバーへの切り替えは、この記事の後半「自宅サーバーに切り替える場合」で触れる。</p>
+<h3 id="step-1-ドメインを取得する">Step 1: ドメインを取得する</h3>
+<p>まず自分のサーバーの「名前」になるドメインを取得する。自分は<a href="https://www.cloudflare.com/products/registrar/">Cloudflare</a>のRegistrar(ドメイン登録サービス)を使った。理由は、相場より安い実費に近い価格で提供されていて、WHOIS(ドメイン所有者情報)を公開しないプライバシー保護もデフォルトで付いてくるため。ダッシュボードの「Register a Domain」から、空いているドメイン名を選んで購入するだけで完了する。年間数百円〜数千円ほど。</p>
+<h3 id="step-2-vpsレンタルサーバーを契約する">Step 2: VPS(レンタルサーバー)を契約する</h3>
+<p>自分が最初に使ったのは<strong>AWS Lightsail</strong>、リージョンはシンガポール、OSはUbuntu(Linuxの一種)、**プランは月$7(メモリ1GB・2vCPU・SSD 40GB)**を選んだ。動画生成のような重い処理をする予定がなければ、この最小プランで十分動く。契約すると、そのサーバーの持ち主だけが入れる「IPアドレス」(サーバーの住所のようなもの)が発行される。</p>
+<p>VPSは他にもさくらのVPS・カゴヤ CLOUD VPS・DigitalOcean・Vultrなど選択肢は多い。自分がAWSを選んだ決め手は、シンガポール在住で近いリージョンが使えたのと、後々AWSの他サービス(バックアップ等)との連携がしやすそうだったため——ただしこの用途では正直どれを選んでも大差ない。</p>
+<h3 id="step-3-ターミナルからサーバーに接続しdockerを入れる">Step 3: ターミナルからサーバーに接続し、Dockerを入れる</h3>
+<p>契約すると、サーバーに接続するための「SSH鍵」(パスワードの代わりに使う、より安全な鍵ファイル)が発行される。ターミナル(黒い画面でコマンドを打ち込む操作)から、次のように接続する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">ssh -i 発行された鍵ファイル ubuntu@サーバーのIPアドレス
+</span></span></code></pre></div><p>接続できたら、Docker公式が配布しているインストールスクリプトを実行する。これ1行で、Dockerと<code>docker compose</code>がまとめて入る。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -fsSL https://get.docker.com <span class="p">|</span> sh
+</span></span><span class="line"><span class="cl">sudo usermod -aG docker <span class="nv">$USER</span>
+</span></span></code></pre></div><p>(2行目は、<code>sudo</code>〈管理者権限で実行〉を毎回付けなくてもDockerコマンドが使えるようにするおまじない。一度ログアウトしてから入り直すと反映される。)</p>
+<h3 id="step-4-cloudflare-tunnelでサーバーを安全に公開する">Step 4: Cloudflare Tunnelでサーバーを安全に公開する</h3>
+<p>サーバーは立ったが、まだ<code>taikiito.com</code>のようなドメインからはアクセスできない。ここで前述の<strong>Cloudflare Tunnel</strong>を使う。取得したドメインをCloudflareのネームサーバーに切り替えた上で(Cloudflareのダッシュボードの指示通りに進めれば数クリックで終わる)、サーバー側で次を実行する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># cloudflaredをインストール</span>
+</span></span><span class="line"><span class="cl">curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+</span></span><span class="line"><span class="cl">sudo dpkg -i cloudflared.deb
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Cloudflareアカウントと連携(ブラウザが開くのでログインする)</span>
+</span></span><span class="line"><span class="cl">cloudflared tunnel login
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># トンネルを作成(名前は自分で決める。ここでは仮に my-server)</span>
+</span></span><span class="line"><span class="cl">cloudflared tunnel create my-server
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ドメインとトンネルを紐付ける</span>
+</span></span><span class="line"><span class="cl">cloudflared tunnel route dns my-server example.taikiito.com
+</span></span></code></pre></div><p>最後に、どのURLへのアクセスをサーバー内のどのポートに転送するかを設定ファイル(<code>~/.cloudflared/config.yml</code>)に書く。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">tunnel</span><span class="p">:</span><span class="w"> </span><span class="l">my-server</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="nt">credentials-file</span><span class="p">:</span><span class="w"> </span><span class="l">/home/ubuntu/.cloudflared/&lt;トンネルID&gt;.json</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="nt">ingress</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">example.taikiito.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http://localhost:8080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http_status:404</span><span class="w">
+</span></span></span></code></pre></div><p>再起動しても自動で動き続けるよう、サービス化しておく。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo cloudflared service install
+</span></span></code></pre></div><p>ここまでできれば、あとはサーバー内の<code>localhost:8080</code>(上の設定例のポート番号)で何かソフトを動かせば、<code>https://example.taikiito.com</code>からアクセスできるようになる。ルーターのポート開放(外から直接アクセスできる穴を開ける、事故ると危険な設定)を一切いじらずに済むのがこの方式の利点。</p>
+<h3 id="step-5-動作確認">Step 5: 動作確認</h3>
+<p>具体的に何かソフトを動かして確認したい場合は、このサイトの次のガイド(<a href="/guides/google-photos-to-immich/">写真をGoogle PhotosからImmichに移す</a>)がそのままStep 6以降の実例になる——<code>docker-compose.yml</code>を書いてImmichを起動し、上のingress設定のポート番号をImmichのポートに合わせれば、そのまま公開まで到達できる。</p>
+<h2 id="自宅サーバーに切り替える場合">自宅サーバーに切り替える場合</h2>
+<p>自分は後になって、AWS Lightsail(VPS)から自宅のゲーミングPC(自宅サーバー)に切り替えた。理由は前述の通りGPU(画像処理用の高性能な部品)を使いたかったのと、月額費用を浮かせたかったため。ただしこの切り替えは、Windows PCの中でLinuxを動かす「WSL2」という仕組みや、再起動時の自動起動設定など、環境固有のハマりどころが多く、万人向けの手順としてはまだ書き起こせていない。GPUを使う予定がなければ、上記のVPS構成のままで十分運用できる。自宅サーバーへの興味がある場合は、今後別記事として書く予定。</p>
+<h2 id="正直な難易度感">正直な難易度感</h2>
+<p>ここまで読んで「思ったより大変そう」と感じたなら、その感覚は正しい。自分の場合も、自宅サーバーへの切り替えではWindowsとLinux(WSL2)の両方の知識が必要になったり、再起動のたびにサービスが自動で立ち上がらない不具合に何度も遭遇したりと、一筋縄ではいかない場面が何度もあった。上記のVPS手順自体はそこまで難しくないが、初めてターミナルを触る場合は1〜2時間はかかると思っておいてほしい。</p>
+<p>ただし、これは「一度整えてしまえば、あとはほぼ触らなくていい」類の作業でもある。土台さえできてしまえば、その後の<a href="/guides/google-photos-to-immich/">写真の移行</a>や<a href="/guides/1password-to-vaultwarden/">パスワードの移行</a>といった個別の作業は、ここまでの土台よりずっと軽い。</p>
+<h2 id="この先">この先</h2>
+<p>サーバーが立ち、ドメインからアクセスできる状態まで来たら、あとは個別のサービスを動かすだけ。まずは実際に何を移したかの記録から読んでもらえればと思う。→ <a href="/guides/google-photos-to-immich/">写真をGoogle PhotosからImmichに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-13: 初版 / 同日: 「自分がどうやってこの作業を進めているか」(MulmoClaude/Claudeの利用、Lightsail→GALLERIA移設)を追記 / 同日: VPS(AWS Lightsail)でのドメイン取得〜Docker〜Cloudflare Tunnelまでの具体的手順を追記</p>
+]]></content:encoded></item><item><title>写真をGoogle PhotosからImmichに移す</title><link>https://offgrid.taikiito.com/guides/google-photos-to-immich/</link><pubDate>Mon, 24 Aug 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/google-photos-to-immich/</guid><description>Googleフォトの全データを自前サーバー(Immich)に移行した時の記録。docker-composeでのImmich構築、immich-goの実際のコマンド、Takeoutの分割zipで踏んだ罠、本番実行の結果まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>Google Photosの全データ(3万件超、約119GB)を自前サーバー上のImmichというソフトに移した記録。前回の版は「何をしたか」の日記だったが、今回は実際に打ったコマンドやファイルの中身まで含めて書き直した。<strong>この記事だけで、自分がやったのと同じ環境を一から再現できることを目指している。</strong></p>
+<h2 id="前提-このガイドで想定している環境">前提: このガイドで想定している環境</h2>
+<p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
+<ul>
+<li>常時起動しているLinux環境(自分の場合はWindows機の中でWSL2〈Windows Subsystem for Linux 2、WindowsのなかでLinuxをそのまま動かす仕組み〉のUbuntu)</li>
+<li>Docker Engine(コンテナ、つまりソフトを隔離された箱に入れて動かす仕組み)と、そのおまけ機能である<code>docker compose</code>(複数のコンテナ設定をまとめて起動・停止するコマンド)が使える状態</li>
+<li>ターミナル(文字でコマンドを打ち込む黒い画面)の基本操作に抵抗がないこと</li>
+</ul>
+<p>GPU(グラフィック処理用の高性能な部品)は必須ではない。無くても写真の保管・閲覧は問題なくでき、違うのは顔認識やスマート検索(自然言語でのあいまい検索)の処理速度だけ。自分はたまたま手元にゲーミングPC(GeForce RTX 3070搭載)があったのでGPUを使う構成にした。GPUを使わない場合は、後述の「GPUを使う場合の追加設定」を丸ごと飛ばして進めて構わない。</p>
+<h2 id="step-1-immichをdocker-composeで動かす">Step 1: Immichをdocker-composeで動かす</h2>
+<p>まず作業用フォルダを作り、Immich公式が配布している設定ファイル一式をダウンロードする。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/immich <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/immich
+</span></span><span class="line"><span class="cl">curl -fL -o docker-compose.yml https://github.com/immich-app/immich/releases/latest/download/docker-compose.yml
+</span></span><span class="line"><span class="cl">curl -fL -o .env https://github.com/immich-app/immich/releases/latest/download/example.env
+</span></span><span class="line"><span class="cl">curl -fL -o hwaccel.ml.yml https://github.com/immich-app/immich/releases/latest/download/hwaccel.ml.yml
+</span></span></code></pre></div><p><strong>ここで一度ハマった</strong>: <code>curl</code>に<code>-L</code>(リダイレクト追従、GitHubのようにURLが転送される先でファイルを配っているサイトでは必須)を付け忘れて、中身が0バイトのファイルができてしまったことがあった。<code>-fL</code>(<code>-f</code>はエラー時に空ファイルを作らず失敗させる、<code>-L</code>はリダイレクト追従)の組み合わせで取り直して解決した。</p>
+<p>次に<code>.env</code>ファイルを編集する。最低限、以下の2点は必ず変更する。</p>
+<ul>
+<li><code>DB_PASSWORD</code> — デフォルトのままだと誰でも推測できるパスワードなので、自分だけの値に変更する</li>
+<li><code>UPLOAD_LOCATION</code> — 写真の実ファイルをどこに保存するかの場所。デフォルトの<code>./library</code>(このフォルダの中の<code>library</code>サブフォルダ)のままで問題ない</li>
+</ul>
+<p>セットアップ中に出てくる「Storage Template」という機能(保存されるファイルの命名・フォルダ構造を人間が読みやすい形に変える機能)は、オフのままにすることを勧める。写真の閲覧はどのみちImmichの画面経由が前提になるので、生ファイルの構造を人が読みやすくする必要性が薄いことと、後から有効化すると全件の再整理ジョブが走って重くなることが理由。</p>
+<p>準備ができたら起動する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker compose up -d
+</span></span><span class="line"><span class="cl">docker compose ps
+</span></span></code></pre></div><p><code>immich_server</code> / <code>immich_machine_learning</code> / <code>database</code>(PostgreSQL) / <code>redis</code>の4つのコンテナが<code>healthy</code>(正常稼働)と表示されれば成功。ブラウザで<code>http://localhost:2283</code>(自宅サーバーの場合はサーバーのIPアドレスに読み替える)を開き、管理者アカウントを作成する。</p>
+<h3 id="gpuを使う場合の追加設定任意">GPUを使う場合の追加設定(任意)</h3>
+<p>顔認識・スマート検索をGPUで高速に処理したい場合は、上記の<code>docker compose up -d</code>の前に以下を行う。</p>
+<ol>
+<li>WSL2からGPUが見えることを確認する: <code>nvidia-smi</code>(GPUの状態を表示するNVIDIA公式コマンド)を実行し、GPU名やドライバのバージョンが表示されればOK</li>
+<li>NVIDIA Container Toolkit(DockerコンテナからGPUを使えるようにする橋渡しソフト)を導入し、<code>nvidia-ctk runtime configure --runtime=docker</code>で設定を反映</li>
+<li><code>docker run --rm --gpus all ubuntu nvidia-smi</code>を実行し、コンテナの中からもGPUが見えることを確認する</li>
+<li><code>docker-compose.yml</code>の<code>immich-machine-learning</code>サービスを編集: イメージタグの末尾に<code>-cuda</code>を追加し、コメントアウトされている<code>extends: file: hwaccel.ml.yml / service: cuda</code>の行を有効化(元は<code>service: cpu</code>になっている行をコメントアウトし、<code>cuda</code>側を使う)</li>
+</ol>
+<p>この状態で<code>docker compose up -d</code>すれば、ログにCUDA関連のエラーが出ていないことを確認して完了。GPUを使わない場合はこの節をまるごと無視してよく、Immichは自動的にCPUで処理する。</p>
+<h2 id="step-2-取り込みツールimmich-goを導入する">Step 2: 取り込みツール<code>immich-go</code>を導入する</h2>
+<p>Immich公式のCLI(コマンドライン操作用ツール)である<code>immich upload</code>は<strong>使わない</strong>。理由は、Google Takeout(Googleのデータ一括エクスポート機能)でダウンロードした写真には、撮影日時やアルバム情報が入った<code>.json</code>という付属ファイル(サイドカーファイルと呼ばれる)が一緒に入っているが、公式CLIはこの<code>.json</code>を読まないため、<strong>アルバムの中身や正確な撮影日時が失われてしまう</strong>ため。</p>
+<p>代わりに使うのが、有志が開発した**<code>immich-go</code>**(自分が使ったのはv0.32.0、開発者はsimulot氏)というツール。Takeoutの<code>.json</code>サイドカーをちゃんと読んでアルバム・撮影日時・GPS情報を復元し、しかもzipファイルを展開せずそのまま読み込める(119GB分を解凍する広い置き場所を用意しなくていい)、重複した写真も自動で名寄せしてくれる。</p>
+<p>GitHubのリリースページから、自分のOS(今回はLinux/amd64)に合ったバイナリをダウンロードして展開し、実行権限を付ける。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -fL -o immich-go.tar.gz https://github.com/simulot/immich-go/releases/download/v0.32.0/immich-go_Linux_x86_64.tar.gz
+</span></span><span class="line"><span class="cl">tar -xzf immich-go.tar.gz
+</span></span><span class="line"><span class="cl">chmod +x immich-go
+</span></span></code></pre></div><p>(バージョンによって配布ファイル名やコマンドのオプション名が変わることがあるので、実行前に<code>./immich-go --help</code>で最新の使い方を確認するのを勧める。)</p>
+<p>Immich側の管理画面(Account Settings → API Keys)でAPIキーを1つ発行しておく。このキーを使ってimmich-goがImmichサーバーに写真をアップロードする。</p>
+<h2 id="step-3-google-takeoutで写真データをエクスポートする">Step 3: Google Takeoutで写真データをエクスポートする</h2>
+<p><a href="https://takeout.google.com">takeout.google.com</a>にアクセスし、「Google フォト」だけを選択してエクスポートを作成する。ファイル形式はzip、分割サイズは自分で選べる(容量が大きいとGoogleが複数のzipファイルに自動分割してくれる)。準備ができるとメールで通知が来て、ダウンロードページから一つずつ落としていく。</p>
+<p><strong>ここでも一度ハマった</strong>: 自分の場合は全部で12個に分割された(<code>takeout-...-001.zip</code>〜<code>-012.zip</code>)。ダウンロードし終わったつもりで作業を始めたら、<strong>途中の2つ(<code>-002</code>と<code>-003</code>)が抜けていた</strong>ことに後から気づいた。ダウンロードページに戻って抜けていた分だけ再取得し、連番が最後まで揃っていることを確認してから次に進んだ。件数が多いときは、連番が全部揃っているかを作業開始前に必ず確認するべき、という教訓。</p>
+<h2 id="step-4-長時間処理に備えてtmuxの中で作業する">Step 4: 長時間処理に備えて<code>tmux</code>の中で作業する</h2>
+<p>数万件・100GB超のアップロードは何時間もかかる処理になる。ターミナルの画面(WindowsならPowerShellやWSLの窓)を誤って閉じてしまうと処理も一緒に止まってしまうので、<strong><code>tmux</code></strong>(ターミナルの中に「もう一つの独立したターミナル」を作れるツール)のセッションの中で実行する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">tmux new -s immich-import
+</span></span></code></pre></div><p>これで新しいセッションに入る。ここから先の作業はこのセッションの中で行い、たとえ元のウィンドウを閉じても処理は裏側で動き続ける(再接続するには<code>tmux attach -t immich-import</code>)。</p>
+<h2 id="step-5-まず--dry-runで確認する">Step 5: まず<code>--dry-run</code>で確認する</h2>
+<p>いきなり本番実行するのは怖いので、実際には何もアップロードせず結果だけ教えてくれる<code>--dry-run</code>オプションを付けて試す。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">./immich-go upload from-google-photos <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --server<span class="o">=</span>http://localhost:2283 <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --api-key<span class="o">=</span>&lt;Step2で発行したAPIキー&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --dry-run <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/Downloads/takeout-*.zip
+</span></span></code></pre></div><p>自分の場合の出力はこうだった。</p>
+<pre tabindex="0"><code>Total Assets: 32218
+Associated metadata: 32211
+Missing metadata: 7
+Errors: 0
+</code></pre><p>3万2千件のうち、日付やアルバム情報(メタデータ)が紐づかなかったのはわずか7件、エラーはゼロ。この結果を見て「時系列が全部壊れる」ような大事故にはならなさそうだと判断し、<code>--include-unmatched</code>(メタデータが無い写真も強引に取り込むオプション)は付けずに本番実行することにした。</p>
+<h2 id="step-6-本番実行">Step 6: 本番実行</h2>
+<p><code>--dry-run</code>を外すだけで、実際のアップロードが始まる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">./immich-go upload from-google-photos <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --server<span class="o">=</span>http://localhost:2283 <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --api-key<span class="o">=</span>&lt;APIキー&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/Downloads/takeout-*.zip
+</span></span></code></pre></div><p>結果はこうだった。</p>
+<pre tabindex="0"><code>Uploaded successfully: 29408
+Metadata updated: 30794
+Discarded local duplicate: 1048
+Errors: 2
+Missing metadata: 7
+</code></pre><p>3万件近くが無事アップロードされ、1,048件は重複と判定されてスキップされた(むしろ取り込み過ぎを防いでくれるので助かる動き)。エラーは2件だけ。ログファイル(<code>~/immich-import.log</code>)を見ると、写真本体が消えたわけではなく、「アルバムを作れなかった(<code>failed to create album</code>)」「タグを付けられなかった(<code>failed to add assets to tag</code>)」といった付随的な失敗だけだった。</p>
+<h2 id="step-7-取り込み直後に焦った話バックグラウンドジョブの確認">Step 7: 取り込み直後に焦った話(バックグラウンドジョブの確認)</h2>
+<p>取り込み後、Immichの管理画面で最近の写真に「Error」のようなマークが出ていて、一瞬「本体が壊れたか」と焦った。よく見ると、管理画面(Administration → Jobs)にサムネイル生成(Generate Thumbnails)・顔認識(Facial Recognition)・文字認識(OCR)といった**後処理(バックグラウンドジョブ)**がまだ大量に残っている状態だった。つまり、アップロード自体は終わっていても、Immich側の後片付け処理がまだ終わっていなかっただけ。数時間待って、これらのジョブがすべて完了したのを確認してから見直したら、表示は正常に戻っていた。<strong>取り込み直後に何かエラーっぽい表示が出ても、すぐパニックにならず、まずバックグラウンドジョブが終わっているか確認する</strong>、というのが得た教訓。</p>
+<h2 id="step-8-バックアップに追加する">Step 8: バックアップに追加する</h2>
+<p>写真ファイルだけをバックアップしても、アルバム構成・撮影日時の補正結果・顔認識結果はすべてPostgreSQL(Immichが使っているデータベース)の中に入っているため、<strong>データベースのバックアップも一緒に取らないと意味がない</strong>。自分は既存のバックアップスクリプト(<code>~/backup-scripts/backup-to-b2.sh</code>、Backblaze B2というオンラインストレージへ<code>rclone</code>で同期するもの)に以下の2つを追記した。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># データベースのダンプ</span>
+</span></span><span class="line"><span class="cl">docker compose -f ~/immich/docker-compose.yml <span class="nb">exec</span> -T database <span class="se">\
+</span></span></span><span class="line"><span class="cl">  pg_dumpall --clean --if-exists --username<span class="o">=</span>postgres <span class="p">|</span> gzip &gt; /tmp/immich-db.sql.gz
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 写真本体の同期(サムネイルと変換済み動画はImmichが再生成できるので除外する)</span>
+</span></span><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/immich/library <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/immich/library&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --exclude <span class="s2">&#34;thumbs/**&#34;</span> --exclude <span class="s2">&#34;encoded-video/**&#34;</span>
+</span></span></code></pre></div><p><strong>注意点が2つ</strong>。1つ目は、<code>thumbs/</code>と<code>encoded-video/</code>(Immichが自動生成する派生ファイル)を除外しないと、バックアップ容量が無駄に膨らむこと。2つ目は、119GBのような大容量を初回にいきなり日次の自動実行(cron)に任せると、家庭のインターネット回線の上り速度によっては半日〜丸1日かかってしまい、日中の回線を占有してしまうこと。初回だけは<code>--bwlimit</code>(転送速度の上限を指定するオプション)を付けて手動で実行し、完了を確認してから自動実行に組み込むことを勧める。</p>
+<h2 id="結果と現状の進捗">結果と現状の進捗</h2>
+<p>ブラウザでImmichを開いて確認したところ、昔の写真もちゃんと時系列順に並んでいた。「日付が全部壊れた」ような状態にはならず、実用上問題のない移行ができたと判断している。</p>
+<p>2026-09-12時点の進捗として追記すると、Google Photosからの移行は完了しているが、実はiPhone側の「iCloud写真」はまだオンのままで、GoogleとImmich・iCloudの3箇所に同時保存されている状態が続いている。写真の管理元を完全にImmich一本にするには、(1)しばらくImmichと並行運用して安定を確認、(2)iPhoneの「iCloud写真」をオフにして以降はImmichアプリの自動バックアップだけに切り替え、(3)必要ならiCloudのストレージプランを見直す、という手順が残っている。Apple純正の「写真」アプリ自体をやめるつもりはなく、OS標準のビューア・共有機能としては使い続け、バックアップ・データの主管をImmichに置く役割分担にする方針。この手順は急がず進める予定で、実施したらここに追記する。</p>
+<p>次は、同じ考え方でGoogle Driveのファイルを移した話。→ <a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-08-24: 初版 / 2026-09-12: 「現状の進捗」を追記(iCloud写真トグルOFF化の計画) / 2026-09-13: docker-composeでのImmich構築・immich-goの実コマンド・バックアップスクリプトの追記まで、再現可能なレベルに全面書き直し</p>
+]]></content:encoded></item><item><title>ファイルをGoogle DriveからNextcloudに移す</title><link>https://offgrid.taikiito.com/guides/google-drive-to-nextcloud/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/google-drive-to-nextcloud/</guid><description>Google Driveのファイルを自前サーバー(Nextcloud)に移行した時の記録。docker-composeでのNextcloud構築、Cloudflare Tunnelでの公開、rcloneでのバックアップ設定まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>Google Driveのファイルを自分のサーバー上のNextcloudというソフトに移した記録。前回の版は経緯中心だったので、今回は実際に使ったdocker-composeの設定内容やコマンドまで書き足した。<strong>この記事だけで、Nextcloudを自分のサーバーに構築するところまで再現できることを目指している。</strong></p>
+<h2 id="前提">前提</h2>
+<p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
+<ul>
+<li>常時起動しているLinux環境(Docker Engineが使える状態)</li>
+<li>自分名義のドメイン、およびCloudflare(無料プランで可)でそのドメインを管理していること</li>
+<li>Cloudflare Tunnel(<code>cloudflared</code>というソフトを使い、自宅のルーターの設定を一切いじらずに自宅サーバーを安全にインターネット公開する仕組み)がすでに動いている状態。導入手順は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を参照</li>
+</ul>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>写真をImmichに移した(<a href="/guides/google-photos-to-immich/">前の記事</a>)のと同じ理由で、Google Driveに置きっぱなしにしていたファイルも自分の手元に戻したいと思った。写真ほど量は多くない(実質100〜150MB程度)が、契約書や身分証のコピーなど「人に預けたくないもの」が混ざっていたのが動機だった。</p>
+<h2 id="step-1-nextcloudを選び全部は移さないと決めた">Step 1: Nextcloudを選び、全部は移さないと決めた</h2>
+<p>Google Driveの代わりになる自前ホスト型のソフトはいくつかある。今回は次の4つを比べた。</p>
+<ul>
+<li><strong>Nextcloud</strong> — ファイル同期に加えて、連絡先・カレンダー・メモアプリなど周辺機能が豊富。後から機能を足しやすい。</li>
+<li><strong>Seafile</strong> — ファイル同期に特化していて速いという評判だが、周辺機能はNextcloudほど無い。</li>
+<li><strong>Syncthing</strong> — サーバーを介さず端末同士が直接同期する仕組み。管理はシンプルだが、Google Driveのような「どこからでもブラウザで見る」用途には向かない。</li>
+<li><strong>Filestash</strong> — 既存のストレージ(自分のNASなど)にWeb UIを被せるツール。今回は土台のストレージ自体を新規に用意する必要があったので、ここでは選択肢から外れた。</li>
+</ul>
+<p>最終的に、**拡張性(今後、連絡先やカレンダーも同じ場所に集約したくなる見込みがあった)**を決め手にNextcloudにした。実際にこの後、<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先・カレンダーも同じNextcloudに移す</a>ことになったので、この判断は結果的に正しかった。</p>
+<p>写真の時は「全部Immichに取り込む」という単純な方針にしたが、Google Driveは事情が違った。中身を確認すると、自分のファイルの他に、家族と共有しているフォルダが2つ(iPhoneの体組成計・血圧データを自動書き出しする仕組みと、ビザ手続き関連の共有フォルダ)混ざっていた。この2つは「相手(連携先アプリや家族)がGoogle前提で動いている」ため、無理にNextcloudへ移すと連携が壊れる。<strong>移行の効果(データ主権が増える度合い)と、移すコスト・壊れるリスクを天秤にかけて、この2つはGoogle側に残すと決めた。</strong> 残りの自分専用ファイル(契約書などの<code>archive</code>フォルダ)だけをNextcloudに移した。</p>
+<h2 id="step-2-docker-composeでnextcloudを構築する">Step 2: docker-composeでNextcloudを構築する</h2>
+<p>作業用フォルダを作り、<code>docker-compose.yml</code>を用意する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/nextcloud <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/nextcloud
+</span></span></code></pre></div><p><code>docker-compose.yml</code>の中身(Nextcloud本体<code>app</code>と、データを整理して保存しておくデータベースソフト<code>db</code>〈MariaDB〉の2つのコンテナをセットで起動する構成):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">services</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">db</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">mariadb:11</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l">always</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">./db:/var/lib/mysql</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">environment</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_ROOT_PASSWORD=&lt;自分で決めた強力なパスワード&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_PASSWORD=&lt;自分で決めた強力なパスワード&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_DATABASE=nextcloud</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_USER=nextcloud</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">app</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">nextcloud:latest</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l">always</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="m">127.0.0.1</span><span class="p">:</span><span class="m">8081</span><span class="p">:</span><span class="m">80</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">links</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">db</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">./data:/var/www/html</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">environment</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_PASSWORD=&lt;自分で決めた強力なパスワード&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_DATABASE=nextcloud</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_USER=nextcloud</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_HOST=db</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">NEXTCLOUD_ADMIN_USER=admin</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">NEXTCLOUD_ADMIN_PASSWORD=&lt;自分で決めた強力なパスワード&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">NEXTCLOUD_TRUSTED_DOMAINS=drive.example.com</span><span class="w">
+</span></span></span></code></pre></div><p><code>ports</code>を<code>127.0.0.1:8081:80</code>(自分のマシンの中からしかアクセスできない設定)にしているのがポイント。外部への公開はこのあとCloudflare Tunnel経由で行うので、Nextcloud自体を直接インターネットに晒す必要はない。<code>NEXTCLOUD_TRUSTED_DOMAINS</code>には、実際に使う自分のドメイン(例: <code>drive.taikiito.com</code>)を入れる。</p>
+<p>起動する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker compose up -d
+</span></span><span class="line"><span class="cl">docker compose ps
+</span></span></code></pre></div><p><code>app</code>・<code>db</code>の2つが起動していることを確認したら、<code>http://localhost:8081</code>にアクセスして管理者アカウント(<code>NEXTCLOUD_ADMIN_USER</code>/<code>NEXTCLOUD_ADMIN_PASSWORD</code>で指定した内容)でログインできることを確認する。</p>
+<p><strong>Nextcloudの管理者ユーザー名は一度決めると後から変更できない</strong>ので、<code>admin</code>のような分かりやすい名前で最初から決めておくとよい。</p>
+<h2 id="step-3-cloudflare-tunnelで公開する">Step 3: Cloudflare Tunnelで公開する</h2>
+<p><code>/etc/cloudflared/config.yml</code>(Cloudflare Tunnelの設定ファイル)の<code>ingress</code>(どのドメイン宛のアクセスを、サーバー内のどのポートに転送するかのルール一覧)に、Nextcloud用の行を追記する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ingress</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">drive.taikiito.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http://localhost:8081</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># ...他のサービスの行がここに続く...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http_status:404</span><span class="w">
+</span></span></span></code></pre></div><p><strong>注意点</strong>: <code>service:</code>行のインデント(行頭の空白)は他の行と正確に揃えること。ここが1マスでもずれるとYAML(設定ファイルの記述形式)の解析エラーになり、Cloudflare Tunnel全体が落ちて他のサービスまで巻き込んで止まる、という事故を実際に経験している。編集後は<code>cloudflared tunnel ingress validate</code>で文法チェックしてから<code>sudo systemctl restart cloudflared</code>で反映するのが安全。</p>
+<p>DNS側は、Cloudflareの管理画面(またはAPI)で<code>drive</code>(サブドメイン部分)のCNAMEレコードを<code>&lt;トンネルID&gt;.cfargotunnel.com</code>に向ける。反映後、<code>https://drive.taikiito.com</code>でNextcloudのログイン画面が表示されれば成功。</p>
+<p><strong>Nextcloud特有の注意点</strong>: Nextcloud(内部でApacheというソフトを使っている)は、自分がHTTPS経由でアクセスされていることを正しく認識できないと、ログイン後に無限リダイレクトを起こすことがある。Cloudflare Tunnelは末端(サーバーとの接続)を暗号化しないHTTP接続で待ち受けるため、この設定が必要になる場合がある。症状が出た場合は、Nextcloudの<code>config/config.php</code>に以下を追記して回避する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-php" data-lang="php"><span class="line"><span class="cl"><span class="s1">&#39;overwriteprotocol&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;https&#39;</span><span class="p">,</span>
+</span></span></code></pre></div><h2 id="step-4-macと同期する">Step 4: Macと同期する</h2>
+<p>ここからは、サーバーさえ用意できていれば誰でもできる部分。Google DriveにはMacの「Finder」(ファイル一覧の画面)に統合される専用アプリがあったが、Nextcloudにも同じような公式デスクトップアプリがある。これをインストールしてログインすると、Finder上にNextcloudのフォルダが表示され、Google Driveの時とほぼ同じ感覚でファイルを開いたり保存したりできる。同期は「全部」ではなく<strong>フォルダ単位で選べる</strong>。最初はNextcloudが用意するお試し用のサンプルフォルダ(Documents、Photos、Templatesなど)が並んでいたが、これは削除してよい。本物のデータが入っているのは、移行した<code>archive</code>フォルダだけだった。</p>
+<h2 id="step-5-バックアップを設定する">Step 5: バックアップを設定する</h2>
+<p>「移した先が壊れたら意味がない」ので、移行作業そのものと同じくらいバックアップ体制を大事にしている。<code>rclone</code>(色々なオンラインストレージをコマンドラインから操作できるツール)を使い、Backblaze B2という安価なオンラインストレージへ、Nextcloudのデータを毎日自動でコピーする設定にした。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># データベースのダンプ</span>
+</span></span><span class="line"><span class="cl">docker compose -f ~/nextcloud/docker-compose.yml <span class="nb">exec</span> -T db <span class="se">\
+</span></span></span><span class="line"><span class="cl">  mysqldump -u nextcloud -p&lt;パスワード&gt; nextcloud <span class="p">|</span> gzip &gt; /tmp/nextcloud-db.sql.gz
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ファイル本体の同期</span>
+</span></span><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/nextcloud/data <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/nextcloud/data&#34;</span>
+</span></span></code></pre></div><p>これを日次のcron(定期実行の仕組み)に登録しておけば、毎晩自動でバックアップが取られる。</p>
+<h2 id="つまづいた所積み残し">つまづいた所・積み残し</h2>
+<p><strong>9.68GBの謎</strong>: 作業の途中、Googleのストレージ画面で「Driveが9.68GB使用中」と表示されているのに気づいた。しかし実際に移行した中身は100〜150MB程度しかない。90倍以上の差があり、計算が全く合わなかった。調べてみると、以前どこかのタイミングで大きなファイルを削除した際、<strong>ゴミ箱を空にしていなかった</strong>可能性が濃厚だという所まで辿り着いた。Googleドライブのゴミ箱は自動では空にならず、手動で「ゴミ箱を空にする」を押さない限り容量を圧迫し続ける。ここは正直に書いておくと、<strong>この謎は最終的に自分の手では確認しきれず、保留のまま</strong>になっている。</p>
+<p><strong>家族との共有</strong>: Google Driveで便利だったことの一つに、家族とのフォルダ共有がある。Nextcloudでも同じことは可能で、家族専用アカウントを作って権限を細かく設定する方法と、アカウント不要のリンク共有で手軽に済ませる方法の2通りがある。これは記事執筆時点でまだどちらにするか決めきれていない、<strong>現在進行系の課題</strong>として正直に残しておく。</p>
+<h2 id="結果">結果</h2>
+<p>自分専用のファイルはNextcloud経由でMacからGoogle Driveと変わらない感覚で使えるようになった。家族共有フォルダ2つは「無理に移さない」という判断のままGoogleに残っており、これはこれで納得している状態。</p>
+<p>次は、同じNextcloudに連絡先とカレンダーも集約した話。→ <a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item><item><title>パスワードを1PasswordからVaultwardenに移す</title><link>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</guid><description>1Passwordを解約し、自前ホストのVaultwardenにパスワードを一本化した記録。docker-composeでの構築、Cloudflare Tunnelでの公開、パスワード・パスキーそれぞれの移行手順まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>1Passwordで管理していたパスワードとパスキーを、自分のサーバー上で動かすVaultwardenというソフトに移した記録。パスワード自体の移行はエクスポート・インポートで数分で終わるが、パスキー(WebAuthnという国際標準規格で実現されている、パスワードの代わりに指紋・顔認証などでログインする仕組み)は仕組み上コピーができず、サイトごとに手作業で登録し直す必要があった。</p>
+<h2 id="前提">前提</h2>
+<p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
+<ul>
+<li>常時起動しているLinux環境(Docker Engineが使える状態)</li>
+<li>自分名義のドメイン、Cloudflare Tunnelが動いている状態(導入手順は<a href="/guides/google-drive-to-nextcloud/">前々回の記事</a>のStep 3と同じ)</li>
+</ul>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>写真(<a href="/guides/google-photos-to-immich/">前の記事</a>)やファイル(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)と同じ理由で、1Passwordに預けていたパスワードも自分の手元に戻したいと思った。加えて、1Passwordは年額のサブスクリプションなので、自前ホストに切り替えれば単純にコストも減らせる。</p>
+<h2 id="vaultwardenを選んだ理由">Vaultwardenを選んだ理由</h2>
+<p>パスワードマネージャーの自前ホスト選択肢は複数ある。</p>
+<ul>
+<li><strong>Vaultwarden</strong> — Bitwardenというサービスの非公式互換サーバー実装。公式のBitwardenアプリ・ブラウザ拡張機能がそのまま使え、UIの完成度も高い。ゼロ知識暗号化(サーバー側もマスターパスワードを知らない設計)。</li>
+<li><strong>KeePassXC</strong> — サーバーを立てず、暗号化されたファイル1つで管理するタイプ。オフラインで完結するが、複数端末間の同期を自分で用意する必要がある(クラウドストレージと組み合わせるのが一般的)。</li>
+<li><strong>Bitwarden公式のクラウド版</strong> — セルフホストではなく、Bitwarden社のサーバーに預ける形。1Passwordと似た構図になるため、今回の「自分の手元に取り戻す」という目的には合わない。</li>
+</ul>
+<p>普段使っているNextcloud・Immichと同じサーバー上に同居させられる手軽さと、公式アプリがそのまま使える点を決め手にVaultwardenにした。</p>
+<h2 id="step-1-docker-composeでvaultwardenを構築する">Step 1: docker-composeでVaultwardenを構築する</h2>
+<p>Vaultwardenは公式イメージを使えばコンテナ1つで完結し、Nextcloudのようにデータベースを別途用意する必要もない分、今回の中では一番シンプルな部類だった。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/vaultwarden <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/vaultwarden
+</span></span></code></pre></div><p><code>docker-compose.yml</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">services</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">vaultwarden</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">vaultwarden/server:latest</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l">always</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">environment</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">DOMAIN=https://vault.example.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">ADMIN_TOKEN=&lt;自分で決めた長いランダム文字列&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">SIGNUPS_ALLOWED=false</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">./vw-data:/data</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="m">127.0.0.1</span><span class="p">:</span><span class="m">8082</span><span class="p">:</span><span class="m">80</span><span class="w">
+</span></span></span></code></pre></div><p>いくつか説明が要る項目がある。</p>
+<ul>
+<li><code>DOMAIN</code> — 最終的に外部からアクセスする本物のURL(自分のドメイン)を指定する。ここがずれているとパスキー(WebAuthn)登録時にエラーになることがある。</li>
+<li><code>ADMIN_TOKEN</code> — サーバーの管理画面(<code>/admin</code>)に入るための鍵。長いランダム文字列にし、他の誰にも教えない。</li>
+<li><code>SIGNUPS_ALLOWED=false</code> — 新規アカウント登録を締め切る設定。自分専用サーバーなので、自分のアカウントを最初に1つ作ったらこれをオフにして、他人が勝手にアカウントを作れないようにする。</li>
+</ul>
+<p>起動する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker compose up -d
+</span></span><span class="line"><span class="cl">docker compose ps
+</span></span></code></pre></div><p><code>http://localhost:8082</code>にアクセスし、「Create Account」から自分のアカウントを作成する。作成が終わったら<code>docker-compose.yml</code>を編集して<code>SIGNUPS_ALLOWED=false</code>に変更し、<code>docker compose up -d</code>で反映しておく。</p>
+<h2 id="step-2-cloudflare-tunnelで公開する">Step 2: Cloudflare Tunnelで公開する</h2>
+<p>Nextcloudの時(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)と同じ要領で、<code>/etc/cloudflared/config.yml</code>にVaultwarden用の行を追記する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ingress</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">vault.taikiito.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http://localhost:8082</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># ...他のサービスの行がここに続く...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http_status:404</span><span class="w">
+</span></span></span></code></pre></div><p>編集後は<code>cloudflared tunnel ingress validate</code>で文法チェックしてから<code>sudo systemctl restart cloudflared</code>。DNS側もCloudflareの管理画面で<code>vault</code>のCNAMEレコードを<code>&lt;トンネルID&gt;.cfargotunnel.com</code>に向けておく。</p>
+<h2 id="step-3-ブラウザスマホから接続する">Step 3: ブラウザ・スマホから接続する</h2>
+<p>ブラウザはChrome・Firefoxの両方にBitwarden拡張機能を追加し、接続先の設定(拡張機能アイコン → 設定 → Self-hosted environment)に自分の<code>vault.taikiito.com</code>を入力する。スマートフォン用の公式Bitwardenアプリも同様に接続先を変更するだけで使える。</p>
+<p>パスワード自体の移行は、1Password側でエクスポートしたデータ(CSV形式など)をVaultwardenの「Import data」機能でインポートするだけで数分で終わった。ここは特につまづくところがなかった。</p>
+<h2 id="step-4-パスキーの移行">Step 4: パスキーの移行</h2>
+<p>パスワードと違い、パスキー(WebAuthn)はエクスポート・インポートで移せない仕様になっている。サイトごとに「旧パスキーを削除 → 新しいマネージャーで再登録」という地道な作業が必要だった。手元の1Passwordを棚卸ししたところ、登録済みのパスキーは全15件。</p>
+<p>作業中に見つかった落とし穴:</p>
+<ul>
+<li><strong>ブラウザ拡張機能の競合</strong>: 1Password拡張機能を有効にしたままだと、WebAuthnのリクエストを1Password側が横取りしてしまい、Bitwarden/Vaultwarden拡張機能が反応できない。<code>chrome://extensions</code>で1Password拡張機能を完全にOFFにする必要があった。</li>
+<li><strong>スマホ側の割り込み</strong>: モバイル版Bitwardenアプリでパスキーを新規登録する際、Touch ID/Face IDのようなOS標準の認証より先にBitwarden拡張機能側が割り込んでしまい、登録に失敗することがあった。</li>
+<li><strong>iCloud Keychainを使う場合の見落としがちな設定</strong>: macOSでiCloudキーチェーン経由のパスキー登録をするには、システム設定 → 一般 → AutoFill &amp; Passwords の「Passwords」トグルが事前にONになっている必要がある(初期状態はOFF)。</li>
+<li><strong>削除する前に、実際に使っているか確認する</strong>: 「もう使っていないはず」と思っていたサービスのパスキーが、実は仕事の特定システムのログインで現役だと後から判明した件があった。1Password内の一覧だけを見て「使っていなさそう」で判断せず、実際に使う場面があるかを確認してから削除する方が安全だった。</li>
+</ul>
+<p>全部をVaultwardenに寄せたわけではなく、用途によって使い分けている。<strong>会社PC(Windows)からのログインが必要なアカウント</strong>はブラウザ拡張機能のインストールが要らずQRコードでのクロスデバイス認証に対応しているiCloud Keychainへ、<strong>個人利用でデータ主権の方針に寄せたいアカウント</strong>はパスワードと同じ場所で一元管理できるVaultwardenへ、という基準にした。</p>
+<h2 id="step-5-バックアップを設定する">Step 5: バックアップを設定する</h2>
+<p>Nextcloud・Immichと同じく<code>rclone</code>でBackblaze B2へ日次バックアップする。Vaultwardenの場合はデータベース(SQLite、1ファイルにまとまった軽量なデータベース形式)がそのままフォルダの中に入っているので、フォルダごと同期するだけでよい。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/vaultwarden/vw-data <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/vaultwarden&#34;</span>
+</span></span></code></pre></div><p><strong>このバックアップの取り出し鍵自体もバックアップしておく</strong>、という一段階上の注意点がある。<code>rclone</code>の設定ファイル(<code>~/.config/rclone/rclone.conf</code>、B2に接続するための鍵が入っている)がサーバー本体にしか無いと、サーバーが完全に壊れた時にバックアップを取り出す鍵ごと失われてしまう。自分はこの設定ファイルの中身を、Vaultwarden自身にSecure Note(パスワード以外のメモも安全に保存できる機能)として複製保存しておくことで、この「鶏と卵」問題を解決した。Vaultwardenはクライアントアプリに一度ログインしておけばオフラインキャッシュが残るため、サーバーが全損してもスマホから鍵を取り出せる。</p>
+<h2 id="結果">結果</h2>
+<p>パスワード15件・パスキー15件、全て移行完了。1Passwordは解約し、年間の固定費を1本減らせた。パスワードの移行自体は簡単だが、パスキーは仕組み上コピーできないので、サイトごとの再登録作業を見込んでおくとよい。</p>
+<p>次は、連絡先とカレンダーをNextcloudに集約した話。→ <a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item><item><title>連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</title><link>https://offgrid.taikiito.com/guides/icloud-google-to-nextcloud-contacts-calendar/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-google-to-nextcloud-contacts-calendar/</guid><description>iCloud連絡先81件・Google連絡先553件をNextcloud Contactsへ、Googleカレンダーの個人予定232件をNextcloud Calendarへ移した記録。アプリパスワードの発行方法、CalDAV/CardDAVへ直接PUTする実際のコマンドまで書いた。</description><content:encoded><![CDATA[<p>連絡先とカレンダーを、Nextcloudの標準機能(Contacts・Calendar)に一本化した記録。すでにファイル(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)で使っていたNextcloudに機能を足すだけなので、新しいサーバーを立てる作業は無かった。件数が多かった分、Web UIのインポート機能が信頼できず、結局CalDAV(カレンダーの同期方法を定めた業界標準規格)・CardDAV(連絡先の同期方法を定めた業界標準規格)という仕組みへ直接データを送り込む方式に切り替えることになった。</p>
+<h2 id="前提">前提</h2>
+<p>すでにNextcloudが動いていることを前提にする。まだの場合は先に<a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a>を読んでほしい。</p>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>連絡先はiCloudとGoogleの両方に分散していた。カレンダーは個人の予定をGoogleカレンダーで管理していた。どちらも「今後もGoogle/Appleに預け続けるほどの理由がない」データなので、ファイルや写真と同じ流れでNextcloudに集約することにした。同期方式は特定の会社に縛られない業界標準の規格(CardDAV・CalDAV)なので、Mac標準の「連絡先」「カレンダー」アプリやiPhoneからもそのまま繋げられる。</p>
+<h2 id="step-1-nextcloudのアプリパスワードを発行する">Step 1: Nextcloudのアプリパスワードを発行する</h2>
+<p>まず、CardDAV/CalDAV経由でアクセスするための専用パスワードを発行する。Nextcloud本体のログインパスワードをそのまま外部アプリに渡すのは避け、用途ごとに無効化できる「アプリパスワード」を使うのが基本。</p>
+<p>Nextcloudの画面右上のアイコン → <strong>個人設定(Personal settings)</strong> → <strong>セキュリティ(Security)</strong> → 「新しいアプリパスワードを作成」から、名前(例: <code>contacts-migration</code>)を付けて発行する。表示されたパスワードは、この画面を閉じると二度と表示されないので、一時的にメモしておく。</p>
+<h2 id="step-2-連絡先をエクスポートする633件">Step 2: 連絡先をエクスポートする(633件)</h2>
+<p>Google連絡先553件・iCloud連絡先81件を、それぞれvCard形式(連絡先データの標準的なファイル形式、拡張子<code>.vcf</code>)で書き出す。</p>
+<ul>
+<li><strong>Google連絡先</strong>: <a href="https://contacts.google.com">contacts.google.com</a> → 左メニュー「エクスポート」→ vCard形式を選択</li>
+<li><strong>iCloud連絡先</strong>: <a href="https://icloud.com">icloud.com</a> → 連絡先 → 全て選択 → 右下の歯車アイコン → 「vCardを書き出す」</li>
+</ul>
+<p>重複1件を除いた633件を、まとめた1つの<code>.vcf</code>ファイルにしておく(vCard形式は複数の連絡先を1ファイルに連結できる)。</p>
+<h2 id="step-3-carddavへ直接putする">Step 3: CardDAVへ直接PUTする</h2>
+<p>Nextcloud Web UI(ブラウザ上の管理画面)の「連絡先をインポート」機能も試したが、件数が多いと不安定だったため、CardDAVのエンドポイント(データの送り先URL)へ、1件ずつ<code>PUT</code>(データをサーバーへ送り込む処理)する方式に切り替えた。</p>
+<p>まず、まとめた<code>.vcf</code>ファイルを連絡先1件ずつのファイルに分割する(Pythonの<code>vobject</code>ライブラリや、<code>csplit</code>のようなテキスト分割コマンドで、<code>BEGIN:VCARD</code>〜<code>END:VCARD</code>の区切りごとに切り出す)。分割できたら、1件ずつ以下のようにアップロードする。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -u <span class="s2">&#34;admin:&lt;Step1のアプリパスワード&gt;&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  -X PUT <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --data-binary @contact-001.vcf <span class="se">\
+</span></span></span><span class="line"><span class="cl">  -H <span class="s2">&#34;Content-Type: text/vcard; charset=utf-8&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.taikiito.com/remote.php/dav/addressbooks/users/admin/contacts/contact-001.vcf&#34;</span>
+</span></span></code></pre></div><p>これを633件分、シェルスクリプトの<code>for</code>ループなどで繰り返す。1件ずつリソースとしてサーバーに送り込む地道なやり方だが、Web UIのインポートより確実に反映される。</p>
+<h2 id="step-4-macで連絡先を同期する">Step 4: Macで連絡先を同期する</h2>
+<p>Macの「連絡先」アプリ → 環境設定 → アカウント → 「アカウントを追加」→「他のアカウント」→「CardDAVアカウントを追加」。</p>
+<p>ここでハマったポイントがある。macOSは通常、サーバーアドレスを短く入力するだけで<code>.well-known/carddav</code>という決まったパスへ自動でアクセスし、正しいCardDAVのURLへリダイレクトしてくれる仕組みになっている。ところが、Cloudflare経由のリダイレクト処理の影響で、この自動検出がうまく機能しなかった。</p>
+<p><strong>解決策</strong>: サーバーアドレスの欄に、自動検出用の短いURL(<code>drive.taikiito.com</code>)ではなく、以下のフルパスを直接入力する。</p>
+<pre tabindex="0"><code>https://drive.taikiito.com/remote.php/dav/principals/users/admin/
+</code></pre><p>ユーザー名は<code>admin</code>(Nextcloudのユーザー名)、パスワードはStep 1で発行したアプリパスワードを使う。iPhoneの「連絡先」アプリでも同じ設定項目がある。</p>
+<h2 id="step-5-カレンダーの移行232件">Step 5: カレンダーの移行(232件)</h2>
+<p>個人用のGoogleカレンダーに入っていた予定(2019〜2029年、232件)をNextcloud Calendarの「Personal」カレンダーへ移す。</p>
+<p>まず<a href="https://calendar.google.com">calendar.google.com</a>の設定画面から、対象のカレンダーを<code>.ics</code>ファイル(カレンダーの予定データをやり取りするための標準的なファイル形式)としてエクスポートする。</p>
+<p>最初はNextcloud Web UIの「カレンダーをインポート」機能で<code>.ics</code>ファイルをそのまま読み込ませようとしたが、「could not be parsed」(うまく読み取れなかった、というエラーメッセージ)というエラーで通らなかった。<code>.ics</code>ファイルの行折り返し(RFC5545というカレンダーデータの技術仕様で決められたルール)を手直ししても解決しなかったため、連絡先と同じくCalDAVへ直接PUTする方式に切り替えた。</p>
+<p><code>.ics</code>ファイルを1イベントずつに分割し(<code>BEGIN:VEVENT</code>〜<code>END:VEVENT</code>の区切りで切り出す)、以下のようにアップロードする。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -u <span class="s2">&#34;admin:&lt;アプリパスワード&gt;&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  -X PUT <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --data-binary @event-001.ics <span class="se">\
+</span></span></span><span class="line"><span class="cl">  -H <span class="s2">&#34;Content-Type: text/calendar; charset=utf-8&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.taikiito.com/remote.php/dav/calendars/users/admin/personal/event-001.ics&#34;</span>
+</span></span></code></pre></div><p>232件全てこの方式でアップロードしたところ、全て成功した。反映を確認したうえで、Google Calendar側の元データは削除した。ただし、妻と共有しているカレンダーはGoogleに残す判断にした(相手がGoogle前提で使っているため)。ファイル移行の時の「移す理由が移さない理由に勝つものだけ移す」という基準を、ここでも踏襲した形だ。</p>
+<h2 id="つまづいた所">つまづいた所</h2>
+<p><strong>1. Web UIの一括インポートは大量データに弱い</strong>: 連絡先・カレンダーともに、NextcloudのWeb UIインポート機能は件数が多いと信頼できなかった。少数なら問題ないと思うが、数百件規模ならCalDAV/CardDAVへ直接PUTする方式を最初から選んだ方が早い、というのが今回の教訓。</p>
+<p><strong>2. <code>.well-known/carddav</code>のリダイレクトが失敗する</strong>: 上記Step 4の通り、自動検出をあきらめてフルパスを直接指定することで解決した。同じ症状はCalDAV側(<code>.well-known/caldav</code>)でも起こりうるので、うまくいかない場合は同じ対処(フルパス直接指定)を試すとよい。</p>
+<p>積み残しもある。祖父の命日のような毎年繰り返す予定は、Google側で表示されていた2025〜2029年分のインスタンスだけを削除しており、繰り返しルールそのもの(マスター)は消していない。2030年以降にまた自動で出現する可能性があるため、気になったら改めてGoogle Calendar側で対応する必要がある。また、Gmailにはフライトやレストランの予約確認メールを自動でGoogleカレンダーに追加してくれる機能があるが、これは自前のメール+Nextcloudカレンダーの組み合わせには存在しない、Google独自の仕組みで、メール・カレンダーのどちらか片方だけ移しても再現できない。同等の仕組みを自作するなら別プロジェクトになるので、今回は見送っている。</p>
+<h2 id="結果">結果</h2>
+<p>連絡先633件・カレンダー232件、どちらも移行完了。MacとiPhoneから、Google/iCloudの時とほぼ変わらない感覚で使えている。大量データの移行はWeb UIのインポートを過信せず、CalDAV/CardDAVへの直接PUTを検討するとよい、というのが一番の学びだった。</p>
+<p>次は、メモをJoplinに移そうとして、結局全部は移さなかった話。→ <a href="/guides/icloud-notes-to-joplin/">メモをiCloud NotesからJoplinに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: アプリパスワードの発行手順・実際のcurl PUTコマンドを追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item><item><title>メモをiCloud NotesからJoplinに移す(で、結局移さなかった話)</title><link>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</guid><description>iCloud Notes 1,649件をJoplinに一本化しようとして、結局は「過去分は移さず、新規メモだけJoplinで書く」という決着にした記録。Nextcloud WebDAV同期の実際の設定手順、iPhone発熱問題も。</description><content:encoded><![CDATA[<p>iCloud Notesに溜まっていたメモを、自前で管理できるJoplinというソフトに移そうとした記録。結論から書くと、過去の1,649件は結局移行せず、Joplinは新規メモ専用として運用することにした。「全部きれいに移す」ことにこだわらなかった判断の話でもある。</p>
+<h2 id="前提">前提</h2>
+<p>すでにNextcloudが動いていることを前提にする。まだの場合は先に<a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a>を読んでほしい。Joplin自体は自分でサーバーを用意する必要がなく、既存のNextcloudをファイル置き場として使うだけなので、新しいDockerコンテナを立てる作業は無い。</p>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>iCloud Notesには、思いついたことをその場で書き留めたメモが1,649件溜まっていた。写真やファイルと同じく、Appleに預けっぱなしのデータを自分の手元に戻したいと考え、Joplinの導入を決めた。</p>
+<h2 id="step-1-joplinを選ぶ">Step 1: Joplinを選ぶ</h2>
+<p>メモアプリの自前ホスト選択肢もいくつかあるが、Markdown形式(見出しや箇条書きなどを簡単な記号だけで書ける、プレーンテキストに近いメモの書き方)でメモを書けること、Nextcloud WebDAV(ファイルをネットワーク越しにやり取りするための標準規格。専用サーバーソフトを別途用意しなくても、既存のNextcloudがそのまま使える)経由で同期できること、Mac・iPhone両方に公式アプリがあることを決め手にJoplinにした。</p>
+<h2 id="step-2-nextcloud側にjoplin専用フォルダとアプリパスワードを用意する">Step 2: Nextcloud側にJoplin専用フォルダとアプリパスワードを用意する</h2>
+<p>Nextcloudのブラウザ画面から、Files(ファイル)アプリで新しいフォルダ(例: <code>Joplin</code>)を作成する。</p>
+<p>次に、<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">前の記事</a>のStep 1と同じ要領で、Joplin専用のアプリパスワードを発行する。個人設定 → セキュリティ → 「新しいアプリパスワードを作成」で、名前を<code>joplin-sync</code>のように分かりやすくしておく。</p>
+<h2 id="step-3-joplinアプリ側でwebdav同期を設定する">Step 3: Joplinアプリ側でWebDAV同期を設定する</h2>
+<p>Mac・iPhoneの両方に公式Joplinアプリをインストールする。設定画面から以下の通り入力する。</p>
+<ul>
+<li>同期対象: <strong>WebDAV</strong></li>
+<li>WebDAVの URL: <code>https://drive.taikiito.com/remote.php/dav/files/admin/Joplin/</code>(<code>admin</code>の部分はNextcloudのユーザー名、末尾の<code>Joplin/</code>はStep 2で作ったフォルダ名)</li>
+<li>ユーザー名: Nextcloudのユーザー名(<code>admin</code>)</li>
+<li>パスワード: Step 2で発行したアプリパスワード</li>
+</ul>
+<p>設定後、同期ボタンを押して接続が成功することを確認する。Mac・iPhoneの両方に同じ設定を入れることで、同じNextcloudフォルダを見に行く形になる。</p>
+<p><strong>同期は「自動」ではなく「手動」に設定している。</strong> 理由は、iPhoneで自動同期(バックグラウンドでの定期的なポーリング)を有効にすると本体が発熱する症状が出たため。常時バックグラウンドで同期し続けるより、メモを書いたタイミングで自分で同期ボタンを押す運用の方が、今のところ実用上困らないと判断した。</p>
+<h2 id="step-4-過去の1649件をどうするか検討する">Step 4: 過去の1,649件をどうするか検討する</h2>
+<p>ここまで環境は整ったが、肝心の「iCloud Notesの過去メモをどうやってJoplinに移すか」で立ち止まった。</p>
+<p>エクスポート自体は可能(Macの「メモ」アプリからPDFや個別ファイルとして書き出せる)だが、実際に中身を見返してみると、大した情報が入っていないメモがほとんどだった。買い物リストの切れ端、一度きりのちょっとしたメモ、すでに用が済んでいる下書きなど。1,649件を一つ一つ精査して移す価値があるかというと、かかる手間に見合わないと判断した。</p>
+<p>最終的に、<strong>過去の1,649件はiCloud Notes側にそのまま残し、Joplinは今後書く新規メモ専用として運用する</strong>ことにした。「全部を完璧に移してから使い始める」のではなく、「新しい方から始めて、今後蓄積されるものだけを自分の手元で管理する」という割り切り方だ。ファイル移行の時の「移す理由が移さない理由に勝つものだけ移す」という基準の延長線上にある判断でもある。</p>
+<h2 id="結果">結果</h2>
+<p>Joplinは新規メモの置き場として運用中。iCloud Notesの過去メモはアーカイブとしてそのまま残しているが、能動的に見返すことはほとんどない。「完全移行」にこだわらず、価値のある部分だけを新しい仕組みに乗せる、という判断も移行の一つの形だと思っている。</p>
+<p>次は、メールをGmailから自分のドメインに移した、一番苦労した話。→ <a href="/guides/gmail-to-own-domain/">メールをGmailから自分のドメインに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: NextcloudのWebDAV同期の実際の設定手順(URL・アプリパスワード)を追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item><item><title>メールをGmailから自分のドメイン(iCloud+カスタムドメイン)に移す</title><link>https://offgrid.taikiito.com/guides/gmail-to-own-domain/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/gmail-to-own-domain/</guid><description>Gmailを卒業し、自分のドメインのメールアドレス(iCloud+カスタムドメイン機能)に一本化した記録。DNSレコードの実際の設定値、Thunderbirdの3層アカウント構造でハマった話、復旧作業中に4,293件のメールを誤って喪失し原本から復元した話まで、正直に書く。</description><content:encoded><![CDATA[<p>長年使っていたGmailをやめて、自分のドメインのメールアドレスに主メールを一本化した記録。土台はiCloud+の「カスタムメールドメイン」機能で、既にiPhoneのバックアップ用にiCloud+を契約していたため追加コストはかからなかった。作業自体は数日がかりで、途中で本当にメールを失いかけた場面もあった。この記事はその過程を、うまくいかなかった所も含めて正直に書く。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>自分名義のドメイン(取得方法は各ドメインレジストラのサイトを参照。自分はCloudflare Registrarを使った)</li>
+<li>iCloud+の契約(月額サブスクリプション。iPhoneのバックアップ用など、何らかの理由ですでに契約していれば追加コストはかからない)</li>
+<li>ドメインのDNS(「<code>taikiito.com</code>というドメインは実際にはどのサーバーを指すか」をインターネット全体に教えるための住所録のような仕組み)を自分で編集できる状態(Cloudflareなど)</li>
+</ul>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>Gmailは便利だが、Googleに完全に預けているアカウントでもある。自分名義のドメインを取得したことで、自分のドメインでメールを受け取れる状態が整った。iCloud+はもともとiPhoneのバックアップ用に契約していたので、カスタムドメインのメールボックスを足しても容量を共有するだけで実質タダ。これなら移行のコストに見合うと判断した。</p>
+<h2 id="何に移すか-icloud-vs-fastmailで迷った話">何に移すか: iCloud+ vs Fastmailで迷った話</h2>
+<p>自前ドメインでメールを使う場合、有名な選択肢としてFastmailがある。料金以外の軸(標準プロトコル対応、Apple以外の端末での使い勝手、エイリアスの上限、送信ドメインとしての評判、データの持ち出しやすさ)で比較検討した。</p>
+<p>比較の途中で、自分の思い込みが一つ崩れた。iCloud MailはApple製品専用だとばかり思っていたが、実際には標準のIMAP/SMTP(メールの受信・送信をやり取りするための業界共通の通信規格。この2つに対応していれば、どのメールソフトからでも接続できる)にアプリ専用パスワードでアクセスすれば、Thunderbirdのような普通のメールクライアント(メールを読み書きするためのアプリ)からも使える。「ロックインされて出られなくなる」という一番の懸念はほぼ杞憂だった。すでに契約しているiCloud+の容量を共有できて実質無料な点も踏まえ、Fastmailへの乗り換えは見送り、iCloud+のカスタムドメイン機能を使うことにした。</p>
+<h2 id="step-1-icloudでカスタムドメインを設定する">Step 1: iCloud+でカスタムドメインを設定する</h2>
+<p>iPhoneの「設定」アプリ → 自分の名前(Apple ID) → iCloud → 「メール」→「カスタムメールドメイン」から設定を開始する(Mac版System Settingsからも同じ設定にたどり着ける)。ドメイン名(例: <code>taikiito.com</code>)を入力すると、iCloud側が必要なDNSレコードを画面に表示してくれるので、それを自分のドメインのDNS管理画面(Cloudflareなど)にそのまま追加する。実際に追加したレコードは以下の3種類だった。</p>
+<table>
+	<thead>
+			<tr>
+					<th>種類</th>
+					<th>内容</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>MX</td>
+					<td><code>mx01.mail.icloud.com</code> / <code>mx02.mail.icloud.com</code>(メールの受け取り先を指定)</td>
+			</tr>
+			<tr>
+					<td>SPF (TXTレコード)</td>
+					<td><code>v=spf1 include:icloud.com ~all</code>(このドメインからのメールはiCloud経由が正当だと示す)</td>
+			</tr>
+			<tr>
+					<td>DKIM (CNAMEレコード)</td>
+					<td><code>sig1._domainkey</code> → <code>sig1.dkim.taikiito.com.at.icloudmailadmin.com</code>(メールが改ざんされていないことを証明する電子署名の仕組み)</td>
+			</tr>
+	</tbody>
+</table>
+<p>iCloud+の設定ウィザードはこの3つだけを要求し、<strong>DMARC(後述、なりすまし対策をさらに強化するレコード)は必須ではなく任意</strong>なので、最初は追加しなくても動く。反映には数分〜数十分かかる。全て緑のチェックマークになれば、そのドメインでメールアドレス(自分の場合は<code>me@taikiito.com</code>)を作成できる。</p>
+<h2 id="step-2-会社のメール環境への到達を確認する">Step 2: 会社のメール環境への到達を確認する</h2>
+<p>自分の場合、<code>me@taikiito.com</code>からGmailへは問題なく届いたが、会社のメール(Microsoft 365ベース)には<strong>エラーも通知もなく、静かに届かない</strong>という問題が起きた。SPF/DKIMを見直しても直らなかったため、DMARC(TXTレコード)を追加した。</p>
+<pre tabindex="0"><code>_dmarc.taikiito.com  TXT  &#34;v=DMARC1; p=none; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
+</code></pre><p><code>p=none</code>はまず様子見のモード(ポリシー違反があっても何もしない、レポートだけ受け取る)。これでも解決しなかったが、SPF/DKIM/DMARCの設定自体には問題が無いことが確認できたので、<strong>原因は取得したばかりのドメインが「送信履歴の無い新規ドメイン」として会社側のメールフィルタに警戒されていることだと判断し、時間経過で解決するのを待つ方針にした</strong>。実際、数日後には特に追加の変更をしないまま届くようになった。<strong>新しく取ったドメインでメールを送る場合、最初の数日〜1週間は主要な送信先に届かないことがある</strong>と見込んでおくとよい。</p>
+<h2 id="step-3-なりすまし対策を強化するspfdmarcの締め上げ">Step 3: なりすまし対策を強化する(SPF/DMARCの締め上げ)</h2>
+<p>ドメインの送信環境が安定してきたら、なりすまし対策を強める。最終的には以下の設定にした。</p>
+<pre tabindex="0"><code>_dmarc.taikiito.com  TXT  &#34;v=DMARC1; p=reject; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
+</code></pre><p><code>p=none</code>(様子見) → <code>p=quarantine</code>(怪しいメールを迷惑メール行き) → <code>p=reject</code>(なりすましメールを完全拒否)の順に段階を踏むのが一般的だが、自分の場合は送信経路がiCloudのみでSPF/DKIMがすでに正常に機能していたため、リスク評価をした上で段階を飛ばして<code>p=reject</code>まで一気に進めた。SPFも<code>~all</code>(該当しない送信元は「疑わしい」扱い)から<code>-all</code>(該当しない送信元は「完全に拒否」)へ強化した。</p>
+<p><strong>注意</strong>: <code>p=reject</code>にすると、このドメインからのメールを送るときに使う経路(自分の場合はiCloudのみ)以外からは一切メールが届かなくなる。今後、別のメールサービスを追加で使う場合は、SPFレコードに新しい送信元を<code>include:</code>で追加し忘れないこと。</p>
+<h2 id="step-4-gmailからの引っ越しで3つハマったこと">Step 4: Gmailからの引っ越しで3つハマったこと</h2>
+<p><strong>1. Thunderbirdの「3層構造」に気づかず認証が通らなかった</strong></p>
+<p>WindowsでThunderbirdを使って移行作業をしようとしたところ、何度設定してもIMAP/SMTPの認証が通らなかった。原因は、iCloudのアカウント構造が3層になっていたこと。</p>
+<ul>
+<li>表向きのApple IDサインイン用メールアドレス</li>
+<li>実際のIMAP/SMTP認証に使う、真のiCloudアカウントアドレス(<code>@icloud.com</code>形式)</li>
+<li>送受信に使う見た目のアドレス(カスタムドメインのエイリアス)</li>
+</ul>
+<p>Thunderbirdの手動設定画面で、サーバー情報は以下のようにする。</p>
+<table>
+	<thead>
+			<tr>
+					<th>項目</th>
+					<th>値</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>受信サーバー(IMAP)</td>
+					<td><code>imap.mail.me.com</code>、ポート993、SSL/TLS</td>
+			</tr>
+			<tr>
+					<td>送信サーバー(SMTP)</td>
+					<td><code>smtp.mail.me.com</code>、ポート587、STARTTLS</td>
+			</tr>
+			<tr>
+					<td>ユーザー名</td>
+					<td><strong>真のiCloudアカウントアドレス(<code>@icloud.com</code>形式)をフルで入力</strong></td>
+			</tr>
+			<tr>
+					<td>パスワード</td>
+					<td>Apple IDの「Appleパスワード」ではなく、Apple ID管理画面で発行する「App用パスワード」</td>
+			</tr>
+	</tbody>
+</table>
+<p>ポイントは<strong>ユーザー名欄</strong>で、一番上のApple IDのアドレスでも、送受信に使うカスタムドメインのアドレスでもなく、<strong>中間層の真のiCloudアカウントアドレスをフルで入力する</strong>必要がある。これはApple公式の設定手順のどこにも明記されておらず、自力で突き止めるまで何度も認証エラーに悩まされた。</p>
+<p><strong>2. 「完了」と判断したが、実は直近1〜2ヶ月分が抜けていた</strong></p>
+<p>Gmailの全メール(46,544件)をThunderbird経由でiCloud側へ移す自作スクリプトを作り、実行した。進捗ログを見ながら待ち、件数がおおよそ一致したことを確認して「移行完了」と判断した。</p>
+<p>ところが後日、送信済みメールを見返していて、直近のメールが見当たらないことに気づいた。調べると、スクリプトは古いメールから新しいメールへ順番に処理する作りで、確認した時点では全体の約8割(37,362件/46,544件)までしか進んでおらず、<strong>直近1〜2ヶ月分がまだ移行されていない状態で「完了」と誤判断していた</strong>ことが分かった。「件数がざっくり合っている」だけでは、移行完了の確認として不十分だったという教訓。</p>
+<p><strong>3. 復旧作業中に4,293件を誤って喪失、Google Takeoutの原本から復元</strong></p>
+<p>上記の見落としを受けて調査していたところ、さらに深刻な問題が見つかった。iCloud側で重複メールを整理する作業をしていた際、<strong>4,293件のメールを誤って消してしまっていた</strong>。加えて、作業の混乱の中でThunderbirdのローカルインポートフォルダ自体も誤って削除してしまい、復元の頼みの綱を一つ失った。</p>
+<p>幸い、Gmailの公式エクスポート機能(Google Takeout、<a href="/guides/google-photos-to-immich/">写真移行の記事</a>で使ったのと同じ機能)で取得していた元データ(zipファイル、Gmailの全メールをmbox形式(メールをまとめて1つのファイルに保存する一般的な形式)で含む)がゴミ箱に残っていた。これは「Thunderbirdの中間コピー」ではなく「Gmail公式のエクスポート原本」なので、むしろ最も確実な復旧元だった。</p>
+<p>Message-ID(メール1通ごとの一意な識別子、ヘッダーに必ず含まれる)単位で「Takeoutの原本」と「今iCloud側にあるメール」を突き合わせる復旧スクリプトを書き、欠落していたメールを復元した。最終的に、iCloudの1通あたりのサイズ上限を超えている(添付ファイルが大きい)ため原理的に復元不可能な2〜3件を除いて、ほぼ完全に復旧できた。</p>
+<p><strong>このとき得た一番の教訓</strong>: 大量データの移行を「件数がだいたい合っている」だけで完了と判断しない。Message-IDで突き合わせる方式が、確実に検証する唯一の方法だった。<strong>そしてGoogle Takeoutのような「移行元の公式エクスポート」は、移行作業が終わるまで絶対に消さないこと。</strong></p>
+<h2 id="step-5-移行後の後片付け">Step 5: 移行後の後片付け</h2>
+<p>Gmail側に<code>me@taikiito.com</code>への自動転送(Forwarding、Gmailの設定 → 「メール転送とPOP/IMAP」から設定できる)を設定し、移行後にGmail宛へ届く新着メールも自動的に新しいアドレスへ流れるようにした。Google Takeoutのバックアップzipは、Backblaze B2とNextcloudの両方に保存。この3点(バックアップ済み・移行件数の整合性確認済み・新着メールの転送設定済み)を確認したうえで、Gmail側の整理に着手した。</p>
+<p>整理は、GmailのAPI(他のプログラムからGmailを操作するための窓口)や管理画面からではなく、IMAP(前述の受信用の通信規格)を直接操作する自作スクリプトで、指定日より前の全メール(49,755件)をGmailの「ゴミ箱」フォルダへ移動する処理を実行した。Gmailのゴミ箱は30日後に自動で完全削除される仕組みなので、今のところ<strong>即座に完全削除したわけではなく、猶予期間を残した状態</strong>にしてある。この記事を書いている時点では、Gmail側のメールはゴミ箱送りまで完了しているが、<strong>Googleアカウント自体はまだ削除していない</strong>。しばらく<code>me@taikiito.com</code>側の運用が安定するのを見届けてから、次の判断(アカウント自体を消すかどうか)をするつもりでいる。</p>
+<h2 id="結果">結果</h2>
+<p><code>me@taikiito.com</code>が主メールとして定着し、日常的に使っている。途中でメールを実際に失いかけた一件は、この移行作業の中で一番肝を冷やした部分だったが、Google Takeoutで原本のバックアップを取っておいたことが最終的に救いになった。<strong>大量データを移す時は、移行先だけでなく移行元の生データも別途バックアップしておく</strong>、というのが今回一番強く実感した教訓だった。</p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: DNSレコードの実際の設定値・Thunderbirdのサーバー設定項目を追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item></channel></rss>

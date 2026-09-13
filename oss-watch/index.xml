@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>海外OSSウォッチ on Off-Grid</title><link>https://offgrid.taikiito.com/oss-watch/</link><description>Recent content in 海外OSSウォッチ on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sun, 13 Sep 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/oss-watch/index.xml" rel="self" type="application/rss+xml"/><item><title>「ヨーロッパからYahoo!ジャパンにアクセスできない」という話</title><link>https://offgrid.taikiito.com/oss-watch/eu-cant-see-yahoo-japan/</link><pubDate>Sun, 13 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/oss-watch/eu-cant-see-yahoo-japan/</guid><description>EUの法律(GDPR)が日本のサイトにまで影響している、という意外な事実から、普段どんな形で自分のデータが集められているかを整理する。海外OSSウォッチの第1回。</description><content:encoded><![CDATA[<p>海外OSSウォッチの第1回。特定のOSS(オープンソースソフトウェア、誰でも無料で使える公開されたソフト)の話ではなく、その前提にある「なぜ自分のデータを自分で守る必要があるのか」を、ちょっと意外な事実から整理する。</p>
+<ul>
+<li>EUの法律(GDPR)は、EU域外の会社にも適用される。そのせいで<strong>日本のサイトなのにヨーロッパから見られない</strong>、という現象が起きている</li>
+<li>制裁金の大きさに対応コストが見合わず、いっそアクセス自体を遮断するサイトがある、というのが正体</li>
+<li>GDPRがここまで厳しい理由は、普段自分たちが思っている以上に個人データが色々な形で収集されているから(Cookie・HTTPヘッダー・トラッキングピクセル・フィンガープリンティング)</li>
+</ul>
+<h2 id="ヨーロッパからyahooジャパンにアクセスできない">ヨーロッパからYahoo!ジャパンにアクセスできない</h2>
+<p>実は、EU(ヨーロッパ連合)域内からYahoo!ジャパンをはじめとする一部の日本のサイトにアクセスすると、ページが表示されずエラーになることがある。日本国内向けのサービスなのに、なぜヨーロッパからのアクセスがブロックされるのか。</p>
+<p>理由は、EUの<strong>GDPR</strong>(General Data Protection Regulation、EU一般データ保護規則、2018年施行)という法律にある。</p>
+<ul>
+<li>GDPRの特徴は、<strong>EU域内に住む人のデータを扱うなら、会社がどこの国にあっても関係なく従わなければならない</strong>という「域外適用」の考え方にある。Yahoo!ジャパンが日本の会社であっても、ヨーロッパの利用者のデータを一つでも扱う可能性がある以上、対象になりうる。</li>
+<li>違反した場合の制裁金は大きい(最大で全世界売上の4%、または2,000万ユーロの高いほう)。対応コストも軽くない。</li>
+<li>そのため一部のサイト運営者は「対応するコストをかけるより、いっそヨーロッパからのアクセス自体を遮断してしまう」という判断をした。これが、日本のサイトなのにヨーロッパから見られない、という現象の正体になる。</li>
+</ul>
+<h2 id="なぜここまで厳しい法律が必要だったのか">なぜここまで厳しい法律が必要だったのか</h2>
+<p>「一つの地域の法律が、地球の反対側のサイトの振る舞いまで変えてしまう」という影響力の大きさもさることながら、興味深いのは<strong>そもそもなぜGDPRのような厳しい法律が必要になったのか</strong>という点にある。</p>
+<p>答えは単純で、<strong>普段自分たちが思っている以上に、色々な形で個人のデータが収集されているから</strong>だ。代表的なものを挙げてみる。</p>
+<ul>
+<li><strong>Cookie(クッキー)</strong> — サイトを訪れたときにブラウザに保存される小さなデータ。ログイン状態を保つような便利な用途もあるが、「どのサイトを、いつ、何回訪れたか」を追跡する目的でも使われる。特に複数のサイトをまたいで同じ広告会社のCookieが埋め込まれていると、自分では別々だと思っているサイト間の行動が、裏側では一つの記録として繋がってしまう。</li>
+<li><strong>HTTPヘッダー</strong> — ブラウザがサイトにアクセスするたびに自動で送っている、目に見えない付帯情報。使っているブラウザの種類・OS・言語設定などが含まれ、これだけでもある程度「どんな端末からのアクセスか」を絞り込める。</li>
+<li><strong>広告トラッキングピクセル</strong> — ページの中に埋め込まれた、1ピクセル(非常に小さいドット)サイズの目に見えない画像。表示された瞬間に「このメールが開封された」「このページが見られた」という情報が広告会社に送られる仕組み。メールの中に仕込まれていることも多い。</li>
+<li><strong>フィンガープリンティング(端末指紋)</strong> — 画面の解像度、インストール済みのフォント、GPUの種類など、一見無害な情報を何十個も組み合わせることで、Cookieを使わなくても「ほぼこの端末に間違いない」と特定してしまう技術。Cookieは自分で削除できるが、フィンガープリンティングは削除のしようがない分、対策が難しい。</li>
+</ul>
+<p>一つ一つは無害に見えても、これらを組み合わせると「どんなサイトを見て、何に興味を持ち、どんな生活パターンなのか」がかなり精密に浮かび上がってしまう。GDPRのような法律は、こうした裏側の仕組みに対して「本人の同意なく勝手にやるな」という歯止めをかけるために作られた。</p>
+<h2 id="このサイトのテーマとの繋がり">このサイトのテーマとの繋がり</h2>
+<p>このサイト(Off-Grid)では、Google PhotosをImmichに、Google DriveをNextcloudに、というように「自分のデータを自分の手元に置き直す」という話を中心に書いてきた。今回のGDPRの話は少し毛色が違うように見えるかもしれないが、根っこは同じだと思っている。</p>
+<p><strong>自分のデータがどこに、どんな形で置かれているか</strong>を意識するのが第一歩で、それは「クラウドに預けたファイルの置き場所」だけでなく、「普段何気なく使っているサイトが裏側でどんな情報を集めているか」も含めた話になる。Cookieやトラッキングピクセルのブロックは、ブラウザの設定や拡張機能(Firefoxの標準トラッキング防止機能や、後述するようなOSSの広告ブロッカーなど)である程度自衛ができる領域でもある。</p>
+]]></content:encoded></item><item><title>GoogleのChromeからOSSのFirefoxに移行した話</title><link>https://offgrid.taikiito.com/oss-watch/chrome-to-firefox/</link><pubDate>Sun, 13 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/oss-watch/chrome-to-firefox/</guid><description>ブラウザをGoogle ChromeからOSS(オープンソースソフトウェア)のFirefoxに乗り換えた記録。広告ブロックの効き目、複数端末での使い勝手、実際に困ったことまで正直に書く。海外OSSウォッチ第2回。</description><content:encoded><![CDATA[<p>海外OSSウォッチの第2回。ブラウザ自体をGoogle ChromeからOSS(オープンソースソフトウェア、誰でも無料で使える公開されたソフト)の<strong>Firefox</strong>に乗り換えた話を書く。</p>
+<ul>
+<li>Google Photos・Google Drive・Gmailだけでなく、<strong>普段使っているブラウザもGoogleのものだった</strong>、という気づきがきっかけ</li>
+<li>移行作業自体はインポート機能一発で数分、パスワードは元々Vaultwarden(自前ホスト)に一本化済みなので影響なし</li>
+<li>入れた拡張機能は2つだけ(uBlock Origin、Bitwarden)</li>
+<li>唯一の欠点は、アニメーションが少し滑らかでないこと。実用上は無視できるレベル</li>
+</ul>
+<h2 id="なぜ移行したか">なぜ移行したか</h2>
+<p>決め手は3つあった。</p>
+<ul>
+<li><strong>複数端末で同じ環境を使いたかった</strong> — 会社のパソコンにも自宅のパソコンにもFirefoxを入れられて、ブックマークや拡張機能をほぼ同じ状態で使い回せる。特定のOS・特定のメーカーに縛られない、という点はこのサイトのテーマ(データ主権)ともそのまま繋がる。</li>
+<li><strong>OSSへのリスペクト</strong> — Firefoxは非営利団体(Mozilla)が開発しているOSS。企業の一部門として広告収益が本業になっているGoogleのブラウザとは、そもそも立ち位置が違う。</li>
+<li><strong>広告ブロックの効き目</strong> — Chromeは、広告ブロック系の拡張機能の効き目を弱める新しい仕組み(Manifest V3という拡張機能の作り方のルール変更)に切り替わりつつある、という話を聞いていた。広告収益が本業のGoogleが作るブラウザである以上、広告ブロックとは利害が対立する構造にあるのは当然といえば当然だ。一方Firefoxは広告ブロックの効きが一番強いという評判を聞いていた。</li>
+</ul>
+<h2 id="実際にやったこと">実際にやったこと</h2>
+<p>移行作業自体はあっさり終わった。</p>
+<ul>
+<li>Firefoxの<strong>Chromeからのインポート機能</strong>(標準搭載)で、ブックマーク・履歴・保存されたパスワードをまとめて持ってきた。1件ずつ手作業で移す、ということはしていない。</li>
+<li>パスワードは元々、自前ホストの<strong>Vaultwarden</strong>(<a href="/guides/1password-to-vaultwarden/">パスワードを1PasswordからVaultwardenに移す</a>を参照)に一本化済みだったので、ブラウザ側の「保存されたパスワード」機能自体をほとんど使っていない。Bitwarden公式の拡張機能をFirefoxに入れて、そこからVaultwardenに繋いでいるだけ。</li>
+</ul>
+<h2 id="入れた拡張機能">入れた拡張機能</h2>
+<ul>
+<li><strong>uBlock Origin</strong> — 広告・トラッカーをブロックするOSSの拡張機能。前回の記事で触れたCookieやトラッキングピクセルへの直接的な対策になる。</li>
+<li><strong>Bitwarden</strong> — 自前のVaultwardenに接続するための拡張機能。</li>
+</ul>
+<p>今のところ入れているのはこの2つだけ。拡張機能を増やしすぎないほうが動作も軽く、管理もしやすい。</p>
+<h2 id="正直な感想">正直な感想</h2>
+<p>隠さずに書くと、Chromeに比べてアニメーションの滑らかさが若干劣ったり、動作がほんの少し重く感じる場面はある。ただし実用上気になるほどではなく、慣れの範囲だと感じている。広告ブロックの効きの強さや複数端末での使い勝手のほうが、この程度の差を補って余りある。</p>
+<h2 id="このサイトのテーマとの繋がり">このサイトのテーマとの繋がり</h2>
+<p>データの置き場所だけでなく、そこにアクセスする**入り口(ブラウザ)**もOSSに置き換えることで、「Googleに依存している面」をまた一つ減らせたと思っている。</p>
+]]></content:encoded></item></channel></rss>

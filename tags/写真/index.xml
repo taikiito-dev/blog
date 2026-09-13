@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>写真 on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E5%86%99%E7%9C%9F/</link><description>Recent content in 写真 on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sun, 13 Sep 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E5%86%99%E7%9C%9F/index.xml" rel="self" type="application/rss+xml"/><item><title>写真をGoogle PhotosからImmichに移す</title><link>https://offgrid.taikiito.com/guides/google-photos-to-immich/</link><pubDate>Mon, 24 Aug 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/google-photos-to-immich/</guid><description>Googleフォトの全データを自前サーバー(Immich)に移行した時の記録。docker-composeでのImmich構築、immich-goの実際のコマンド、Takeoutの分割zipで踏んだ罠、本番実行の結果まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>Google Photosの全データ(3万件超、約119GB)を自前サーバー上のImmichというソフトに移した記録。前回の版は「何をしたか」の日記だったが、今回は実際に打ったコマンドやファイルの中身まで含めて書き直した。<strong>この記事だけで、自分がやったのと同じ環境を一から再現できることを目指している。</strong></p>
+<h2 id="前提-このガイドで想定している環境">前提: このガイドで想定している環境</h2>
+<p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
+<ul>
+<li>常時起動しているLinux環境(自分の場合はWindows機の中でWSL2〈Windows Subsystem for Linux 2、WindowsのなかでLinuxをそのまま動かす仕組み〉のUbuntu)</li>
+<li>Docker Engine(コンテナ、つまりソフトを隔離された箱に入れて動かす仕組み)と、そのおまけ機能である<code>docker compose</code>(複数のコンテナ設定をまとめて起動・停止するコマンド)が使える状態</li>
+<li>ターミナル(文字でコマンドを打ち込む黒い画面)の基本操作に抵抗がないこと</li>
+</ul>
+<p>GPU(グラフィック処理用の高性能な部品)は必須ではない。無くても写真の保管・閲覧は問題なくでき、違うのは顔認識やスマート検索(自然言語でのあいまい検索)の処理速度だけ。自分はたまたま手元にゲーミングPC(GeForce RTX 3070搭載)があったのでGPUを使う構成にした。GPUを使わない場合は、後述の「GPUを使う場合の追加設定」を丸ごと飛ばして進めて構わない。</p>
+<h2 id="step-1-immichをdocker-composeで動かす">Step 1: Immichをdocker-composeで動かす</h2>
+<p>まず作業用フォルダを作り、Immich公式が配布している設定ファイル一式をダウンロードする。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/immich <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/immich
+</span></span><span class="line"><span class="cl">curl -fL -o docker-compose.yml https://github.com/immich-app/immich/releases/latest/download/docker-compose.yml
+</span></span><span class="line"><span class="cl">curl -fL -o .env https://github.com/immich-app/immich/releases/latest/download/example.env
+</span></span><span class="line"><span class="cl">curl -fL -o hwaccel.ml.yml https://github.com/immich-app/immich/releases/latest/download/hwaccel.ml.yml
+</span></span></code></pre></div><p><strong>ここで一度ハマった</strong>: <code>curl</code>に<code>-L</code>(リダイレクト追従、GitHubのようにURLが転送される先でファイルを配っているサイトでは必須)を付け忘れて、中身が0バイトのファイルができてしまったことがあった。<code>-fL</code>(<code>-f</code>はエラー時に空ファイルを作らず失敗させる、<code>-L</code>はリダイレクト追従)の組み合わせで取り直して解決した。</p>
+<p>次に<code>.env</code>ファイルを編集する。最低限、以下の2点は必ず変更する。</p>
+<ul>
+<li><code>DB_PASSWORD</code> — デフォルトのままだと誰でも推測できるパスワードなので、自分だけの値に変更する</li>
+<li><code>UPLOAD_LOCATION</code> — 写真の実ファイルをどこに保存するかの場所。デフォルトの<code>./library</code>(このフォルダの中の<code>library</code>サブフォルダ)のままで問題ない</li>
+</ul>
+<p>セットアップ中に出てくる「Storage Template」という機能(保存されるファイルの命名・フォルダ構造を人間が読みやすい形に変える機能)は、オフのままにすることを勧める。写真の閲覧はどのみちImmichの画面経由が前提になるので、生ファイルの構造を人が読みやすくする必要性が薄いことと、後から有効化すると全件の再整理ジョブが走って重くなることが理由。</p>
+<p>準備ができたら起動する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker compose up -d
+</span></span><span class="line"><span class="cl">docker compose ps
+</span></span></code></pre></div><p><code>immich_server</code> / <code>immich_machine_learning</code> / <code>database</code>(PostgreSQL) / <code>redis</code>の4つのコンテナが<code>healthy</code>(正常稼働)と表示されれば成功。ブラウザで<code>http://localhost:2283</code>(自宅サーバーの場合はサーバーのIPアドレスに読み替える)を開き、管理者アカウントを作成する。</p>
+<h3 id="gpuを使う場合の追加設定任意">GPUを使う場合の追加設定(任意)</h3>
+<p>顔認識・スマート検索をGPUで高速に処理したい場合は、上記の<code>docker compose up -d</code>の前に以下を行う。</p>
+<ol>
+<li>WSL2からGPUが見えることを確認する: <code>nvidia-smi</code>(GPUの状態を表示するNVIDIA公式コマンド)を実行し、GPU名やドライバのバージョンが表示されればOK</li>
+<li>NVIDIA Container Toolkit(DockerコンテナからGPUを使えるようにする橋渡しソフト)を導入し、<code>nvidia-ctk runtime configure --runtime=docker</code>で設定を反映</li>
+<li><code>docker run --rm --gpus all ubuntu nvidia-smi</code>を実行し、コンテナの中からもGPUが見えることを確認する</li>
+<li><code>docker-compose.yml</code>の<code>immich-machine-learning</code>サービスを編集: イメージタグの末尾に<code>-cuda</code>を追加し、コメントアウトされている<code>extends: file: hwaccel.ml.yml / service: cuda</code>の行を有効化(元は<code>service: cpu</code>になっている行をコメントアウトし、<code>cuda</code>側を使う)</li>
+</ol>
+<p>この状態で<code>docker compose up -d</code>すれば、ログにCUDA関連のエラーが出ていないことを確認して完了。GPUを使わない場合はこの節をまるごと無視してよく、Immichは自動的にCPUで処理する。</p>
+<h2 id="step-2-取り込みツールimmich-goを導入する">Step 2: 取り込みツール<code>immich-go</code>を導入する</h2>
+<p>Immich公式のCLI(コマンドライン操作用ツール)である<code>immich upload</code>は<strong>使わない</strong>。理由は、Google Takeout(Googleのデータ一括エクスポート機能)でダウンロードした写真には、撮影日時やアルバム情報が入った<code>.json</code>という付属ファイル(サイドカーファイルと呼ばれる)が一緒に入っているが、公式CLIはこの<code>.json</code>を読まないため、<strong>アルバムの中身や正確な撮影日時が失われてしまう</strong>ため。</p>
+<p>代わりに使うのが、有志が開発した**<code>immich-go</code>**(自分が使ったのはv0.32.0、開発者はsimulot氏)というツール。Takeoutの<code>.json</code>サイドカーをちゃんと読んでアルバム・撮影日時・GPS情報を復元し、しかもzipファイルを展開せずそのまま読み込める(119GB分を解凍する広い置き場所を用意しなくていい)、重複した写真も自動で名寄せしてくれる。</p>
+<p>GitHubのリリースページから、自分のOS(今回はLinux/amd64)に合ったバイナリをダウンロードして展開し、実行権限を付ける。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -fL -o immich-go.tar.gz https://github.com/simulot/immich-go/releases/download/v0.32.0/immich-go_Linux_x86_64.tar.gz
+</span></span><span class="line"><span class="cl">tar -xzf immich-go.tar.gz
+</span></span><span class="line"><span class="cl">chmod +x immich-go
+</span></span></code></pre></div><p>(バージョンによって配布ファイル名やコマンドのオプション名が変わることがあるので、実行前に<code>./immich-go --help</code>で最新の使い方を確認するのを勧める。)</p>
+<p>Immich側の管理画面(Account Settings → API Keys)でAPIキーを1つ発行しておく。このキーを使ってimmich-goがImmichサーバーに写真をアップロードする。</p>
+<h2 id="step-3-google-takeoutで写真データをエクスポートする">Step 3: Google Takeoutで写真データをエクスポートする</h2>
+<p><a href="https://takeout.google.com">takeout.google.com</a>にアクセスし、「Google フォト」だけを選択してエクスポートを作成する。ファイル形式はzip、分割サイズは自分で選べる(容量が大きいとGoogleが複数のzipファイルに自動分割してくれる)。準備ができるとメールで通知が来て、ダウンロードページから一つずつ落としていく。</p>
+<p><strong>ここでも一度ハマった</strong>: 自分の場合は全部で12個に分割された(<code>takeout-...-001.zip</code>〜<code>-012.zip</code>)。ダウンロードし終わったつもりで作業を始めたら、<strong>途中の2つ(<code>-002</code>と<code>-003</code>)が抜けていた</strong>ことに後から気づいた。ダウンロードページに戻って抜けていた分だけ再取得し、連番が最後まで揃っていることを確認してから次に進んだ。件数が多いときは、連番が全部揃っているかを作業開始前に必ず確認するべき、という教訓。</p>
+<h2 id="step-4-長時間処理に備えてtmuxの中で作業する">Step 4: 長時間処理に備えて<code>tmux</code>の中で作業する</h2>
+<p>数万件・100GB超のアップロードは何時間もかかる処理になる。ターミナルの画面(WindowsならPowerShellやWSLの窓)を誤って閉じてしまうと処理も一緒に止まってしまうので、<strong><code>tmux</code></strong>(ターミナルの中に「もう一つの独立したターミナル」を作れるツール)のセッションの中で実行する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">tmux new -s immich-import
+</span></span></code></pre></div><p>これで新しいセッションに入る。ここから先の作業はこのセッションの中で行い、たとえ元のウィンドウを閉じても処理は裏側で動き続ける(再接続するには<code>tmux attach -t immich-import</code>)。</p>
+<h2 id="step-5-まず--dry-runで確認する">Step 5: まず<code>--dry-run</code>で確認する</h2>
+<p>いきなり本番実行するのは怖いので、実際には何もアップロードせず結果だけ教えてくれる<code>--dry-run</code>オプションを付けて試す。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">./immich-go upload from-google-photos <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --server<span class="o">=</span>http://localhost:2283 <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --api-key<span class="o">=</span>&lt;Step2で発行したAPIキー&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --dry-run <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/Downloads/takeout-*.zip
+</span></span></code></pre></div><p>自分の場合の出力はこうだった。</p>
+<pre tabindex="0"><code>Total Assets: 32218
+Associated metadata: 32211
+Missing metadata: 7
+Errors: 0
+</code></pre><p>3万2千件のうち、日付やアルバム情報(メタデータ)が紐づかなかったのはわずか7件、エラーはゼロ。この結果を見て「時系列が全部壊れる」ような大事故にはならなさそうだと判断し、<code>--include-unmatched</code>(メタデータが無い写真も強引に取り込むオプション)は付けずに本番実行することにした。</p>
+<h2 id="step-6-本番実行">Step 6: 本番実行</h2>
+<p><code>--dry-run</code>を外すだけで、実際のアップロードが始まる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">./immich-go upload from-google-photos <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --server<span class="o">=</span>http://localhost:2283 <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --api-key<span class="o">=</span>&lt;APIキー&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/Downloads/takeout-*.zip
+</span></span></code></pre></div><p>結果はこうだった。</p>
+<pre tabindex="0"><code>Uploaded successfully: 29408
+Metadata updated: 30794
+Discarded local duplicate: 1048
+Errors: 2
+Missing metadata: 7
+</code></pre><p>3万件近くが無事アップロードされ、1,048件は重複と判定されてスキップされた(むしろ取り込み過ぎを防いでくれるので助かる動き)。エラーは2件だけ。ログファイル(<code>~/immich-import.log</code>)を見ると、写真本体が消えたわけではなく、「アルバムを作れなかった(<code>failed to create album</code>)」「タグを付けられなかった(<code>failed to add assets to tag</code>)」といった付随的な失敗だけだった。</p>
+<h2 id="step-7-取り込み直後に焦った話バックグラウンドジョブの確認">Step 7: 取り込み直後に焦った話(バックグラウンドジョブの確認)</h2>
+<p>取り込み後、Immichの管理画面で最近の写真に「Error」のようなマークが出ていて、一瞬「本体が壊れたか」と焦った。よく見ると、管理画面(Administration → Jobs)にサムネイル生成(Generate Thumbnails)・顔認識(Facial Recognition)・文字認識(OCR)といった**後処理(バックグラウンドジョブ)**がまだ大量に残っている状態だった。つまり、アップロード自体は終わっていても、Immich側の後片付け処理がまだ終わっていなかっただけ。数時間待って、これらのジョブがすべて完了したのを確認してから見直したら、表示は正常に戻っていた。<strong>取り込み直後に何かエラーっぽい表示が出ても、すぐパニックにならず、まずバックグラウンドジョブが終わっているか確認する</strong>、というのが得た教訓。</p>
+<h2 id="step-8-バックアップに追加する">Step 8: バックアップに追加する</h2>
+<p>写真ファイルだけをバックアップしても、アルバム構成・撮影日時の補正結果・顔認識結果はすべてPostgreSQL(Immichが使っているデータベース)の中に入っているため、<strong>データベースのバックアップも一緒に取らないと意味がない</strong>。自分は既存のバックアップスクリプト(<code>~/backup-scripts/backup-to-b2.sh</code>、Backblaze B2というオンラインストレージへ<code>rclone</code>で同期するもの)に以下の2つを追記した。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># データベースのダンプ</span>
+</span></span><span class="line"><span class="cl">docker compose -f ~/immich/docker-compose.yml <span class="nb">exec</span> -T database <span class="se">\
+</span></span></span><span class="line"><span class="cl">  pg_dumpall --clean --if-exists --username<span class="o">=</span>postgres <span class="p">|</span> gzip &gt; /tmp/immich-db.sql.gz
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 写真本体の同期(サムネイルと変換済み動画はImmichが再生成できるので除外する)</span>
+</span></span><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/immich/library <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/immich/library&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --exclude <span class="s2">&#34;thumbs/**&#34;</span> --exclude <span class="s2">&#34;encoded-video/**&#34;</span>
+</span></span></code></pre></div><p><strong>注意点が2つ</strong>。1つ目は、<code>thumbs/</code>と<code>encoded-video/</code>(Immichが自動生成する派生ファイル)を除外しないと、バックアップ容量が無駄に膨らむこと。2つ目は、119GBのような大容量を初回にいきなり日次の自動実行(cron)に任せると、家庭のインターネット回線の上り速度によっては半日〜丸1日かかってしまい、日中の回線を占有してしまうこと。初回だけは<code>--bwlimit</code>(転送速度の上限を指定するオプション)を付けて手動で実行し、完了を確認してから自動実行に組み込むことを勧める。</p>
+<h2 id="結果と現状の進捗">結果と現状の進捗</h2>
+<p>ブラウザでImmichを開いて確認したところ、昔の写真もちゃんと時系列順に並んでいた。「日付が全部壊れた」ような状態にはならず、実用上問題のない移行ができたと判断している。</p>
+<p>2026-09-12時点の進捗として追記すると、Google Photosからの移行は完了しているが、実はiPhone側の「iCloud写真」はまだオンのままで、GoogleとImmich・iCloudの3箇所に同時保存されている状態が続いている。写真の管理元を完全にImmich一本にするには、(1)しばらくImmichと並行運用して安定を確認、(2)iPhoneの「iCloud写真」をオフにして以降はImmichアプリの自動バックアップだけに切り替え、(3)必要ならiCloudのストレージプランを見直す、という手順が残っている。Apple純正の「写真」アプリ自体をやめるつもりはなく、OS標準のビューア・共有機能としては使い続け、バックアップ・データの主管をImmichに置く役割分担にする方針。この手順は急がず進める予定で、実施したらここに追記する。</p>
+<p>次は、同じ考え方でGoogle Driveのファイルを移した話。→ <a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-08-24: 初版 / 2026-09-12: 「現状の進捗」を追記(iCloud写真トグルOFF化の計画) / 2026-09-13: docker-composeでのImmich構築・immich-goの実コマンド・バックアップスクリプトの追記まで、再現可能なレベルに全面書き直し</p>
+]]></content:encoded></item></channel></rss>

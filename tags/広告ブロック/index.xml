@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>広告ブロック on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E5%BA%83%E5%91%8A%E3%83%96%E3%83%AD%E3%83%83%E3%82%AF/</link><description>Recent content in 広告ブロック on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sun, 13 Sep 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E5%BA%83%E5%91%8A%E3%83%96%E3%83%AD%E3%83%83%E3%82%AF/index.xml" rel="self" type="application/rss+xml"/><item><title>GoogleのChromeからOSSのFirefoxに移行した話</title><link>https://offgrid.taikiito.com/oss-watch/chrome-to-firefox/</link><pubDate>Sun, 13 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/oss-watch/chrome-to-firefox/</guid><description>ブラウザをGoogle ChromeからOSS(オープンソースソフトウェア)のFirefoxに乗り換えた記録。広告ブロックの効き目、複数端末での使い勝手、実際に困ったことまで正直に書く。海外OSSウォッチ第2回。</description><content:encoded><![CDATA[<p>海外OSSウォッチの第2回。ブラウザ自体をGoogle ChromeからOSS(オープンソースソフトウェア、誰でも無料で使える公開されたソフト)の<strong>Firefox</strong>に乗り換えた話を書く。</p>
+<ul>
+<li>Google Photos・Google Drive・Gmailだけでなく、<strong>普段使っているブラウザもGoogleのものだった</strong>、という気づきがきっかけ</li>
+<li>移行作業自体はインポート機能一発で数分、パスワードは元々Vaultwarden(自前ホスト)に一本化済みなので影響なし</li>
+<li>入れた拡張機能は2つだけ(uBlock Origin、Bitwarden)</li>
+<li>唯一の欠点は、アニメーションが少し滑らかでないこと。実用上は無視できるレベル</li>
+</ul>
+<h2 id="なぜ移行したか">なぜ移行したか</h2>
+<p>決め手は3つあった。</p>
+<ul>
+<li><strong>複数端末で同じ環境を使いたかった</strong> — 会社のパソコンにも自宅のパソコンにもFirefoxを入れられて、ブックマークや拡張機能をほぼ同じ状態で使い回せる。特定のOS・特定のメーカーに縛られない、という点はこのサイトのテーマ(データ主権)ともそのまま繋がる。</li>
+<li><strong>OSSへのリスペクト</strong> — Firefoxは非営利団体(Mozilla)が開発しているOSS。企業の一部門として広告収益が本業になっているGoogleのブラウザとは、そもそも立ち位置が違う。</li>
+<li><strong>広告ブロックの効き目</strong> — Chromeは、広告ブロック系の拡張機能の効き目を弱める新しい仕組み(Manifest V3という拡張機能の作り方のルール変更)に切り替わりつつある、という話を聞いていた。広告収益が本業のGoogleが作るブラウザである以上、広告ブロックとは利害が対立する構造にあるのは当然といえば当然だ。一方Firefoxは広告ブロックの効きが一番強いという評判を聞いていた。</li>
+</ul>
+<h2 id="実際にやったこと">実際にやったこと</h2>
+<p>移行作業自体はあっさり終わった。</p>
+<ul>
+<li>Firefoxの<strong>Chromeからのインポート機能</strong>(標準搭載)で、ブックマーク・履歴・保存されたパスワードをまとめて持ってきた。1件ずつ手作業で移す、ということはしていない。</li>
+<li>パスワードは元々、自前ホストの<strong>Vaultwarden</strong>(<a href="/guides/1password-to-vaultwarden/">パスワードを1PasswordからVaultwardenに移す</a>を参照)に一本化済みだったので、ブラウザ側の「保存されたパスワード」機能自体をほとんど使っていない。Bitwarden公式の拡張機能をFirefoxに入れて、そこからVaultwardenに繋いでいるだけ。</li>
+</ul>
+<h2 id="入れた拡張機能">入れた拡張機能</h2>
+<ul>
+<li><strong>uBlock Origin</strong> — 広告・トラッカーをブロックするOSSの拡張機能。前回の記事で触れたCookieやトラッキングピクセルへの直接的な対策になる。</li>
+<li><strong>Bitwarden</strong> — 自前のVaultwardenに接続するための拡張機能。</li>
+</ul>
+<p>今のところ入れているのはこの2つだけ。拡張機能を増やしすぎないほうが動作も軽く、管理もしやすい。</p>
+<h2 id="正直な感想">正直な感想</h2>
+<p>隠さずに書くと、Chromeに比べてアニメーションの滑らかさが若干劣ったり、動作がほんの少し重く感じる場面はある。ただし実用上気になるほどではなく、慣れの範囲だと感じている。広告ブロックの効きの強さや複数端末での使い勝手のほうが、この程度の差を補って余りある。</p>
+<h2 id="このサイトのテーマとの繋がり">このサイトのテーマとの繋がり</h2>
+<p>データの置き場所だけでなく、そこにアクセスする**入り口(ブラウザ)**もOSSに置き換えることで、「Googleに依存している面」をまた一つ減らせたと思っている。</p>
+]]></content:encoded></item></channel></rss>

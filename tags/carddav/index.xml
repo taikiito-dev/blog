@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>CardDAV on Off-Grid</title><link>https://offgrid.taikiito.com/tags/carddav/</link><description>Recent content in CardDAV on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sun, 13 Sep 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/carddav/index.xml" rel="self" type="application/rss+xml"/><item><title>連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</title><link>https://offgrid.taikiito.com/guides/icloud-google-to-nextcloud-contacts-calendar/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-google-to-nextcloud-contacts-calendar/</guid><description>iCloud連絡先81件・Google連絡先553件をNextcloud Contactsへ、Googleカレンダーの個人予定232件をNextcloud Calendarへ移した記録。アプリパスワードの発行方法、CalDAV/CardDAVへ直接PUTする実際のコマンドまで書いた。</description><content:encoded><![CDATA[<p>連絡先とカレンダーを、Nextcloudの標準機能(Contacts・Calendar)に一本化した記録。すでにファイル(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)で使っていたNextcloudに機能を足すだけなので、新しいサーバーを立てる作業は無かった。件数が多かった分、Web UIのインポート機能が信頼できず、結局CalDAV(カレンダーの同期方法を定めた業界標準規格)・CardDAV(連絡先の同期方法を定めた業界標準規格)という仕組みへ直接データを送り込む方式に切り替えることになった。</p>
+<h2 id="前提">前提</h2>
+<p>すでにNextcloudが動いていることを前提にする。まだの場合は先に<a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a>を読んでほしい。</p>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>連絡先はiCloudとGoogleの両方に分散していた。カレンダーは個人の予定をGoogleカレンダーで管理していた。どちらも「今後もGoogle/Appleに預け続けるほどの理由がない」データなので、ファイルや写真と同じ流れでNextcloudに集約することにした。同期方式は特定の会社に縛られない業界標準の規格(CardDAV・CalDAV)なので、Mac標準の「連絡先」「カレンダー」アプリやiPhoneからもそのまま繋げられる。</p>
+<h2 id="step-1-nextcloudのアプリパスワードを発行する">Step 1: Nextcloudのアプリパスワードを発行する</h2>
+<p>まず、CardDAV/CalDAV経由でアクセスするための専用パスワードを発行する。Nextcloud本体のログインパスワードをそのまま外部アプリに渡すのは避け、用途ごとに無効化できる「アプリパスワード」を使うのが基本。</p>
+<p>Nextcloudの画面右上のアイコン → <strong>個人設定(Personal settings)</strong> → <strong>セキュリティ(Security)</strong> → 「新しいアプリパスワードを作成」から、名前(例: <code>contacts-migration</code>)を付けて発行する。表示されたパスワードは、この画面を閉じると二度と表示されないので、一時的にメモしておく。</p>
+<h2 id="step-2-連絡先をエクスポートする633件">Step 2: 連絡先をエクスポートする(633件)</h2>
+<p>Google連絡先553件・iCloud連絡先81件を、それぞれvCard形式(連絡先データの標準的なファイル形式、拡張子<code>.vcf</code>)で書き出す。</p>
+<ul>
+<li><strong>Google連絡先</strong>: <a href="https://contacts.google.com">contacts.google.com</a> → 左メニュー「エクスポート」→ vCard形式を選択</li>
+<li><strong>iCloud連絡先</strong>: <a href="https://icloud.com">icloud.com</a> → 連絡先 → 全て選択 → 右下の歯車アイコン → 「vCardを書き出す」</li>
+</ul>
+<p>重複1件を除いた633件を、まとめた1つの<code>.vcf</code>ファイルにしておく(vCard形式は複数の連絡先を1ファイルに連結できる)。</p>
+<h2 id="step-3-carddavへ直接putする">Step 3: CardDAVへ直接PUTする</h2>
+<p>Nextcloud Web UI(ブラウザ上の管理画面)の「連絡先をインポート」機能も試したが、件数が多いと不安定だったため、CardDAVのエンドポイント(データの送り先URL)へ、1件ずつ<code>PUT</code>(データをサーバーへ送り込む処理)する方式に切り替えた。</p>
+<p>まず、まとめた<code>.vcf</code>ファイルを連絡先1件ずつのファイルに分割する(Pythonの<code>vobject</code>ライブラリや、<code>csplit</code>のようなテキスト分割コマンドで、<code>BEGIN:VCARD</code>〜<code>END:VCARD</code>の区切りごとに切り出す)。分割できたら、1件ずつ以下のようにアップロードする。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -u <span class="s2">&#34;admin:&lt;Step1のアプリパスワード&gt;&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  -X PUT <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --data-binary @contact-001.vcf <span class="se">\
+</span></span></span><span class="line"><span class="cl">  -H <span class="s2">&#34;Content-Type: text/vcard; charset=utf-8&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.taikiito.com/remote.php/dav/addressbooks/users/admin/contacts/contact-001.vcf&#34;</span>
+</span></span></code></pre></div><p>これを633件分、シェルスクリプトの<code>for</code>ループなどで繰り返す。1件ずつリソースとしてサーバーに送り込む地道なやり方だが、Web UIのインポートより確実に反映される。</p>
+<h2 id="step-4-macで連絡先を同期する">Step 4: Macで連絡先を同期する</h2>
+<p>Macの「連絡先」アプリ → 環境設定 → アカウント → 「アカウントを追加」→「他のアカウント」→「CardDAVアカウントを追加」。</p>
+<p>ここでハマったポイントがある。macOSは通常、サーバーアドレスを短く入力するだけで<code>.well-known/carddav</code>という決まったパスへ自動でアクセスし、正しいCardDAVのURLへリダイレクトしてくれる仕組みになっている。ところが、Cloudflare経由のリダイレクト処理の影響で、この自動検出がうまく機能しなかった。</p>
+<p><strong>解決策</strong>: サーバーアドレスの欄に、自動検出用の短いURL(<code>drive.taikiito.com</code>)ではなく、以下のフルパスを直接入力する。</p>
+<pre tabindex="0"><code>https://drive.taikiito.com/remote.php/dav/principals/users/admin/
+</code></pre><p>ユーザー名は<code>admin</code>(Nextcloudのユーザー名)、パスワードはStep 1で発行したアプリパスワードを使う。iPhoneの「連絡先」アプリでも同じ設定項目がある。</p>
+<h2 id="step-5-カレンダーの移行232件">Step 5: カレンダーの移行(232件)</h2>
+<p>個人用のGoogleカレンダーに入っていた予定(2019〜2029年、232件)をNextcloud Calendarの「Personal」カレンダーへ移す。</p>
+<p>まず<a href="https://calendar.google.com">calendar.google.com</a>の設定画面から、対象のカレンダーを<code>.ics</code>ファイル(カレンダーの予定データをやり取りするための標準的なファイル形式)としてエクスポートする。</p>
+<p>最初はNextcloud Web UIの「カレンダーをインポート」機能で<code>.ics</code>ファイルをそのまま読み込ませようとしたが、「could not be parsed」(うまく読み取れなかった、というエラーメッセージ)というエラーで通らなかった。<code>.ics</code>ファイルの行折り返し(RFC5545というカレンダーデータの技術仕様で決められたルール)を手直ししても解決しなかったため、連絡先と同じくCalDAVへ直接PUTする方式に切り替えた。</p>
+<p><code>.ics</code>ファイルを1イベントずつに分割し(<code>BEGIN:VEVENT</code>〜<code>END:VEVENT</code>の区切りで切り出す)、以下のようにアップロードする。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -u <span class="s2">&#34;admin:&lt;アプリパスワード&gt;&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  -X PUT <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --data-binary @event-001.ics <span class="se">\
+</span></span></span><span class="line"><span class="cl">  -H <span class="s2">&#34;Content-Type: text/calendar; charset=utf-8&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.taikiito.com/remote.php/dav/calendars/users/admin/personal/event-001.ics&#34;</span>
+</span></span></code></pre></div><p>232件全てこの方式でアップロードしたところ、全て成功した。反映を確認したうえで、Google Calendar側の元データは削除した。ただし、妻と共有しているカレンダーはGoogleに残す判断にした(相手がGoogle前提で使っているため)。ファイル移行の時の「移す理由が移さない理由に勝つものだけ移す」という基準を、ここでも踏襲した形だ。</p>
+<h2 id="つまづいた所">つまづいた所</h2>
+<p><strong>1. Web UIの一括インポートは大量データに弱い</strong>: 連絡先・カレンダーともに、NextcloudのWeb UIインポート機能は件数が多いと信頼できなかった。少数なら問題ないと思うが、数百件規模ならCalDAV/CardDAVへ直接PUTする方式を最初から選んだ方が早い、というのが今回の教訓。</p>
+<p><strong>2. <code>.well-known/carddav</code>のリダイレクトが失敗する</strong>: 上記Step 4の通り、自動検出をあきらめてフルパスを直接指定することで解決した。同じ症状はCalDAV側(<code>.well-known/caldav</code>)でも起こりうるので、うまくいかない場合は同じ対処(フルパス直接指定)を試すとよい。</p>
+<p>積み残しもある。祖父の命日のような毎年繰り返す予定は、Google側で表示されていた2025〜2029年分のインスタンスだけを削除しており、繰り返しルールそのもの(マスター)は消していない。2030年以降にまた自動で出現する可能性があるため、気になったら改めてGoogle Calendar側で対応する必要がある。また、Gmailにはフライトやレストランの予約確認メールを自動でGoogleカレンダーに追加してくれる機能があるが、これは自前のメール+Nextcloudカレンダーの組み合わせには存在しない、Google独自の仕組みで、メール・カレンダーのどちらか片方だけ移しても再現できない。同等の仕組みを自作するなら別プロジェクトになるので、今回は見送っている。</p>
+<h2 id="結果">結果</h2>
+<p>連絡先633件・カレンダー232件、どちらも移行完了。MacとiPhoneから、Google/iCloudの時とほぼ変わらない感覚で使えている。大量データの移行はWeb UIのインポートを過信せず、CalDAV/CardDAVへの直接PUTを検討するとよい、というのが一番の学びだった。</p>
+<p>次は、メモをJoplinに移そうとして、結局全部は移さなかった話。→ <a href="/guides/icloud-notes-to-joplin/">メモをiCloud NotesからJoplinに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: アプリパスワードの発行手順・実際のcurl PUTコマンドを追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item></channel></rss>

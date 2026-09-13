@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>ファイル on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB/</link><description>Recent content in ファイル on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sun, 13 Sep 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB/index.xml" rel="self" type="application/rss+xml"/><item><title>ファイルをGoogle DriveからNextcloudに移す</title><link>https://offgrid.taikiito.com/guides/google-drive-to-nextcloud/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/google-drive-to-nextcloud/</guid><description>Google Driveのファイルを自前サーバー(Nextcloud)に移行した時の記録。docker-composeでのNextcloud構築、Cloudflare Tunnelでの公開、rcloneでのバックアップ設定まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>Google Driveのファイルを自分のサーバー上のNextcloudというソフトに移した記録。前回の版は経緯中心だったので、今回は実際に使ったdocker-composeの設定内容やコマンドまで書き足した。<strong>この記事だけで、Nextcloudを自分のサーバーに構築するところまで再現できることを目指している。</strong></p>
+<h2 id="前提">前提</h2>
+<p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
+<ul>
+<li>常時起動しているLinux環境(Docker Engineが使える状態)</li>
+<li>自分名義のドメイン、およびCloudflare(無料プランで可)でそのドメインを管理していること</li>
+<li>Cloudflare Tunnel(<code>cloudflared</code>というソフトを使い、自宅のルーターの設定を一切いじらずに自宅サーバーを安全にインターネット公開する仕組み)がすでに動いている状態。導入手順は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を参照</li>
+</ul>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>写真をImmichに移した(<a href="/guides/google-photos-to-immich/">前の記事</a>)のと同じ理由で、Google Driveに置きっぱなしにしていたファイルも自分の手元に戻したいと思った。写真ほど量は多くない(実質100〜150MB程度)が、契約書や身分証のコピーなど「人に預けたくないもの」が混ざっていたのが動機だった。</p>
+<h2 id="step-1-nextcloudを選び全部は移さないと決めた">Step 1: Nextcloudを選び、全部は移さないと決めた</h2>
+<p>Google Driveの代わりになる自前ホスト型のソフトはいくつかある。今回は次の4つを比べた。</p>
+<ul>
+<li><strong>Nextcloud</strong> — ファイル同期に加えて、連絡先・カレンダー・メモアプリなど周辺機能が豊富。後から機能を足しやすい。</li>
+<li><strong>Seafile</strong> — ファイル同期に特化していて速いという評判だが、周辺機能はNextcloudほど無い。</li>
+<li><strong>Syncthing</strong> — サーバーを介さず端末同士が直接同期する仕組み。管理はシンプルだが、Google Driveのような「どこからでもブラウザで見る」用途には向かない。</li>
+<li><strong>Filestash</strong> — 既存のストレージ(自分のNASなど)にWeb UIを被せるツール。今回は土台のストレージ自体を新規に用意する必要があったので、ここでは選択肢から外れた。</li>
+</ul>
+<p>最終的に、**拡張性(今後、連絡先やカレンダーも同じ場所に集約したくなる見込みがあった)**を決め手にNextcloudにした。実際にこの後、<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先・カレンダーも同じNextcloudに移す</a>ことになったので、この判断は結果的に正しかった。</p>
+<p>写真の時は「全部Immichに取り込む」という単純な方針にしたが、Google Driveは事情が違った。中身を確認すると、自分のファイルの他に、家族と共有しているフォルダが2つ(iPhoneの体組成計・血圧データを自動書き出しする仕組みと、ビザ手続き関連の共有フォルダ)混ざっていた。この2つは「相手(連携先アプリや家族)がGoogle前提で動いている」ため、無理にNextcloudへ移すと連携が壊れる。<strong>移行の効果(データ主権が増える度合い)と、移すコスト・壊れるリスクを天秤にかけて、この2つはGoogle側に残すと決めた。</strong> 残りの自分専用ファイル(契約書などの<code>archive</code>フォルダ)だけをNextcloudに移した。</p>
+<h2 id="step-2-docker-composeでnextcloudを構築する">Step 2: docker-composeでNextcloudを構築する</h2>
+<p>作業用フォルダを作り、<code>docker-compose.yml</code>を用意する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/nextcloud <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/nextcloud
+</span></span></code></pre></div><p><code>docker-compose.yml</code>の中身(Nextcloud本体<code>app</code>と、データを整理して保存しておくデータベースソフト<code>db</code>〈MariaDB〉の2つのコンテナをセットで起動する構成):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">services</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">db</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">mariadb:11</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l">always</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">./db:/var/lib/mysql</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">environment</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_ROOT_PASSWORD=&lt;自分で決めた強力なパスワード&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_PASSWORD=&lt;自分で決めた強力なパスワード&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_DATABASE=nextcloud</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_USER=nextcloud</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">app</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">nextcloud:latest</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l">always</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="m">127.0.0.1</span><span class="p">:</span><span class="m">8081</span><span class="p">:</span><span class="m">80</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">links</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">db</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">./data:/var/www/html</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">environment</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_PASSWORD=&lt;自分で決めた強力なパスワード&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_DATABASE=nextcloud</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_USER=nextcloud</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_HOST=db</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">NEXTCLOUD_ADMIN_USER=admin</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">NEXTCLOUD_ADMIN_PASSWORD=&lt;自分で決めた強力なパスワード&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">NEXTCLOUD_TRUSTED_DOMAINS=drive.example.com</span><span class="w">
+</span></span></span></code></pre></div><p><code>ports</code>を<code>127.0.0.1:8081:80</code>(自分のマシンの中からしかアクセスできない設定)にしているのがポイント。外部への公開はこのあとCloudflare Tunnel経由で行うので、Nextcloud自体を直接インターネットに晒す必要はない。<code>NEXTCLOUD_TRUSTED_DOMAINS</code>には、実際に使う自分のドメイン(例: <code>drive.taikiito.com</code>)を入れる。</p>
+<p>起動する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker compose up -d
+</span></span><span class="line"><span class="cl">docker compose ps
+</span></span></code></pre></div><p><code>app</code>・<code>db</code>の2つが起動していることを確認したら、<code>http://localhost:8081</code>にアクセスして管理者アカウント(<code>NEXTCLOUD_ADMIN_USER</code>/<code>NEXTCLOUD_ADMIN_PASSWORD</code>で指定した内容)でログインできることを確認する。</p>
+<p><strong>Nextcloudの管理者ユーザー名は一度決めると後から変更できない</strong>ので、<code>admin</code>のような分かりやすい名前で最初から決めておくとよい。</p>
+<h2 id="step-3-cloudflare-tunnelで公開する">Step 3: Cloudflare Tunnelで公開する</h2>
+<p><code>/etc/cloudflared/config.yml</code>(Cloudflare Tunnelの設定ファイル)の<code>ingress</code>(どのドメイン宛のアクセスを、サーバー内のどのポートに転送するかのルール一覧)に、Nextcloud用の行を追記する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ingress</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">drive.taikiito.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http://localhost:8081</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># ...他のサービスの行がここに続く...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http_status:404</span><span class="w">
+</span></span></span></code></pre></div><p><strong>注意点</strong>: <code>service:</code>行のインデント(行頭の空白)は他の行と正確に揃えること。ここが1マスでもずれるとYAML(設定ファイルの記述形式)の解析エラーになり、Cloudflare Tunnel全体が落ちて他のサービスまで巻き込んで止まる、という事故を実際に経験している。編集後は<code>cloudflared tunnel ingress validate</code>で文法チェックしてから<code>sudo systemctl restart cloudflared</code>で反映するのが安全。</p>
+<p>DNS側は、Cloudflareの管理画面(またはAPI)で<code>drive</code>(サブドメイン部分)のCNAMEレコードを<code>&lt;トンネルID&gt;.cfargotunnel.com</code>に向ける。反映後、<code>https://drive.taikiito.com</code>でNextcloudのログイン画面が表示されれば成功。</p>
+<p><strong>Nextcloud特有の注意点</strong>: Nextcloud(内部でApacheというソフトを使っている)は、自分がHTTPS経由でアクセスされていることを正しく認識できないと、ログイン後に無限リダイレクトを起こすことがある。Cloudflare Tunnelは末端(サーバーとの接続)を暗号化しないHTTP接続で待ち受けるため、この設定が必要になる場合がある。症状が出た場合は、Nextcloudの<code>config/config.php</code>に以下を追記して回避する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-php" data-lang="php"><span class="line"><span class="cl"><span class="s1">&#39;overwriteprotocol&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;https&#39;</span><span class="p">,</span>
+</span></span></code></pre></div><h2 id="step-4-macと同期する">Step 4: Macと同期する</h2>
+<p>ここからは、サーバーさえ用意できていれば誰でもできる部分。Google DriveにはMacの「Finder」(ファイル一覧の画面)に統合される専用アプリがあったが、Nextcloudにも同じような公式デスクトップアプリがある。これをインストールしてログインすると、Finder上にNextcloudのフォルダが表示され、Google Driveの時とほぼ同じ感覚でファイルを開いたり保存したりできる。同期は「全部」ではなく<strong>フォルダ単位で選べる</strong>。最初はNextcloudが用意するお試し用のサンプルフォルダ(Documents、Photos、Templatesなど)が並んでいたが、これは削除してよい。本物のデータが入っているのは、移行した<code>archive</code>フォルダだけだった。</p>
+<h2 id="step-5-バックアップを設定する">Step 5: バックアップを設定する</h2>
+<p>「移した先が壊れたら意味がない」ので、移行作業そのものと同じくらいバックアップ体制を大事にしている。<code>rclone</code>(色々なオンラインストレージをコマンドラインから操作できるツール)を使い、Backblaze B2という安価なオンラインストレージへ、Nextcloudのデータを毎日自動でコピーする設定にした。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># データベースのダンプ</span>
+</span></span><span class="line"><span class="cl">docker compose -f ~/nextcloud/docker-compose.yml <span class="nb">exec</span> -T db <span class="se">\
+</span></span></span><span class="line"><span class="cl">  mysqldump -u nextcloud -p&lt;パスワード&gt; nextcloud <span class="p">|</span> gzip &gt; /tmp/nextcloud-db.sql.gz
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ファイル本体の同期</span>
+</span></span><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/nextcloud/data <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/nextcloud/data&#34;</span>
+</span></span></code></pre></div><p>これを日次のcron(定期実行の仕組み)に登録しておけば、毎晩自動でバックアップが取られる。</p>
+<h2 id="つまづいた所積み残し">つまづいた所・積み残し</h2>
+<p><strong>9.68GBの謎</strong>: 作業の途中、Googleのストレージ画面で「Driveが9.68GB使用中」と表示されているのに気づいた。しかし実際に移行した中身は100〜150MB程度しかない。90倍以上の差があり、計算が全く合わなかった。調べてみると、以前どこかのタイミングで大きなファイルを削除した際、<strong>ゴミ箱を空にしていなかった</strong>可能性が濃厚だという所まで辿り着いた。Googleドライブのゴミ箱は自動では空にならず、手動で「ゴミ箱を空にする」を押さない限り容量を圧迫し続ける。ここは正直に書いておくと、<strong>この謎は最終的に自分の手では確認しきれず、保留のまま</strong>になっている。</p>
+<p><strong>家族との共有</strong>: Google Driveで便利だったことの一つに、家族とのフォルダ共有がある。Nextcloudでも同じことは可能で、家族専用アカウントを作って権限を細かく設定する方法と、アカウント不要のリンク共有で手軽に済ませる方法の2通りがある。これは記事執筆時点でまだどちらにするか決めきれていない、<strong>現在進行系の課題</strong>として正直に残しておく。</p>
+<h2 id="結果">結果</h2>
+<p>自分専用のファイルはNextcloud経由でMacからGoogle Driveと変わらない感覚で使えるようになった。家族共有フォルダ2つは「無理に移さない」という判断のままGoogleに残っており、これはこれで納得している状態。</p>
+<p>次は、同じNextcloudに連絡先とカレンダーも集約した話。→ <a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item></channel></rss>
