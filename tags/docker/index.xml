@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Docker on Off-Grid</title><link>https://offgrid.taikiito.com/tags/docker/</link><description>Recent content in Docker on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sun, 13 Sep 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/docker/index.xml" rel="self" type="application/rss+xml"/><item><title>自分の「サーバー」を持つとはどういうことか</title><link>https://offgrid.taikiito.com/guides/self-hosting-basics/</link><pubDate>Sun, 13 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/self-hosting-basics/</guid><description>他のガイドは実は『自分のサーバーが既にある』前提で書かれている。ターミナルもDockerも触ったことがない人向けに、サーバーとは何か、レンタルと自前どちらを選ぶべきか、実際に自分が何をしたかを説明する、このサイトの本当の出発点。</description><content:encoded><![CDATA[<p>正直に告白すると、<a href="/guides/google-photos-to-immich/">写真の移行</a>や<a href="/guides/google-drive-to-nextcloud/">ファイルの移行</a>など、他のガイドはすべて「ImmichやNextcloudが動くサーバーが、自分の手元に既にある」という前提で書かれている。ターミナル(文字を打ち込んで操作する黒い画面)を開いたこともない人がいきなりあの記事を読んでも、何をどこから始めればいいのか分からないはずだ。指摘を受けて、そこが一番の土台なのに書いていなかったことに気づいた。この記事は、その土台の話をする。</p>
+<h2 id="そもそもサーバーとは何か">そもそも「サーバー」とは何か</h2>
+<p>普段使っているパソコンやスマホは、使う時だけ電源を入れて、使い終わったら閉じたり寝かせたりする。<strong>サーバーとは、それと逆で、24時間365日ずっと電源が入っていて、インターネットの向こう側からいつでもアクセスできる状態のコンピュータ</strong>のことだ。</p>
+<p>Google Photosも、Gmailも、実態は「Googleが管理する巨大なサーバー群」に自分のデータを預けて、そこに常時アクセスしている状態にすぎない。「データ主権を取り戻す」とは、この「常時アクセスできる置き場所」を、Google任せではなく自分の管理下に置き換える、ということだ。そのためには、自分の管理下にある「常時起動しているコンピュータ」、つまり自分のサーバーが要る。</p>
+<h2 id="サーバーを持つ2つの道">サーバーを持つ2つの道</h2>
+<p>サーバーを持つには、大きく2つの選び方がある。</p>
+<p><strong>① レンタルサーバー(VPS)を借りる</strong> — 月額数百円〜数千円で、どこかのデータセンターにあるコンピュータの一部を間借りする方式。AWS Lightsail、さくらのVPS、カゴヤ CLOUD VPSなどが有名どころ。自分で機械を持たなくていい代わりに、月額費用がずっとかかり続ける。</p>
+<p><strong>② 自分の手元にあるPCを使う(自宅サーバー)</strong> — 使っていない古いPCや、ゲーミングPCのような性能の高いPCを、24時間つけっぱなしにして使う方式。初期投資(電気代はかかる)以外の追加費用がかからない代わりに、電源やネット回線が落ちたらサービスも止まる、という自己責任になる。</p>
+<p>自分は最初、AWS LightsailというVPSを使っていたが、途中で②の自宅サーバー(使っていたゲーミングPC)に切り替えた。理由は、写真管理ソフト(Immich)の顔認識機能がGPU(画像処理用の高性能な部品)を使うと速く動くのに、一般的なVPSにはGPUオプションが無いか、あっても高額だったため。自宅のゲーミングPCには既にGPUが載っていたので、それをそのまま活用できるほうが合理的だった。加えて、VPSの月額費用も浮いた。</p>
+<p><strong>とはいえ、どちらが正解ということはない。</strong> GPUを使う予定が無く、自宅に眠っているPCも無いなら、まずは安価なVPSを1つ借りるところから始めるほうが手軽だと思う。自分の場合はたまたま条件が噛み合って②を選んだ、という話として読んでほしい。</p>
+<h2 id="自分がどうやってこの作業を進めているか">自分がどうやってこの作業を進めているか</h2>
+<p>このサイトのガイドは、自分がターミナルに一つ一つコマンドを手打ちして進めたわけではない。実際には<strong>Claude(AIアシスタント)に「こうしたい」と会話しながら指示を出し、実際のコマンド実行やファイル編集はClaude側にやってもらう</strong>、という進め方をしている。使っているのはMulmoClaude(自分がGitHub上で公開している、Claudeを使ったAIアシスタントの土台)というソフトで、これ自体の成り立ちは<a href="/posts/">開発日誌</a>に書いている。</p>
+<p>このMulmoClaude自体も、ここまでの話と同じ「自分のサーバー」の上で動いている。<strong>最初はAWS Lightsail(レンタルサーバー)の上で動かしていたが、Immichの顔認識をGPUで速く処理したいという理由で自宅のゲーミングPC(GALLERIA)に切り替えた時、Nextcloud・VaultwardenといったほかのサービスもろともMulmoClaude自体も一緒にGALLERIA側へ引っ越した。</strong> つまり今は、この文章を書いているAI自身も含めて、全部が同じ自宅の1台のPCの上で動いている状態になっている。</p>
+<p>なので、このサイトの文章の「自分がやった」は、実際には「Claudeに頼んで、Claudeが実行した」を指していることがほとんどだと理解しておいてもらえればと思う。とはいえ、何をどうするかの判断・決断は全部自分がしているので、「作業の手を動かす部分をAIに任せている」くらいの温度感で読んでほしい。</p>
+<h2 id="出てくる専門用語を一通り">出てくる専門用語を一通り</h2>
+<p>ここから先のガイドで繰り返し出てくる言葉を、先にまとめて説明しておく。</p>
+<ul>
+<li><strong>ターミナル</strong> — マウスでクリックする代わりに、文字でコマンド(命令文)を打ち込んでコンピュータを操作するための画面。最初は怖く見えるが、実態は「決まった呪文を決まった場所にコピー&amp;ペーストするだけ」の作業がほとんどで、慣れの問題が大きい。</li>
+<li><strong>Docker(ドッカー)</strong> / <strong>docker-compose(ドッカーコンポーズ)</strong> — サーバー上でソフトを動かすための仕組み。1つ1つのソフトを「コンテナ」という隔離された箱に入れて動かすので、複数のソフトを同じサーバーに入れてもお互いが干渉しにくい。<code>docker-compose</code>は、その箱をいくつか組み合わせて一括で起動・停止するための設定ファイルの書き方。</li>
+<li><strong>ドメイン</strong> — <code>taikiito.com</code>のような、自分のサーバーにつける覚えやすい名前。年間数百円〜数千円で自分の名義で取得できる(自分はCloudflare Registrarで取得した)。</li>
+<li><strong>DNS</strong> — 「<code>taikiito.com</code>というドメインは、実際にはどのサーバーを指すか」をインターネット全体に教えるための、住所録のような仕組み。ドメインを取得したら、DNSの設定でどのサーバーに繋げるかを指定する。</li>
+<li><strong>Cloudflare Tunnel(クラウドフレア・トンネル)</strong> — 自宅のサーバーを、自宅のルーターの設定(ポート開放という、外から直接アクセスできる穴を開ける作業)をいじらずに、安全にインターネットへ公開するための仕組み。自分もこれを使っていて、ルーター側の設定は一切変更していない。ポート開放は誤って設定すると自宅のネットワーク全体が外部から丸見えになるリスクがあるため、この方式のほうが安心して扱える。</li>
+</ul>
+<p>これらのソフト自体は、すべて無料(OSS、オープンソースソフトウェア = 誰でも無料で使える公開されたソフト)で使える。かかる費用は基本的に「サーバー代(自宅の場合は電気代のみ)」と「ドメイン代(年数百円〜)」だけだ。</p>
+<h2 id="実際に手を動かす-最小構成でサーバーを1台立てる">実際に手を動かす: 最小構成でサーバーを1台立てる</h2>
+<p>ここから先は、自分が最初にやった手順そのままに、VPS(レンタルサーバー)でサーバーを1台立てるところまでを書く。<strong>自宅サーバー(Windows + WSL2)は環境依存が強すぎて万人向けに書き起こせないと判断し、まずは誰でも同じように再現できるVPSの手順に絞った。</strong> 自宅サーバーへの切り替えは、この記事の後半「自宅サーバーに切り替える場合」で触れる。</p>
+<h3 id="step-1-ドメインを取得する">Step 1: ドメインを取得する</h3>
+<p>まず自分のサーバーの「名前」になるドメインを取得する。自分は<a href="https://www.cloudflare.com/products/registrar/">Cloudflare</a>のRegistrar(ドメイン登録サービス)を使った。理由は、相場より安い実費に近い価格で提供されていて、WHOIS(ドメイン所有者情報)を公開しないプライバシー保護もデフォルトで付いてくるため。ダッシュボードの「Register a Domain」から、空いているドメイン名を選んで購入するだけで完了する。年間数百円〜数千円ほど。</p>
+<h3 id="step-2-vpsレンタルサーバーを契約する">Step 2: VPS(レンタルサーバー)を契約する</h3>
+<p>自分が最初に使ったのは<strong>AWS Lightsail</strong>、リージョンはシンガポール、OSはUbuntu(Linuxの一種)、**プランは月$7(メモリ1GB・2vCPU・SSD 40GB)**を選んだ。動画生成のような重い処理をする予定がなければ、この最小プランで十分動く。契約すると、そのサーバーの持ち主だけが入れる「IPアドレス」(サーバーの住所のようなもの)が発行される。</p>
+<p>VPSは他にもさくらのVPS・カゴヤ CLOUD VPS・DigitalOcean・Vultrなど選択肢は多い。自分がAWSを選んだ決め手は、シンガポール在住で近いリージョンが使えたのと、後々AWSの他サービス(バックアップ等)との連携がしやすそうだったため——ただしこの用途では正直どれを選んでも大差ない。</p>
+<h3 id="step-3-ターミナルからサーバーに接続しdockerを入れる">Step 3: ターミナルからサーバーに接続し、Dockerを入れる</h3>
+<p>契約すると、サーバーに接続するための「SSH鍵」(パスワードの代わりに使う、より安全な鍵ファイル)が発行される。ターミナル(黒い画面でコマンドを打ち込む操作)から、次のように接続する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">ssh -i 発行された鍵ファイル ubuntu@サーバーのIPアドレス
+</span></span></code></pre></div><p>接続できたら、Docker公式が配布しているインストールスクリプトを実行する。これ1行で、Dockerと<code>docker compose</code>がまとめて入る。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -fsSL https://get.docker.com <span class="p">|</span> sh
+</span></span><span class="line"><span class="cl">sudo usermod -aG docker <span class="nv">$USER</span>
+</span></span></code></pre></div><p>(2行目は、<code>sudo</code>〈管理者権限で実行〉を毎回付けなくてもDockerコマンドが使えるようにするおまじない。一度ログアウトしてから入り直すと反映される。)</p>
+<h3 id="step-4-cloudflare-tunnelでサーバーを安全に公開する">Step 4: Cloudflare Tunnelでサーバーを安全に公開する</h3>
+<p>サーバーは立ったが、まだ<code>taikiito.com</code>のようなドメインからはアクセスできない。ここで前述の<strong>Cloudflare Tunnel</strong>を使う。取得したドメインをCloudflareのネームサーバーに切り替えた上で(Cloudflareのダッシュボードの指示通りに進めれば数クリックで終わる)、サーバー側で次を実行する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># cloudflaredをインストール</span>
+</span></span><span class="line"><span class="cl">curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+</span></span><span class="line"><span class="cl">sudo dpkg -i cloudflared.deb
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Cloudflareアカウントと連携(ブラウザが開くのでログインする)</span>
+</span></span><span class="line"><span class="cl">cloudflared tunnel login
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># トンネルを作成(名前は自分で決める。ここでは仮に my-server)</span>
+</span></span><span class="line"><span class="cl">cloudflared tunnel create my-server
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ドメインとトンネルを紐付ける</span>
+</span></span><span class="line"><span class="cl">cloudflared tunnel route dns my-server example.taikiito.com
+</span></span></code></pre></div><p>最後に、どのURLへのアクセスをサーバー内のどのポートに転送するかを設定ファイル(<code>~/.cloudflared/config.yml</code>)に書く。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">tunnel</span><span class="p">:</span><span class="w"> </span><span class="l">my-server</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="nt">credentials-file</span><span class="p">:</span><span class="w"> </span><span class="l">/home/ubuntu/.cloudflared/&lt;トンネルID&gt;.json</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="nt">ingress</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">example.taikiito.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http://localhost:8080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http_status:404</span><span class="w">
+</span></span></span></code></pre></div><p>再起動しても自動で動き続けるよう、サービス化しておく。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo cloudflared service install
+</span></span></code></pre></div><p>ここまでできれば、あとはサーバー内の<code>localhost:8080</code>(上の設定例のポート番号)で何かソフトを動かせば、<code>https://example.taikiito.com</code>からアクセスできるようになる。ルーターのポート開放(外から直接アクセスできる穴を開ける、事故ると危険な設定)を一切いじらずに済むのがこの方式の利点。</p>
+<h3 id="step-5-動作確認">Step 5: 動作確認</h3>
+<p>具体的に何かソフトを動かして確認したい場合は、このサイトの次のガイド(<a href="/guides/google-photos-to-immich/">写真をGoogle PhotosからImmichに移す</a>)がそのままStep 6以降の実例になる——<code>docker-compose.yml</code>を書いてImmichを起動し、上のingress設定のポート番号をImmichのポートに合わせれば、そのまま公開まで到達できる。</p>
+<h2 id="自宅サーバーに切り替える場合">自宅サーバーに切り替える場合</h2>
+<p>自分は後になって、AWS Lightsail(VPS)から自宅のゲーミングPC(自宅サーバー)に切り替えた。理由は前述の通りGPU(画像処理用の高性能な部品)を使いたかったのと、月額費用を浮かせたかったため。ただしこの切り替えは、Windows PCの中でLinuxを動かす「WSL2」という仕組みや、再起動時の自動起動設定など、環境固有のハマりどころが多く、万人向けの手順としてはまだ書き起こせていない。GPUを使う予定がなければ、上記のVPS構成のままで十分運用できる。自宅サーバーへの興味がある場合は、今後別記事として書く予定。</p>
+<h2 id="正直な難易度感">正直な難易度感</h2>
+<p>ここまで読んで「思ったより大変そう」と感じたなら、その感覚は正しい。自分の場合も、自宅サーバーへの切り替えではWindowsとLinux(WSL2)の両方の知識が必要になったり、再起動のたびにサービスが自動で立ち上がらない不具合に何度も遭遇したりと、一筋縄ではいかない場面が何度もあった。上記のVPS手順自体はそこまで難しくないが、初めてターミナルを触る場合は1〜2時間はかかると思っておいてほしい。</p>
+<p>ただし、これは「一度整えてしまえば、あとはほぼ触らなくていい」類の作業でもある。土台さえできてしまえば、その後の<a href="/guides/google-photos-to-immich/">写真の移行</a>や<a href="/guides/1password-to-vaultwarden/">パスワードの移行</a>といった個別の作業は、ここまでの土台よりずっと軽い。</p>
+<h2 id="この先">この先</h2>
+<p>サーバーが立ち、ドメインからアクセスできる状態まで来たら、あとは個別のサービスを動かすだけ。まずは実際に何を移したかの記録から読んでもらえればと思う。→ <a href="/guides/google-photos-to-immich/">写真をGoogle PhotosからImmichに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-13: 初版 / 同日: 「自分がどうやってこの作業を進めているか」(MulmoClaude/Claudeの利用、Lightsail→GALLERIA移設)を追記 / 同日: VPS(AWS Lightsail)でのドメイン取得〜Docker〜Cloudflare Tunnelまでの具体的手順を追記</p>
+]]></content:encoded></item></channel></rss>
