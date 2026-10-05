@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Backblaze B2 on Off-Grid</title><link>https://offgrid.taikiito.com/tags/backblaze-b2/</link><description>Recent content in Backblaze B2 on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Mon, 05 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/backblaze-b2/index.xml" rel="self" type="application/rss+xml"/><item><title>バックアップを「消されても戻せる」形にする</title><link>https://offgrid.taikiito.com/guides/backup-ransomware-resistant/</link><pubDate>Thu, 01 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/backup-ransomware-resistant/</guid><description>毎晩クラウドへバックアップしていたが、サーバーが乗っ取られたらバックアップごと消されると気づいた。鍵の権限削減・削除が伝播しない複製バケット・サーバーの外で動く見張りの3層で、ハードウェアを増やさずに作り直した記録。踏んだ落とし穴も全部書いた。</description><content:encoded><![CDATA[<p>写真・パスワード・ファイルを自分のサーバーに集めたあと、毎晩クラウドストレージ(Backblaze B2)へバックアップを取る仕組みを作って安心していた。ところが鍵の権限を実際に調べてみたら、<strong>サーバーを乗っ取られた時点でバックアップも全部消せる状態</strong>だった。それを作り直した記録。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>常時起動しているLinux環境と、そこから<code>rclone</code>(いろいろなクラウドストレージへファイルを同期するコマンド)で日次バックアップを取っている状態</li>
+<li>バックアップ先はBackblaze B2(安価なオブジェクトストレージ。1GBあたり月$0.005前後)</li>
+<li>構築の土台は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a></li>
+</ul>
+<h2 id="何が問題だったか">何が問題だったか</h2>
+<p>心配していたのは<strong>ランサムウェア</strong>(侵入したうえでファイルを暗号化し、戻す鍵と引き換えに金銭を要求する攻撃)のような、サーバーを乗っ取られるケース。</p>
+<p>「B2側に30日間のバージョン保持(上書き・削除された古い版を30日間取っておく設定)があるから、仮に荒らされても戻せる」と考えていた。これが成立していなかった。</p>
+<p>サーバーに置いていたB2のアプリケーションキー(APIから操作するための鍵。権限を選んで発行できる)の権限を一覧してみると、18個の権限が付いていた。問題はこの3つ。</p>
+<ul>
+<li><code>deleteFiles</code> — ファイルの版そのものを完全削除できる</li>
+<li><code>writeBucketLifecycleRules</code> — ライフサイクルルール(古い版をいつ消すかの設定)を書き換えられる。「0日で消す」に変えれば30日の保持は即座に無意味になる</li>
+<li><code>writeBucketReplications</code> — 複製ルールを止められる</li>
+</ul>
+<p>つまり<strong>鍵を1本盗られたら、バックアップ本体も、それを守るはずの設定も、まとめて壊せる</strong>。実際に同期スクリプトが使っていたのは<code>listBuckets, listFiles, readFiles, writeFiles, deleteFiles</code>の5つだけで、残りは余分だった。</p>
+<p>もう1つ、根本的な制約を自分に課した。<strong>「予備のハードウェアをもう1台持つ」案は採らない</strong>。将来は拠点を移して身軽に暮らしたいと思っているので、機械を持ち続ける前提の設計にはしたくなかった。ハードウェア不要・手作業ゼロで回る形に限定して考えた結果、3層構成になった。</p>
+<h2 id="層0-鍵の権限を必要最小限にする">層0: 鍵の権限を必要最小限にする</h2>
+<p>まずサーバー上の鍵を、実際に使う5権限ちょうどの新しい鍵に差し替えた。</p>
+<p><strong>ここで分かった制約: B2のWeb管理画面の鍵発行UIでは権限を細かく選べない</strong>。「読み書き」のような粗い単位しかないので、<code>b2</code>コマンド(Backblaze公式のCLI = コマンドライン操作ツール)が必須になる。全権限を持つマスター鍵を扱う作業なので、サーバー上ではなく手元のPCから実行した。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">b2 account authorize
+</span></span><span class="line"><span class="cl">b2 key create --bucket &lt;バケット名&gt; &lt;鍵の名前&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl">  listBuckets,listFiles,readFiles,writeFiles,deleteFiles
+</span></span><span class="line"><span class="cl">b2 key list --long     <span class="c1"># 権限が5つちょうどか確認</span>
+</span></span><span class="line"><span class="cl">b2 key delete &lt;旧鍵のID&gt;
+</span></span></code></pre></div><ul>
+<li><strong><code>b2 account authorize</code>と<code>b2 key create</code>の出力は、どこにも貼り付けない</strong>。鍵の本体(パスワード相当の文字列)が含まれる。自分はこの作業中にターミナルの出力をそのままAIチャットに貼ってしまい、鍵が会話ログに残った。同日中にマスター鍵の再発行と露出した鍵の削除で無効化したので実害はなかったが、<strong>確認は<code>b2 key list --long</code>で行う</strong>のが正しい(鍵のIDと権限しか出さず、本体は出ない)。</li>
+<li><strong>鍵の状態確認はWeb管理画面を信じない</strong>。削除済みの鍵が残って見えたり、新規作成した鍵が出てこなかったりした。<code>b2 key list</code>を正とする。</li>
+</ul>
+<p>層0は次の層1と<strong>セット</strong>。層0をやらずに複製ルールだけ作っても、<code>writeBucketReplications</code>を持った鍵でルールごと止められてしまう。</p>
+<h2 id="層1-削除が伝播しない複製先を作る">層1: 削除が伝播しない複製先を作る</h2>
+<p>B2には<strong>Cloud Replication</strong>という、バケット(ストレージ上のフォルダのような入れ物)の内容を別のバケットへ自動複製する機能がある。決定的な仕様はこれ。</p>
+<blockquote>
+<p><strong>削除と hideマーカー(B2が「削除された」印として置く目印)は複製されない。</strong></p>
+</blockquote>
+<p>つまり複製先は、構造的に<strong>append-only</strong>(追加だけができて削除が伝わらない)なミラーになる。元のバケットでファイルが消されても、複製先には残り続ける。これがランサムウェア対策の本体になる。</p>
+<p>同一アカウント内の別バケットへの複製で十分と判断した。理由は、<strong>サーバー上の鍵は元のバケットに限定されているので、別バケットには構造的に届かない</strong>から。別アカウントが必須になるのは「別リージョンへ複製する場合」だけで、同一アカウント・同一リージョンの別バケットへの複製は普通にできる。別アカウント構成と差が出るのは「B2のログイン自体を乗っ取られた場合」と「リージョン障害」の2つだけで、前者は後述の2段階認証のほうが本質的な対策になる。</p>
+<p>複製元を読む鍵・複製先に書く鍵は<strong>B2が自動で2本発行し、どちらもB2の内部にしか存在しない</strong>(サーバー上に置かれない)。侵害経路にならないのがこの構成の強み。</p>
+<p>複製先のライフサイクル設定でUIに落とし穴が2つあった。</p>
+<ul>
+<li>🔴 <strong>「Keep only the last version」(最新の版だけ残す)を選んではいけない</strong>。上書き攻撃を受けた瞬間に正常な旧版が消え、複製先を用意した意味がなくなる。必ず<code>Use custom lifecycle rules</code>を選ぶ。</li>
+<li>🔴 <strong><code>Days Till Hide</code>は必ず空にする</strong>。ここに数字を入れると、現役のバックアップ本体が自動削除される。埋めるのは「古い版を何日後に消すか」の1箇所だけ。</li>
+</ul>
+<p>自分は<strong>古い版を180日で削除</strong>に設定した。毎晩上書きされるデータベースのダンプ(写真サーバー188MB + ファイルサーバー18MB + 認証サーバー13MB ≒ 日220MB)が積み上がって年80GB増える計算だったため。180日なら約40GBで頭打ちになる。<strong>保護が弱まるわけではない</strong>——削除は複製されないので消されたファイルには無関係で、上書き攻撃は次の層2が1週間以内に検知する。</p>
+<p>複製元141.5GB・118,503ファイルに対して、複製先は149.0GB・118,976ファイルで完了。<strong>複製先のほうが大きいのは設計どおり</strong>(元で消えた・上書きされたファイルが残り続けるので膨らむ)。初回コピーは数日かかった。</p>
+<ul>
+<li><strong>初回コピーの進捗はAPIでは測れない</strong>。B2が複製の状態フラグを付けるのはルール作成後に新規アップロードされたファイルだけで、既存ファイルの後追いコピー分は全件「未設定」のまま。進捗はWeb管理画面の複製先バケットのファイル数で見るしかない。</li>
+<li><strong>初回コピー完了を待つ必要はない</strong>(層2の判定は「減った/増えていない」なのでコピー中に誤報は出ない)。ただし<strong>ライフサイクル設定は初回コピー完了まで触らない</strong>——コピー中の変更は直後のファイルが消える危険があると公式ドキュメントに明記されている。</li>
+<li>コストは複製分で<strong>月$0.70</strong>。複製の転送料は無料。</li>
+</ul>
+<h2 id="層2-サーバーの外に見張りを置く">層2: サーバーの外に見張りを置く</h2>
+<p>複製が本当に続いているかを誰も見ていなければ、仕組みは静かに壊れる。そこで<strong>デッドマンスイッチ</strong>(定期的な生存信号が途絶えたら警報を出す仕掛け)を用意した。</p>
+<p>肝は<strong>サーバーの外で動かすこと</strong>。サーバー監視には別途Uptime Kumaを使っているが、これはサーバー自身の上で動いているので、<strong>サーバーごと死んだら自分の死を通報できない</strong>。</p>
+<p>実装はGitHub上の非公開リポジトリ1つ + <strong>GitHub Actions</strong>(GitHubが提供する、決めた時刻やイベントでスクリプトを自動実行する仕組み)。週1回、複製先バケットを走査して、次のどれかに当たったらTelegramへ通報する。</p>
+<ol>
+<li>ファイル件数が前回より減った</li>
+<li>合計サイズが前回比1%を超えて減った</li>
+<li>21日間まったく増えていない</li>
+<li>B2へ接続・認証できない</li>
+</ol>
+<p>観測値はリポジトリ内のJSONファイルにコミットして、次回の比較基準にする。外部ライブラリは使わず標準ライブラリだけでB2のAPIを直接叩く作りにした(依存が増えると、それ自体が壊れる原因になる)。見張り用の鍵は<strong>複製先バケット限定・読み取り専用</strong>なので、こちらはWeb画面の発行UIで作れる。</p>
+<ul>
+<li>件数の減少は「複製先を直接触られた」ことのシグナルとして意味が強い(削除は複製されないので、正常運用では減らない)。</li>
+<li><strong>上書き破壊の検知は不完全</strong>だと正確に理解しておく。同サイズ・より大きいサイズで上書きされた場合は検知できない。ただしその場合も版管理で旧版が残るので復元は可能で、守りは版管理側が担っている。</li>
+<li><strong>GitHub Actionsの定時実行は大幅に遅れる</strong>。<code>0 1 * * 1</code>(毎週月曜01:00 UTC)と書いたジョブが実際に走ったのは06:16 UTCで、<strong>5時間16分遅れ</strong>だった。<code>:00</code>は最も混雑する分なので、奇数分(<code>17 1 * * 1</code>など)にずらすと改善する。週次監視なら遅延自体は無害だが、<strong>時刻を当てにした説明を書かないこと</strong>。</li>
+<li><strong>通報が空振りする状態で放置してはいけない</strong>。鍵をGitHubのSecrets(リポジトリに暗号化して保存する秘密情報)に登録する前に初回の定時実行が走り、認証情報が無くて失敗した。設計どおりの挙動だが、これを放置すると毎週失敗通知が来て、<strong>デッドマンスイッチの警報を無視する習慣がつく</strong>。それが一番の実害。</li>
+</ul>
+<h2 id="踏んだ落とし穴-鍵の差し替えが設定ファイルを作り直していた">踏んだ落とし穴: 「鍵の差し替え」が設定ファイルを作り直していた</h2>
+<p>層0の鍵差し替えには、以前自分で書いた<code>rotate-b2-key.sh</code>というスクリプトを使った。これが<code>rclone</code>の設定ファイル(<code>rclone.conf</code>)を<strong>丸ごと作り直す</strong>作りになっていた。</p>
+<p>同じ日の朝に、送信前に自前で暗号化するための設定ブロックをこのファイルに追加していた。スクリプトはそのブロックを知らないので、鍵の差し替え自体は成功したのに<strong>直後のバックアップが「設定ブロックが見つからない」で全滅</strong>した。</p>
+<ul>
+<li><strong>教訓: 構成に新しい設定ブロックを足したら、そのファイルを書き換える既存スクリプトを洗い出す</strong>。「鍵の差し替え」という名前から、設定ファイル全体を作り直しているとは読み取れなかった。</li>
+<li>スクリプトは、丸ごと上書きをやめて該当2行だけを置換する形に直した。加えて<strong>書き込む前に「設定ブロックが減っていないか」「新しい鍵IDが入ったか」を検査し、1つでも失敗したら一切書かずに中止する</strong>ようにした。</li>
+<li>🔴 <strong>もう1つの地雷</strong>: 設定ファイルは<code>root</code>用と一般ユーザー用の2箇所にあり、復旧を片方だけやって放置していた。バックアップは<code>root</code>で動くので「成功」と出続け、<strong>一般ユーザーで実行したときだけ静かに失敗する</strong>状態になっていた。</li>
+<li><strong>教訓: 「両方必要」と書いた手順は、実施後に必ず両方を実測で確認する</strong>。<code>grep &quot;^\[&quot; &lt;設定ファイル1&gt; &lt;設定ファイル2&gt;</code>のようにセクション名だけ出すコマンドなら値が漏れないので、安心して結果を見られる。</li>
+<li>おまけの罠として、<code>ssh サーバー 'bash -s' &lt;&lt;'EOF'</code>形式のヒアドキュメント(複数行のスクリプトを流し込む書き方)は<code>ssh</code>の標準入力と競合して出力が二重化し、成功したのか失敗したのか読めなくなった。<strong>サーバー操作は1行の<code>ssh サーバー '...'</code>に分解して1つずつ流す</strong>のが確実だった。</li>
+</ul>
+<h2 id="2段階認証が1段階だった">2段階認証が1段階だった</h2>
+<p>作業中にもっと基本的な穴が見つかった。「2段階認証は済んでいる(ログインのたびにメールでコードが来る)」と認識していたが、これはBackblazeが既定で有効にしている<strong>メールMFA</strong>(多要素認証)だった。</p>
+<p><strong>コードの送り先も、パスワードリセットの送り先も、同じメールアドレス</strong>。つまりメールボックス1つ取られると2要素が1要素に潰れる。同一アカウント構成を選んだ結果、このアカウントが全データの唯一のオフサイトコピーを持っているので、ここが設計上の最大の残留リスクだった。</p>
+<p><strong>TOTP</strong>(認証アプリが30秒ごとに生成する6桁コード方式)に切り替えて解消した。</p>
+<ul>
+<li>認証アプリは<strong>Ente Auth のオフラインモード</strong>(アカウント登録なしで使える)を選んだ。Google Authenticatorは、自分がGoogleアカウントを削除する方針で同期が使えないこと、Google Playが載らない端末への移行を検討していることの2点で不適だった。アプリ登録が必要なものだと、復旧手段がまた別の会社のアカウントに依存して、断ち切った鎖を作り直すことになる。</li>
+<li><strong>バックアップコードは必ず生成してパスワードマネージャーに保存する。ただしTOTPそのものは同じ金庫に入れない</strong>(同じ場所に入れたら1要素に戻る)。TOTPはスマートフォンのアプリに、バックアップコードはVaultwardenに置いた。</li>
+</ul>
+<h2 id="残る鶏と卵">残る「鶏と卵」</h2>
+<p>この構成にも、原理的に閉じない循環が残っている。</p>
+<ul>
+<li>B2に入るには → TOTP(スマートフォン)</li>
+<li>スマートフォンを失くしたら → バックアップコード(Vaultwarden)</li>
+<li>VaultwardenはサーバーVPS上 → サーバーを失ったらB2から復元が必要 → B2に入る必要がある</li>
+</ul>
+<p><strong>スマートフォンとサーバーを同時に失うと詰む</strong>。対処は「バックアップコードを紙でもう1箇所持つ」しかない。これは<a href="/guides/1password-to-vaultwarden/">パスワードの移行の記事</a>で書いた、バックアップの取り出し鍵自体をどこに置くかという問題とまったく同じ構造になっている。<strong>自前で持つほど、最後の1本をどこに置くかという問題に必ず行き着く。</strong></p>
+<h2 id="結果とやらなかったこと">結果と、やらなかったこと</h2>
+<p>鍵の権限削減・append-onlyな複製先・サーバー外の見張りの3層が稼働状態になった。追加費用は複製分の月$0.70だけで、ハードウェアは1台も増えていない。</p>
+<p>やらなかったことも書いておく。<strong>Backblazeというプロバイダ1社に依存している</strong>のは未対策のまま。アカウントの凍結や会社都合に備えるなら、別会社のストレージへもう1本(追記専用の設定で月€4前後)が答えになるが、今回は見送った。手を広げる前に、今ある3層が本当に回り続けるかを数ヶ月見ておきたかった。</p>
+<p><strong>更新履歴</strong> — 2026-10-01: 初版</p>
+]]></content:encoded></item><item><title>写真サーバーの容量が足りない問題に、遠回りして決着をつけた</title><link>https://offgrid.taikiito.com/guides/photo-storage-capacity/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/photo-storage-capacity/</guid><description>自前の写真サーバーは写真が増えるほど容量が足りなくなる。古い写真を安いクラウドストレージへ追い出す仕掛けを一晩かけて作り、10枚で実証まで通したあとに、VPS業者が月数ドルでSSDを増設できることに気づいて全部捨てた記録。測った数字と踏んだ罠を書いた。</description><content:encoded><![CDATA[<p>写真を自分のサーバーに置くようにしてから、ずっと気になっていたことがある。<strong>写真は毎年増えるのに、サーバーのディスクは契約した大きさのまま</strong>だということ。</p>
+<p>結論を先に書くと、自分は<strong>古い写真を安いオブジェクトストレージへ追い出す仕掛け</strong>を一晩かけて作り、動くところまで確認してから、<strong>全部捨てた</strong>。業者が月$3.60でディスクを足せると分かったからだ。その遠回りの中身を書く。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>写真は<a href="/guides/google-photos-to-immich/">Google PhotosからImmichに移した</a>状態（Immich = 自前サーバーで動かす写真管理ソフト）</li>
+<li>サーバーは<a href="/guides/home-server-to-vps/">自宅PCからVPSへ移した</a>直後（VPS = 仮想専用サーバー。業者のデータセンターにある自分専用のLinuxマシンを借りる形）。Contaboの6vCPU / 12GB RAM / <strong>SSD 200GB</strong> のプランで月$9.00（2026年9月時点）</li>
+<li>バックアップ先はBackblaze B2（安価なオブジェクトストレージ。2026年9月時点で1TBあたり月$6.95）。構成は<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a></li>
+<li>土台の考え方は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a></li>
+</ul>
+<h2 id="まず現実を測った">まず現実を測った</h2>
+<p>移行直後のディスクはこうだった。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">df -h /
+</span></span><span class="line"><span class="cl"><span class="c1"># 使用 164GB / 193GB、空き 29GB</span>
+</span></span></code></pre></div><p>しかもこの時点でサムネイル（一覧表示用の縮小画像）がまだ生成されていなかった。以前のサーバーでは9.6GBあったので、それが戻ると<strong>空きは約19GB</strong>。200GBのプランを選んだ数日後にもう先が見えた。</p>
+<p>次に増える速さを測った。Immichのデータベースに撮影年が入っているので、年ごとに集計できる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="k">extract</span><span class="p">(</span><span class="k">year</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="s2">&#34;fileCreatedAt&#34;</span><span class="p">),</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="n">pg_size_pretty</span><span class="p">(</span><span class="k">sum</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="s2">&#34;fileSizeInByte&#34;</span><span class="p">))</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="k">from</span><span class="w"> </span><span class="n">asset</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">asset_exif</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="s2">&#34;assetId&#34;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">id</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="s2">&#34;deletedAt&#34;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></div><p>実測（写真の実体は合計115GB）。</p>
+<ul>
+<li><strong>直近3年分の合計で約22GB</strong>。年あたり3〜10GBのペース</li>
+<li><strong>それより古い分が約19,000件・約93GB</strong></li>
+</ul>
+<p>つまり<strong>今の撮り方で年10GB弱</strong>。29GBの空きは3年もたない。いずれRAW（カメラが記録した無加工のデータ。1枚25〜50MB）で撮り始めたら桁が変わる。「毎年ちょっとずつ月額が増えていく」のが一番嫌だったので、<strong>容量と月額を切り離す</strong>方法を探し始めた。</p>
+<h2 id="最初の案-古い写真を安いストレージへ追い出す">最初の案: 古い写真を安いストレージへ追い出す</h2>
+<p><strong>サーバーのSSDには直近1〜2年の「よく見る」写真だけ置き、古い写真はB2に預けて見たいときだけ取り出す。</strong> SSDの使用量が年によらず一定になるので月額が増えない。B2には毎晩のバックアップで全写真の実体がすでにあるから、<strong>アップロードすらいらない</strong>のが魅力だった。</p>
+<h3 id="方式をいくつか捨てた">方式をいくつか捨てた</h3>
+<ul>
+<li>🔴 <strong>Immichの「External Library」（外部ライブラリ）機能は使えない</strong>。サーバーの外のフォルダを読み込む機能だが、<strong>すでにImmichの中にある写真を引き取れず、新規の写真として再登録される</strong>。アルバム・顔認識の結果・お気に入りが失われる恐れがある。</li>
+<li>🔴 <strong>「年ごとのフォルダを切り出す」はそもそも不可能</strong>。ディスク上の写真は<code>library/upload/&lt;ユーザーID&gt;/&lt;16進2桁&gt;/&lt;16進2桁&gt;/&lt;ランダムな名前&gt;.拡張子</code>という形で、<strong>ランダムな名前のハッシュで256×256のフォルダに均等にばらまかれている</strong>。年ごとのフォルダは存在しない。</li>
+</ul>
+<p>残ったのは、<strong>写真ファイル1個ずつをシンボリックリンク（ファイルの位置を指すだけのショートカット）に置き換え、リンク先をB2をフォルダとして見せた場所に向ける</strong>方式。データベースに一切触らないので、Immichから見れば何も変わらない。B2をフォルダとして見せる部分は<code>rclone</code>（いろいろなクラウドストレージへファイルを同期するコマンド）のマウント機能で、読み取り専用で常駐させた。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># /etc/systemd/system/rclone-immich-cold.service の要点</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ExecStart</span><span class="o">=</span>/usr/local/bin/rclone mount &lt;リモート名&gt;:&lt;バケット&gt;/immich-cold <span class="se">\
+</span></span></span><span class="line"><span class="cl">  /home/&lt;user&gt;/immich/library/cold <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --read-only --allow-other --uid <span class="m">1001</span> --gid <span class="m">1001</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --vfs-cache-mode full --vfs-cache-max-size 3G --dir-cache-time 24h
+</span></span></code></pre></div><p>ここで踏んだもの。</p>
+<ul>
+<li><strong><code>rclone</code>の場所は<code>/usr/local/bin/rclone</code>で、<code>/usr/bin/rclone</code>ではなかった</strong>。systemd（Linuxの常駐サービス管理）はそれだけの理由で<code>203/EXEC</code>と言って起動に失敗する。<code>which rclone</code>で確かめる。<code>--allow-other</code>には<code>/etc/fuse.conf</code>への<code>user_allow_other</code>の追記も必要。</li>
+<li><strong><code>--dir-cache-time</code>は必ず延ばす</strong>。既定の5分だと期限切れごとにフォルダ一覧の問い合わせが全件走る。24時間にした。</li>
+<li>🔴 <strong>Immichのコンテナ設定で写真フォルダのマウント指定に<code>:rslave</code>を付けないと見えない</strong>。<code>docker-compose.yml</code>の<code>${UPLOAD_LOCATION}:/data</code>を<code>${UPLOAD_LOCATION}:/data:rslave</code>にする。コンテナ（ソフトを隔離した箱に入れて動かす仕組み）へのフォルダ受け渡しは既定で「あとから生えたマウントを伝えない」ので、<strong>ホスト側で後から作ったマウントはコンテナの中からは空に見える</strong>。ここで30分溶かした。なお<code>docker compose up -d immich_server</code>は<code>no such service</code>になる——<strong>設定上のサービス名はハイフンの<code>immich-server</code>、コンテナ名がアンダースコアの<code>immich_server</code></strong>。</li>
+</ul>
+<h3 id="一番危なかったのはバックアップスクリプトだった">一番危なかったのはバックアップスクリプトだった</h3>
+<p>実験で確証を取った、本当の地雷。毎晩のバックアップは<code>rclone sync</code>（送り元に無いものは送り先からも消す片方向ミラー）で動いている。<strong>ローカルの写真をシンボリックリンクに置き換えると、<code>rclone</code>は<code>Can't follow symlink without -L/--copy-links</code>と言ってそれをスキップし、「送り元に無い」と判断してB2側の実体を削除する。</strong></p>
+<ul>
+<li>🔴 <strong>行き先が存在しない壊れたリンクでも同じ挙動で、しかも終了コードは0</strong>（＝成功として記録される）。失敗として検知できない。つまり<strong>最も危険な順序は「B2へコピーする前にシンボリックリンクを作ってしまう」こと</strong>で、やると、その夜のバックアップがB2にある唯一の実体を無言で消す。</li>
+<li><code>--copy-links</code>を付ける解決策は不可。B2に二重保存になって容量が倍になる。</li>
+</ul>
+<p>正解は<code>--exclude &quot;cold/**&quot;</code>で追い出し先を同期対象から外し、<strong>かつ順序を守ること</strong>。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 1. B2の中で複製（同一バケット内のサーバーサイドコピー＝転送ゼロ・一瞬）</span>
+</span></span><span class="line"><span class="cl">rclone copyto REMOTE/immich/library/&lt;rel&gt; REMOTE/immich-cold/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 2. 宛先のサイズを照合</span>
+</span></span><span class="line"><span class="cl">rclone lsl REMOTE/immich-cold/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 3. ローカルの実体は「削除」ではなく退避（ロールバックできるように）</span>
+</span></span><span class="line"><span class="cl">mv library/upload/&lt;rel&gt; /root/poc-staging/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 4. 相対パスのリンクを張る（library まで ちょうど4階層）</span>
+</span></span><span class="line"><span class="cl">ln -s <span class="s2">&#34;../../../../cold/&lt;rel&gt;&#34;</span> library/upload/&lt;rel&gt;
+</span></span><span class="line"><span class="cl">chown -h &lt;user&gt;:&lt;user&gt; library/upload/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 5. リンク越しに md5 を照合。違ったら即ロールバック</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 6. 全件の検証が終わってから、はじめて旧パスを削除</span>
+</span></span><span class="line"><span class="cl">rclone deletefile REMOTE/immich/library/&lt;rel&gt;
+</span></span></code></pre></div><ul>
+<li><strong>存在確認に<code>rclone lsjson</code>を使ってはいけない</strong>。存在しないファイルを渡すとフォルダとして扱われ、空の一覧と<strong>終了コード0</strong>を返す。これで一度「B2にある」と誤判断した。<strong><code>rclone lsl</code>の出力が空でないことを見る。</strong></li>
+</ul>
+<h3 id="10枚で通して確認したこと">10枚で通して、確認したこと</h3>
+<p>PoC（Proof of Concept = 動くことを示すための小さな実装）として写真10枚・46MBで最後まで通した。ホストからもコンテナの中からも同じmd5で読め、ImmichのAPI経由でオリジナル画像が10/10でHTTP 200かつmd5一致、サムネイルは10/10がローカルから配信（<strong>一覧の表示速度は一切変わらない</strong>）、エラーログなし。B2からの初回読み込みは<strong>0.39秒</strong>（636KB）、キャッシュ後は<strong>0.017秒</strong>。</p>
+<p>そして<strong>最も確認したかったこと: マウントが切れたらどうなるか</strong>。<code>systemctl stop</code>で接続を落として測った。</p>
+<ul>
+<li>オリジナル画像は<strong>404</strong>、サムネイルは<strong>200のまま</strong></li>
+<li>写真のレコード件数は<strong>前・中・後で29,716件のまま不変</strong>、該当写真の削除日時もnullのまま</li>
+<li>マウントを戻すと即座に200に復帰</li>
+</ul>
+<p>つまり<strong>Immichは、ファイルが読めなくなっても勝手にレコードを消したりゴミ箱に落としたりしない</strong>。これが成立しなければ全部やめるつもりだった。</p>
+<p>安全網が既にあったことも実測した。<strong>B2のバケットは「隠してから30日で削除」の設定にしてあり、<code>rclone deletefile</code>は既定でハード削除ではなく論理削除</strong>。だから消したファイルは30日間復元できる。15分前に消した2.1MBのHEICを<code>rclone lsf --b2-versions</code>で版名（<code>&lt;名前&gt;-v&lt;日時&gt;.&lt;拡張子&gt;</code>）を調べて取り出し、md5一致まで確認した（<strong><code>--b2-versions</code>を付けても元のファイル名を渡すと失敗する</strong>ので、必ず版名で指定する）。これで「スクリプトのミスで写真が消える」は<strong>永久喪失ではなく30日以内なら戻せるミス</strong>に格下げされた。残る課題は復元手段ではなく<strong>30日以内に気づくこと</strong>になる。</p>
+<h2 id="途中で前提そのものを疑った">途中で前提そのものを疑った</h2>
+<p>10枚が通った時点でB2からの読み出し速度を測り直して、気が変わった。197MBのデータベースダンプが6.58秒＝<strong>約30MB/s</strong>、17MBの写真が単一ストリームで0.52秒＝<strong>約33MB/s（265Mbps）</strong>。一方で手元の動画は535本・平均11.6MB、ビットレートは平均7.3Mbps・上位5%で17.9Mbps・最大67.5Mbps。<strong>最も重い動画でも4倍近い余裕がある。</strong></p>
+<p>それなら「古い写真を追い出す」のではなく、<strong>写真の置き場そのものをB2にすればいい</strong>のではないか。SSDの天井が消える。コストも、写真をB2に置けば月$10前後、1TBまで増えても月$16で、大きいディスクのプランへ引っ越す月$19より安い。<strong>安いほうが天井も無い</strong>という綺麗な結論になりかけた。</p>
+<p>そこで手を止めて2つ調べた。</p>
+<h3 id="自分以外に誰がやっているのか">自分以外に誰がやっているのか</h3>
+<ul>
+<li><strong>主流は「オリジナルはローカル、クラウドはバックアップ専用」</strong>。<a href="https://docs.immich.app/administration/backup-and-restore/">Immich公式のバックアップ手順</a>もローカル本番を前提に書かれている。クラウドを本番の置き場にしている例は少数派・実験的で、数少ない実践者は「わずかなレイテンシのゆらぎでマウントが壊れる」「ローカルキャッシュがすぐ溢れる」と報告している。</li>
+<li><strong>「クラウドが唯一のコピー」でやっている人は、調べた範囲で1人も見つからなかった。</strong> 定番は3コピー（本番＋ローカルの2本目＋クラウド）。</li>
+<li>🔴 <strong>Immichに未解決の不具合がある</strong>: <a href="https://github.com/immich-app/immich/issues/10480">issue #10480</a> — サムネイル生成が同じファイルを2回読むため、リモートストレージでは<strong>ダウンロード量が実データの8〜10倍</strong>に膨らむ。16,000ファイル・110GBで900GBという報告がある。B2の無料ダウンロード枠は保存量の3倍/月なので、<strong>サムネイルの全件再生成を一度回すと枠を超えて課金が出る</strong>。</li>
+<li><strong>Immich本体のS3対応（オブジェクトストレージへの公式対応）は期待できない</strong>。2026年時点で未実装、ロードマップにも無い。**「待つ」は非現実的で、マウント方式が唯一の道（公式サポート外）**という整理になった。</li>
+<li>追い風もあった。<strong>B2のAPI呼び出し課金が2026-05-01に全廃された</strong>（代わりに保存料が$6→$6.95/TB/月に値上げ）ので、「マウントが大量の一覧取得を発行して請求が爆発する」という有名な事故モード（過去に約$598の実例がある）は構造的に消えていた。</li>
+</ul>
+<h3 id="暗号化のコストを測った">暗号化のコストを測った</h3>
+<p>クラウドに本番を置くなら預け先に中身を読まれない形にしたい。界隈の多数派も「上げる前に自分で暗号化する」だった。そして改めて気づいたのだが、<strong>自分の既存のバックアップは暗号化されていなかった</strong>。毎晩のバックアップを始めた時点で、預け先は写真59,000枚を読める状態だった。</p>
+<p>17MBの写真で測った結果は、<strong>暗号化あり0.63〜0.95秒 / 平文0.46〜0.53秒</strong>。差は0.2〜0.4秒でボトルネックは回線のまま。<strong>暗号化は速度面の障害にはならない。</strong></p>
+<ul>
+<li>⚠️ <strong>最初の計測では「暗号化7.01秒 vs 平文0.46秒＝15倍」と誤った結論を出した</strong>。原因は、比較した2つのマウントで<code>--vfs-read-chunk-size</code>などの設定が揃っていなかったこと。<strong>ベンチマークは条件を揃える。</strong> 危うく「暗号化は無理」と誤った判断を下すところだった。</li>
+<li>代償は速度ではなく別の2つ。①預け先のファイル名が不可読な文字列になり管理画面から中身を確認できない ②<strong>既存の115GBを暗号化し直すには全部アップロードし直す必要があり、「移行作業ゼロ」という最大の利点が消える</strong>。</li>
+</ul>
+<h2 id="本命の答えはボタンひとつだった">本命の答えは、ボタンひとつだった</h2>
+<p>ここまで自分は「B2へ追い出す」「オブジェクトストレージを本番にする」「大きいプランへ引っ越す」の3つを丁寧に比較していた。そして<strong>契約しているVPSの管理画面を開いて、「ディスクだけ足す」という選択肢を一度も検討していなかったことに気づいた。</strong></p>
+<p>Contaboの管理画面には**「Extend SSD Storage」ボタン**がある。<a href="https://help.contabo.com/en/support/solutions/articles/103000404620-can-i-add-more-ssd-storage-to-my-vps-or-vds-dedicated-server-">公式ヘルプ</a>にも、既存のVPSにSSDを足せる・再インストール不要・移行不要と書いてある。200GBを400GBにした。</p>
+<p>月額の増分で並べるとこうなる（2026年9月時点）。</p>
+<table>
+	<thead>
+			<tr>
+					<th>選択肢</th>
+					<th>月額の増分</th>
+					<th>必要な作業</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>SSDを200GB増設</strong></td>
+					<td><strong>+$3.60</strong></td>
+					<td><strong>なし</strong></td>
+			</tr>
+			<tr>
+					<td>B2へ追い出す（200GB相当）</td>
+					<td>+$0.87</td>
+					<td>マウント常駐＋リンク張り＋見張り＋孤児掃除</td>
+			</tr>
+			<tr>
+					<td>同社のオブジェクトストレージ（最小250GB）</td>
+					<td>+$2.99</td>
+					<td>同じくマウントが必要</td>
+			</tr>
+			<tr>
+					<td>大きいプランへ引っ越す</td>
+					<td>+$8〜10</td>
+					<td>データ移行、数分の停止</td>
+			</tr>
+	</tbody>
+</table>
+<p><strong>差額が月$2〜3しかないなら、その$2で複雑さを全部買い取れる。</strong> 一晩かけて作った仕掛けは、この表の2行目のためのものだった。</p>
+<h3 id="増設の実作業">増設の実作業</h3>
+<p>公式ヘルプの「activated right away（即座に有効、再起動不要）」は実態と違った。⚠️ <strong>増設は業者側の強制リセットを伴った</strong>——正常なシャットダウンの記録がなく、前のログが突然途切れている。<strong>増設するときはダウンタイムを見込むこと。</strong> 結果的に、<strong>予期しない電源断からの自動復旧が完全に機能することが実証できた</strong>（コンテナ14個・常駐サービス7件・公開している9サービスすべて復帰、写真のデータ欠損ゼロ）。棚からぼた餅の検証になった。</p>
+<p><strong>増えた分は既存ディスクの拡大として現れた</strong>（別のディスクとしてではない）。ただし<strong>パーティションとファイルシステムは自動では広がらない</strong>ので、ここだけ手作業。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 作業前に、必ず手動でバックアップを一度完走させる</span>
+</span></span><span class="line"><span class="cl">/root/backup-scripts/backup-to-b2.sh
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">growpart --dry-run /dev/sda <span class="m">1</span>   <span class="c1"># まず空振りで確認</span>
+</span></span><span class="line"><span class="cl">growpart /dev/sda <span class="m">1</span>             <span class="c1"># パーティションを広げる</span>
+</span></span><span class="line"><span class="cl">resize2fs /dev/sda1             <span class="c1"># ファイルシステムを広げる</span>
+</span></span></code></pre></div><ul>
+<li>ルートのパーティションテーブルを書き換える操作なので、<strong>直前のバックアップは作法として必須</strong>。</li>
+<li>対象が最後のパーティションで、直後に連続した空き領域がある理想的なケースだった。ext4に<code>resize_inode</code>があるので<strong>マウントしたまま、無停止でオンライン拡張できた</strong>。</li>
+<li>結果: パーティション199GB→399GB、ファイルシステム193GB→387GB、<strong>使用率93%→46%、空き16GB→209GB</strong>。RAWを30MB換算で約7,000枚の余裕。</li>
+<li><strong>料金の実績は月$9.00 → $12.60。100GBあたり月$1.80（＝$18/TB/月）。</strong></li>
+</ul>
+<h2 id="仕掛けは完全に撤去した">仕掛けは完全に撤去した</h2>
+<p>増設で解決したので、一晩かけて作ったものは全部元に戻した。<strong>「使っていないだけ」で残すのが一番たちが悪い</strong>——あとでバックアップスクリプトを触ったときに、忘れた除外設定が事故になる。退避していた10枚の実体を元の場所に戻してB2へ再アップロードし、追い出し先のプレフィックスを削除。常駐マウントのサービスを停止・無効化・削除し、マウント用フォルダと<code>/etc/fuse.conf</code>の追記も撤去。バックアップスクリプトの<code>--exclude &quot;cold/**&quot;</code>とコンテナ設定の<code>:rslave</code>は、<strong>事前に取った<code>.bak</code>との差分で元と一致することを確認してから<code>.bak</code>も消した</strong>。撤去後の検証は10枚のmd5一致・シンボリックリンク0件・API 10/10・B2側も10/10復元・レコード件数29,716件で不変。</p>
+<p>残したのは<strong>メモだけ</strong>。実際に効いた相対パスとmd5の一覧を<code>/root/notes/</code>に置いてある。将来TB級になってオブジェクトストレージが本当に必要になったとき、この一晩をゼロからやり直さずに済むように。</p>
+<h2 id="単価で見るといつか判断が逆転する">単価で見ると、いつか判断が逆転する</h2>
+<p>増設が常に正解ではない。1TBあたりの単価では<strong>増設が一番高い</strong>（VPSのSSD増設 <strong>$18/TB</strong> ＞ 同社オブジェクトストレージ $11.96/TB ＞ B2 <strong>$6.95/TB</strong>）。200GBでは差額が月$2程度にしかならないから複雑さを避けるのが正解だった、という話にすぎない。分岐点は2つ決めてある。<strong>追い出したい古い写真が1TBを超えたらB2方式を再検討する</strong>（差額が年$132になり、ようやくマウント方式の複雑さを引き受ける価値が出る）。<strong>1TB規模ならプランごと乗り換えたほうが安い</strong>（現プラン＋800GB増設の月$23.40に対し、1TBのSSDが付いたプランは月$15前後。ただし数分の停止を伴うし、<strong>SSDからNVMeへの変更は再インストール必須</strong>なので絶対に選ばない）。</p>
+<p>残っている課題も書いておく。<strong>写真の2本目のコピーは引き続きバックアップ先の1本だけ</strong>で、以前使っていた自宅のPCに全量が残っているうちは3コピーだが、あれを片付けるときに決め直す必要がある。<strong>バックアップの暗号化も未着手</strong>——速度は問題にならないと測れたが、115GBを全部アップロードし直すコストが残っている。</p>
+<h2 id="この遠回りから取ったもの">この遠回りから取ったもの</h2>
+<p>一晩かけて作って、10枚で実証して、全部捨てた。<strong>月$3.60のボタンを先に押していれば丸ごと要らなかった作業</strong>だ。素直に書くと、「どう作るか」を考えるのが面白くて、「買えば済むか」を確かめる手順を飛ばしていた。</p>
+<p><strong>構成を変える検討を始めるときは、まず今契約しているサービスの管理画面に、その問題をそのまま解決するボタンが無いかを確認する。</strong> 自分は3つの案を丁寧に比較表にしておいて、「ディスクだけ足す」をその表に入れていなかった。<strong>選択肢の作り方を間違えると、どれだけ丁寧に比べても正解には当たらない。</strong></p>
+<p>捨てた作業から残ったものもある。マウントが切れてもImmichのレコードは壊れないこと、削除が30日間は取り返せること、<code>rclone sync</code>がリンクを見て送り先を消すこと、暗号化が速度の障害にならないこと、サムネイルの全件再生成が課金を踏むこと。これは<strong>どの方式を選んでも効く知識</strong>で、1TBを超えた日に取り出せる形でメモに残した。遠回りの元は取れていないが、ゼロでもない。</p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+]]></content:encoded></item><item><title>バックアップ先を2つから1つに減らした</title><link>https://offgrid.taikiito.com/guides/backup-consolidation/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/backup-consolidation/</guid><description>非公開のGitリポジトリとクラウドストレージの2系統にバックアップしていたが、片方を捨てて1系統に絞った。2系統は「2倍安全」ではなく「壊れたら困るものが2つ」で、どちらも検証されていなかった。一本化に必要だった棚卸しの手順、復元に使う鍵をどこに置くか、実際にやった復元テストまでの記録。</description><content:encoded><![CDATA[<p>自分のサーバーに写真・パスワード・ファイルを集めたあと、バックアップを<strong>2系統</strong>持っていた。GitHubの非公開リポジトリ(自分だけが見られるGitの保管場所)への日次バックアップと、クラウドのオブジェクトストレージ(Backblaze B2)への日次バックアップ。多いほうが安全だと思っていた。</p>
+<p>調べたら、どちらも完全ではなく、どちらも検証されていなかった。GitHub側を廃止して1系統に絞り、代わりに「本当に戻せるか」を確かめる作業を足した。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>常時起動しているLinuxサーバー1台に、パスワード管理・写真・ファイル置き場・認証を同居させた状態。土台は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a></li>
+<li>道具は<code>rclone</code>(いろいろなクラウドストレージへファイルを同期するコマンド)。送り先はBackblaze B2(安価なオブジェクトストレージ。1GBあたり月$0.006、最初の10GBは無料)</li>
+<li>もう1系統は、作業用ディレクトリ一式を毎日<code>git commit</code>して非公開リポジトリへ<code>push</code>する自作の仕組み</li>
+</ul>
+<h2 id="2系統が実際に守っていたもの">2系統が実際に守っていたもの</h2>
+<p>同じものを2箇所に置いているつもりだったが、並べたら役割が違っていた。GitHub側はテキスト類(会話ログ・設定・メモ)と添付ファイルで、強みは<strong>履歴</strong>——「このファイルは3週間前どう書かれていたか」を追える。B2側はデータベースのダンプ・写真ライブラリ・ファイル置き場の実データ・パスワードの保管庫で、強みは<strong>容量</strong>。つまり二重化ではなく<strong>分担</strong>で、片方だけでは静かに欠けが出る状態だった。</p>
+<p>実際に測ったら、添付ファイルが<strong>B2に638件、GitHubに460件、重複ゼロ</strong>。時期で真っ二つに割れていた。<code>git clone</code>だけで戻せば638件が消え、B2だけで戻せば460件が消える。</p>
+<h2 id="2倍安全ではなく壊れたら困るものが2つ">「2倍安全」ではなく「壊れたら困るものが2つ」</h2>
+<p>分担になっていた理由は単純で、<strong>2つあると、どちらも真剣に見なくなる</strong>。</p>
+<p>B2側の同期スクリプトのログを読んだら、<strong>34回の起動のうち完走は5回だけ</strong>だった。最後の処理で<code>sudo</code>がパスワードを求めて止まり、<code>set -e</code>(途中で失敗したらそこで中断する設定)で全体が終わっていた。データ本体の各工程は成功していたので実害はなかったが、問題はそこではない。<strong>「完走しました」のマーカーが1ヶ月出ていないのに、気づいていなかった。</strong></p>
+<p>これが冗長なバックアップ経路の本当のコストだと思う。ディスク代でもなく手間でもなく、<strong>どちらも検証されないこと</strong>。「もう片方があるから」と思っている限り、片方が壊れても痛みが出ないので、気づく機会そのものが無くなる。</p>
+<h2 id="githubがこの用途に向いていなかった理由">GitHubがこの用途に向いていなかった理由</h2>
+<ol>
+<li><strong>サイズと中身</strong>。Gitはテキストには強いが、<strong>画像のようなバイナリは版が増えるたびに丸ごと溜まる</strong>。<code>.git</code>(履歴の実体)が346MBあり、作業用ディレクトリ751MBの半分近くを占めていた(1年後には847MB)</li>
+<li><strong>履歴は消せない</strong>。消さないことが価値の仕組みなので、間違って入れたものが残る。実際、秘密情報を含むディレクトリ(APIトークン類やサーバーの秘密鍵)が<strong>気づかないうちに毎日pushされ続けていた</strong>。「除外設定に入れてある」と自分のメモに書いてあったが、入っていなかった</li>
+<li><strong>他人のアカウント方針の上に乗っている</strong>。容量制限も規約も将来どう変わるかは自分では決められない</li>
+<li><strong>そもそも用途が違った</strong>。置いていたのは日々の記録で、ソースコードではない。全ての版を永久に取っておく必要がない</li>
+</ol>
+<p>一方で**「履歴が追える」価値は本物だった<strong>ので代わりを用意した。B2の</strong>バージョン保持**(上書き・削除された古い版を一定期間取っておく設定)で、自分のバケット(ストレージ上のフォルダのような入れ物)は旧バージョンを30日保持している。実際にデータベースのダンプは26世代遡れた。30日の「取り消し」が成立していればGitの履歴機能の大部分は代替できる。なお<strong>公開しているもの(ブログ・ポートフォリオ)はGitHubのままにしている</strong>。廃止したのは「バックアップ置き場として使うこと」だけ。</p>
+<h2 id="一本化の本体は棚卸しだった">一本化の本体は棚卸しだった</h2>
+<p>ここが一番再利用できる部分だと思う。片方を止める作業の本体は、<strong>「GitHub側にしか無いものが、B2側に全部入っているか」を1件ずつ確認すること</strong>。やらずに止めると、欠けたことに気づくのは復元が必要になった日になる。</p>
+<p><strong>1. 止める側の中身を、実物から列挙する</strong></p>
+<p>設計書ではなく実際のファイル一覧から出す。自分はここで一度間違えた。手元のメモの箇条書きだけを読んで「テキスト類がB2に入っていない」と誤判断したが、スクリプト本文を開いたら既に実装済みだった。<strong>メモで判断せず、スクリプト本文とファイル一覧を実見する。</strong></p>
+<p><strong>2. 残す側の対象リストと突き合わせる</strong></p>
+<p>ここで<strong>本物の穴が見つかった</strong>。環境変数をまとめたファイル(<code>.env</code>。各種サービスのトークンが入っている)が、<strong>GitHubにもB2にも無かった</strong>。2系統あったのに、どちらにも無いものが存在した。</p>
+<p><strong>3. Gitの履歴そのものを、ファイルとして退避する</strong></p>
+<p>履歴は普通のファイル同期では運べない。<code>git bundle</code>(リポジトリ全体を1ファイルに固める機能)を使った。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">git bundle create /tmp/history-20260928.bundle --all
+</span></span><span class="line"><span class="cl">git bundle verify /tmp/history-20260928.bundle
+</span></span><span class="line"><span class="cl">rclone copy /tmp/history-20260928.bundle &lt;暗号化remote&gt;:&lt;保存先&gt;/
+</span></span></code></pre></div><ul>
+<li>🔴 <strong><code>root</code>で<code>git</code>を叩くと<code>detected dubious ownership</code>で弾かれる</strong>。ディレクトリの所有者ユーザーで実行する</li>
+<li>出来上がりは831MB。<strong>往復まで確認した</strong>——取り出してmd5(内容の指紋)が一致し、<code>git clone &lt;bundleファイル&gt; &lt;ディレクトリ&gt;</code>で162コミットが復元でき、履歴の中にしか無いPDFを元のサイズどおり取り出せた</li>
+<li>🔴 <strong>一度きりのスナップショット</strong>。以後履歴が伸びても自動では更新されない</li>
+</ul>
+<p><strong>4. 止める前に「止める側にしか無いコミット」がゼロだと確認する</strong></p>
+<p><code>git rev-list --count &lt;リモート&gt;/main --not --all</code>が<code>0</code>であること。</p>
+<p><strong>5. 浮いた分を別の軸に回す</strong></p>
+<p><strong>テキスト類だけを対象にした軽い同期を1日4回</strong>動かすようにした(全体の同期は従来どおり夜1回)。これでRPO(障害時に失われる最大の時間幅)が<strong>最大24時間から最大6時間</strong>に縮んだ。重い写真ライブラリに触らないので約10秒で完走する。加えて30日を超える長期の記録として、<strong>テキスト類のみの日付付き<code>tar.gz</code>スナップショットを週1回</strong>置いた。実測16MBなので年0.8GB、費用はほぼゼロ。</p>
+<ul>
+<li>🔴 <strong>バックアップを取る道具自体がバックアップ対象外だった</strong>。同期スクリプトを置いたディレクトリは、どちらの系統にも入っていなかった。サーバーが全損したらデータは戻るが<strong>戻し方を書いた道具が無い</strong></li>
+<li>🔴 <strong>データベースのダンプを取る行に管理者パスワードが直書きされていた</strong>。<strong>権限600の<code>.env</code>に切り出して読み込む</strong>形にし、読めなければ<code>exit 1</code>、変数が空なら<code>: &quot;${VAR:?未設定}&quot;</code>で止める(黙って空のパスワードで走らせないため)。渡し方は<code>-p'…'</code>のような引数ではなく環境変数経由にする——引数は<code>ps</code>で他のユーザーから見える。なお<strong>平文の秘密はスクリプト本文を直しても消えない</strong>。過去の退避ファイルと稼働中のコンテナの環境変数に同じ値が残っており、本当に消すにはパスワードの変更が必要だった</li>
+</ul>
+<h2 id="何を金庫に入れるか">何を金庫に入れるか</h2>
+<p><strong>バックアップを復元するための鍵が、バックアップの中にしか無いと、永久に開かない。</strong> いわゆるブートストラップ問題(起動するために起動済みの何かが必要になる循環)。自分の場合、B2から取り出すための接続情報(<code>rclone</code>の設定ファイル)はサーバーの中だけにあった。毎日バックアップは成功していたが、<strong>サーバーが丸ごと壊れた瞬間に、無事なデータを開ける人が誰もいなくなる</strong>。</p>
+<blockquote>
+<p><strong>再発行できる鍵は金庫に入れない。再発行できない鍵だけ入れる。</strong></p>
+</blockquote>
+<ul>
+<li><strong>入れる(再発行不能)</strong>: 暗号化パスワード(失うとバックアップが永久に読めない石になる)、ストレージ事業者のアカウントの2段階認証バックアップコード、復元用の接続情報</li>
+<li><strong>入れない(再発行可能)</strong>: 各種APIトークン、ストレージのアプリケーションキー。上位のアカウントにログインできれば1分で作り直せる</li>
+<li><strong>置くべきは鍵そのものではなく、上位の認証</strong>(アカウントのログイン情報と2段階認証)。それがあれば下位の鍵は何度でも生やせる</li>
+<li>🔴 <strong>何でも放り込むと、金庫自体が肥大した単一障害点になる</strong></li>
+</ul>
+<p>置き場所はパスワードマネージャー(<a href="/guides/1password-to-vaultwarden/">1PasswordからVaultwardenに移した</a>もの)にした。スマートフォンのアプリは一度ログインすればオフラインのキャッシュが残るので、サーバーが全損してもそこから取り出せる。ただし金庫自身がサーバー上で動いているので、<strong>スマートフォンとサーバーを同時に失うと詰む</strong>。対処は「紙でもう1部持つ」しかない。</p>
+<h2 id="暗号化とやらなかったこと">暗号化と、やらなかったこと</h2>
+<p>実査したら<strong>事業者側の暗号化(SSE)すら無効</strong>になっていて、写真は生のJPEGのままディスクに置かれていた。「バケットは非公開だから最低限守られている」という感覚は間違いだった。2種類あることを区別しておく。</p>
+<ul>
+<li><strong>事業者側の暗号化</strong>: 倉庫が金庫に入れてくれるが<strong>鍵は倉庫が持つ</strong>。退役ディスクの流出には効くが事業者自身には無力で、手間はゼロ。🔴 <strong>有効にしても遡らない</strong></li>
+<li><strong>送る前に自分で暗号化</strong>: 自分で鍵をかけた箱を渡す。事業者にもアカウント乗っ取りにも強いが、<strong>鍵を失えば永久に読めない</strong>し、既存分は全量を再アップロードになる</li>
+</ul>
+<p>やったのは前者を有効化したうえで、<strong>テキスト類・秘密情報・データベースのダンプだけを後者にする</strong>こと。<code>rclone</code>には<code>crypt</code>という、送信前に暗号化して保存名も不可読にする仕組みがある。初回は6,710オブジェクト・69MBで5分43秒、以後は差分で数十秒だった。</p>
+<p><strong>やらなかったこと</strong>。</p>
+<ul>
+<li><strong>写真ライブラリ131GBは自分で暗号化していない</strong>。全量の再アップロードになるのと、暗号化する動機(「事業者に読まれたくない」のか「凍結で消えるのが嫌」なのか)を整理できていなかったため。後者ならもう達成済みで、前者ならまだ未達。<strong>整理できていないまま重い工事をしない</strong></li>
+<li>🔴 <strong>パスワードの保管庫も、意図的に暗号化していない</strong>。中身はそれ自体がゼロ知識暗号化(サービス側も読めない方式)済みで平文ではなく、何より<strong>暗号化パスワードの保管場所がその金庫なので、暗号化すると循環依存になる</strong></li>
+</ul>
+<h2 id="誰も戻したことのないバックアップはバックアップではない">誰も戻したことのないバックアップは、バックアップではない</h2>
+<p><strong>1. 生のファイルから実際に復元して突き合わせる。</strong> 124ファイルが完全一致した。暗号化remote経由でちゃんと復号できることも同時に確かめられる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rclone copy &lt;暗号化remote&gt;:&lt;対象パス&gt; /tmp/restore-test/
+</span></span><span class="line"><span class="cl">diff -rq /tmp/restore-test/ /home/&lt;user&gt;/&lt;元のディレクトリ&gt;
+</span></span></code></pre></div><p><strong>2. 週次スナップショットを取り出して<code>tar xzf</code>で展開する。</strong> 6,644ファイル・74MBが正常に展開でき、自動処理の定義ファイル16本まで含まれていた。</p>
+<p><strong>3. 全ファイルを照合する。</strong> 差分19件。中身を見たら<strong>すべて同期が走った時刻より後に生成されたファイル</strong>で、取りこぼしはゼロだった。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rclone check --one-way &lt;ローカル&gt; &lt;暗号化remote&gt;:&lt;対象パス&gt;
+</span></span></code></pre></div><p><code>--one-way</code>はリモートにしかない古い版を差分に数えないので、検証にはこちらを使う。</p>
+<p>併せて<strong>事業者からの通知メールの読み方</strong>を決めた。「マスターキーが生成されました」のような通知は、<strong>自分がコンソールを触っていた日なら本人操作、触っていない日なら本物の警戒シグナル</strong>。先に線引きしないと、通知を全部無視する習慣がつく。</p>
+<h2 id="残った1系統の弱いところ">残った1系統の弱いところ</h2>
+<ul>
+<li><strong>事業者1社への依存は未対策</strong>。アカウントの凍結や会社都合には何の備えもない。別会社のストレージへ追記専用でもう1本(月€4前後)が答えだが、見送った</li>
+<li><strong>削除の伝播と容量の兼ね合いが未整理</strong>。送信側の鍵から削除権限を外すと<code>rclone sync</code>が使えず<code>copy</code>しかできなくなり、ローカルで消したものが残り続けて容量が増える。守りと費用がここで正面衝突する</li>
+<li><strong>一番大きい穴は、サーバーを乗っ取られた場合</strong>。1系統しかないので、送信に使っている鍵を盗られたらバックアップ本体を消される。これは別テーマとして切り出し、鍵の権限削減・削除が伝播しない複製先・サーバーの外で動く見張りの3層で作り直した。そちらは<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>に書いた</li>
+</ul>
+<p>費用は全バックアップ合計125GBで<strong>月約$0.69</strong>。一本化で減ったのは費用ではなく、<strong>気にかけておく仕組みの数</strong>だった。</p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+]]></content:encoded></item></channel></rss>

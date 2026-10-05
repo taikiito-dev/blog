@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Radicale on Off-Grid</title><link>https://offgrid.taikiito.com/tags/radicale/</link><description>Recent content in Radicale on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Mon, 05 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/radicale/index.xml" rel="self" type="application/rss+xml"/><item><title>予定表と住所録を、全部入りのNextcloudから軽いRadicaleへ切り出す</title><link>https://offgrid.taikiito.com/guides/nextcloud-to-radicale/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/nextcloud-to-radicale/</guid><description>予定236件・連絡先575件をNextcloudからRadicaleへ移した記録。データは.ics/.vcfの素のファイルになり速くなったが、Web画面と共有機能は失う。選ぶ前に知るべき制約として「Radicaleは重いREPORT問い合わせを同時に受けられない(並列5本で全滅、直列なら1本4.7秒)」という実測も書いた。</description><content:encoded><![CDATA[<p><a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">前の記事</a>で、連絡先とカレンダーをiCloud・GoogleからNextcloudへ移した。それを今度はNextcloudから引き剥がして、Radicaleという「予定表と住所録しかできない」小さなサーバーへ移した記録。</p>
+<p>先に正直に書くと、<strong>Nextcloudで困っていたことは何も無かった</strong>。故障の修理ではなく、作りを良くするための工事だ。だから得たものと同じ分量で、失ったものを書く。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>常時起動しているLinux環境とDocker(ソフトを1つずつ箱に入れて動かす仕組み)が使えること。土台は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a></li>
+<li>すでにNextcloudの連絡先・カレンダーを使っている状態(<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">前の記事</a>)</li>
+<li>CalDAV(予定表をやりとりするための標準的な通信規約)・CardDAV(住所録用の同じもの)の名前だけ知っていれば十分</li>
+</ul>
+<h2 id="動かした理由は規模が不釣り合いの一点">動かした理由は「規模が不釣り合い」の一点</h2>
+<p>移す前に、Nextcloud側の中身を<code>?export</code>で実測した。住所録<strong>575件</strong>、予定表<strong>236件</strong>、そして<strong>空の予定表が2つ</strong>(片方はiPhoneのリマインダーが勝手に作ったもの)。</p>
+<p>🔴 前の記事に書いた「連絡先633件・予定232件」は誤りだった。<strong>移した件数は、移した日に書き留めただけでは当てにならない。</strong></p>
+<p>実データの合計は<strong>約230KB</strong>。テキストファイル1枚に収まる量だ。これに対してNextcloudはPHPで書かれた大きな母屋にデータベースまで抱えている。やっている仕事に対して仕掛けが大きすぎる、というのが唯一の動機だった。</p>
+<h2 id="radicaleは何で何ではないか">Radicaleは何で、何ではないか</h2>
+<p>Radicaleは<strong>CalDAV/CardDAVだけを話す小さなサーバー</strong>。データベースを持たず、予定1件が<code>.ics</code>ファイル1枚、連絡先1件が<code>.vcf</code>ファイル1枚として、普通のフォルダにただ並んでいるだけ。</p>
+<p>やっているのは「フォルダのテキストファイルを、CalDAVという会話の形に翻訳して端末に見せる」中継だけだ。Appleのカレンダーアプリには「このフォルダを見ろ」という設定が存在せず、CalDAVでしか話せないので、この翻訳役が必要になる。あとは各予定にetag(版番号)を付けて差分と衝突を管理するだけ。</p>
+<p><strong>何ではないか</strong>のほうが重要だと思う。</p>
+<ul>
+<li><strong>使えるWeb画面が無い</strong>。ブラウザで開いても予定を見る画面は出てこない。どうしても画面が欲しければ、CalDAVを外から繋げられるメールサービス(自分はFastmail)を窓口にする手はある。</li>
+<li><strong>共有リンクも共有のUIも無い</strong>。「この予定表をあの人に見せる」をボタンで作れない。</li>
+<li><strong>ファイル置き場ではない</strong>。PDFもWordも置けない。契約書の保管はNextcloudに残した。</li>
+<li><strong>何でも1箇所にある便利さを捨てる</strong>。サーバーが1つ増え、端末のアカウントも1つ増える。</li>
+</ul>
+<p>代わりに得たのは、速さ、攻撃される面の小ささ(PHPの大きな母屋とデータベースが無くなる)、そして<strong>バックアップがフォルダのコピーで済み、ソフトが壊れても中身はテキストで読める</strong>こと。この3つのために上の4つを捨てた。判断は人によって逆でいい。</p>
+<h2 id="立てて流し込む">立てて流し込む</h2>
+<p>構成は<code>docker compose</code>で1つ、<code>tomsquest/docker-radicale</code>(Radicale 3.8.1)。<code>127.0.0.1</code>にだけ口を開け、外から直接は触れないようにした。認証はhtpasswd(ユーザー名とパスワードの対応表ファイル)だけ。<strong>設定の書き方は版で変わるので公式ドキュメントのConfigurationの項を見てほしい。</strong></p>
+<p>移行前にNextcloudから控えを取る。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 住所録</span>
+</span></span><span class="line"><span class="cl">curl -u <span class="s2">&#34;&lt;ユーザー名&gt;:&lt;アプリパスワード&gt;&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.example.com/remote.php/dav/addressbooks/users/&lt;ユーザー名&gt;/contacts?export&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 予定表</span>
+</span></span><span class="line"><span class="cl">curl -u <span class="s2">&#34;&lt;ユーザー名&gt;:&lt;アプリパスワード&gt;&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.example.com/remote.php/dav/calendars/&lt;ユーザー名&gt;/&lt;予定表名&gt;?export&#34;</span>
+</span></span></code></pre></div><p>入れ物の一覧は同じURLに<code>-X PROPFIND -H &quot;Depth: 1&quot;</code>を付けて取る。流し込みはスクリプトを書いた。設計で効いた点が2つ。</p>
+<ul>
+<li><strong>ファイル名をデータの中のUID(1件ごとの識別子)にする</strong>。何度流し直しても同じファイルを上書きするだけで、件数が増えない。</li>
+<li><strong>繰り返す予定の「例外日」(毎週の予定のうち1回だけ時間をずらした分)は同じUIDを持つので、1ファイルにまとめる</strong>。別ファイルにすると予定が二重になる。</li>
+</ul>
+<p>結果は575件・236件でNextcloud側と<strong>完全一致、失敗0件</strong>。</p>
+<h3 id="-立てるときに踏んだ穴">🔴 立てるときに踏んだ穴</h3>
+<ul>
+<li><strong>コンテナの中のRadicaleは自分と違うユーザーで動く</strong>。自分の場合は数字のユーザーID 2999だった。パスワード表を<code>root</code>の持ち物にしたままだと<code>Permission denied</code>で起動しない。<strong>そのIDに所有者を変え、読み取りだけ許す</strong>のが正解。</li>
+<li>🔴 <strong>「正常な応答コード」を3回続けて読み違えた</strong>。トップページの<code>GET</code>は<strong>302</strong>(転送)が正常で401ではない。予定表フォルダの<code>GET</code>は認証が通っていても<strong>403</strong>が仕様どおりで、壊れていない。<strong>正しい確認は<code>PROPFIND</code>を投げて207が返ること</strong>で、件数もこれで数える。</li>
+</ul>
+<h2 id="端末の繋ぎ直しに移行は無い">端末の繋ぎ直しに「移行」は無い</h2>
+<p>ここが一番地味で、一番時間がかかる。<strong>サーバー間でデータを移しても、端末のアカウント設定は1台も自動で付いてこない。全部手で繋ぎ直す。</strong> Apple(Mac・iPhone)で詰まる点は1つだけで、はっきりしている。</p>
+<ul>
+<li>🔴 <strong>アカウント種別の「自動(Automatic)」では繋がらない</strong>。Appleは<code>.well-known/caldav</code>という決まった入口で「本当の場所はどこ?」と尋ねるが、Radicaleはここでトップページへ転送するだけで場所を教えない。</li>
+<li><strong>必ず「手動(Manual)」を選ぶ</strong>。サーバーアドレスはホスト名(<code>cal.example.com</code>)、駄目なら自分のフォルダまでのフルパス(<code>https://cal.example.com/&lt;ユーザー名&gt;/</code>)を直接入れる。前の記事と同じ系統で、<strong>自動検出は当てにしない</strong>。</li>
+</ul>
+<p>AndroidとThunderbirdは今回つないでいないので手順を書かない。確かなのは、<strong>Androidの標準カレンダーにはCalDAVアカウントを足す項目が無く、別途CalDAVクライアントのアプリを入れて端末のカレンダーに同期させる形になる</strong>こと、<strong>ThunderbirdはCalDAVに標準対応している</strong>ことだけだ。</p>
+<p>並行期間(両方に同じデータがある状態)の事故防止で効いたこと。</p>
+<ul>
+<li><strong>古い側の表示名を「OLD(使わない)」に変える</strong>。同じ名前が2つ並ぶと、どちらを編集しているか分からなくなる。</li>
+<li>端末側で<strong>新規作成先の既定のカレンダーを新しい方に変える</strong>(Macは Calendar &gt; Settings &gt; General、iPhoneは 設定 &gt; アプリ &gt; カレンダー)。ここを変えないと、自分で作った予定だけ古い方に入り続ける。</li>
+<li>古い側を消すのは、①手元に控えがある②新しい側の件数が一致している、の両方を実測してから。</li>
+<li>🔴 <strong>Nextcloudの予定表は<code>204</code>が返っても消えていない</strong>。ごみ箱行き(論理削除)になり、一覧に出続けて中身も読める。完全に消すには削除要求に<code>X-NC-CalDAV-No-Trashbin: 1</code>を付ける。住所録はごみ箱が無く一発で消えるので、挙動が揃っていない。</li>
+</ul>
+<h2 id="-radicaleは重いreport問い合わせを同時に受けられない">🔴 Radicaleは重いREPORT問い合わせを同時に受けられない</h2>
+<p><strong>Radicaleを選ぶ前に知っておくべき制約</strong>で、しかもほとんどどこにも書かれていない。自分は後から実測で踏んだ。</p>
+<p>REPORTは、カレンダーアプリが「この日からこの日までに何が入っているか教えて」と尋ねるCalDAVの問い合わせだ。Radicaleはこれを受けると<strong>フォルダの中の全ファイルを毎回走査する</strong>。繰り返す予定は1ファイルにルールが1行入っているだけなので、「表示を1年先までに絞る」といった対策は効かない。<strong>遅さを決めているのは問い合わせの範囲ではなく、フォルダ内のファイル総数</strong>だ。</p>
+<p>予定表が現在2,626件まで増えた結果、1回の範囲問い合わせに<strong>約4.7秒</strong>かかる。これ自体は待てる。問題は同時に投げたときだった。</p>
+<ul>
+<li>事前読み込みを<strong>直列3本から並列5本に変えたら、30秒で5本とも通信切れになり、取れた予定は0件</strong>になった。</li>
+<li><strong>直列に戻したら、5期間228件が23.3秒で全部成功</strong>した(1本あたり約4.7秒)。</li>
+</ul>
+<p>つまり<strong>Radicaleは重いREPORTを並べて投げられると、速くなるどころか全部落ちる</strong>。「カレンダーアプリを2つ同時に開く」「月を素早く切り替える」「複数の範囲を先読みする自作ツール」のどれでも起こり得る。付き合い方は、どれも「並列化しない」方向になる。</p>
+<ol>
+<li><strong>1本ずつ流す列を作る</strong>。手前のサーバーに順番待ちの列を1本入れ、範囲問い合わせは必ず直列で流す。</li>
+<li><strong>同じ範囲の同時要求は1本に相乗りさせる</strong>。2箇所から同じ月を聞かれたら投げるのは1回で、答えを2箇所に配る。画面の操作から来た要求だけ列の先頭に割り込ませると、裏の先読みが詰まっていても人は待たされない。</li>
+<li><strong>一度取ったら捨てない</strong>。1件保存・削除するたびに全期間のキャッシュを丸ごと捨てて再取得していたのが最悪の形だった。<strong>変わった1件だけを手元で差し替える</strong>ようにしたら、保存のたびの5秒が消えた。</li>
+<li><strong>範囲は広めに取って一度だけ聞く</strong>。細かく刻んで何度も聞くほうが遅い。</li>
+</ol>
+<p>⭐ 一般則。<strong>相手が1本ずつしか捌けない所へ、並べて投げてはいけない。速くする手は並列化ではなく、①同じものを二度聞かない ②要るものだけ聞く、の2つしかない。</strong></p>
+<h2 id="時間帯は最初に片付ける">時間帯は最初に片付ける</h2>
+<p>2人で共有するカレンダーを、互いに別の国にいる状態で使っている。<strong>時間帯(タイムゾーン)の扱いは後から足す機能ではなく、土台</strong>だった。救われたのは、保存の形が最初から正しかったことだ。<code>.ics</code>の中では開始時刻が<code>DTSTART;TZID=Asia/Singapore:...</code>のように**「どの地域の時計で何時か」の形で書かれている**ので、絶対の時刻として一意に決まる。Apple純正のカレンダーはこれを読む側の端末の時間帯で出し直してくれる。<strong>標準形式に素直に保存されていれば、時間帯は自動で解決する。</strong> 壊れたのは自作の画面のほうで、そこから学んだのは次の3つ。</p>
+<ul>
+<li><strong>変換は入口と出口の2箇所だけでやる</strong>。画面に出す直前と、入力を受け取った直後。途中の計算に混ぜると、どこが変換済みか分からなくなって必ず二重変換が起きる。</li>
+<li><strong>「いまどの時間帯で見ているか」を常に画面に出す</strong>。Google・Apple・Thunderbirdのどれもこうしている。あとから読まれる文章に時刻を書くときも、必ず時間帯を添える(保存された文は読む人の時間帯に書き直せない)。</li>
+<li><strong>時刻の変換は、画面で確かめる前に机上で全パターン流す</strong>。夏時間の切り替わりの前後、30分ずれる地域、日付をまたぐ西側の地域は、実機を1件ずつ見ても踏めない。</li>
+</ul>
+<h2 id="バックアップは単純になった">バックアップは単純になった</h2>
+<p>データが素のファイルになったので、バックアップは<strong>フォルダを同期するだけ</strong>になった。既存の日次スクリプトに2行足して終わりで、初回送信は1,035ファイル・379KiBで32秒。ただし<strong>消されても戻せる形にしておくことは、データが素のファイルになっても別途必要</strong>で、そこは変わらない(<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>)。</p>
+<h2 id="結果">結果</h2>
+<p>575件・236件の移行は失敗0で完了し、MacとiPhoneから繋がっている。サーバー上にあるのは1,000枚ほどのテキストファイルで、<code>cat</code>で開けば中身が読める。</p>
+<p>ファイル置き場のNextcloudは据え置いた。素のファイルを普通のフォルダ構造で保存しているという一点では、調べた移行先候補よりNextcloudのほうが上だったからだ。<strong>目的が「データを読める形に保つ」なのに、手段がそこを後退させるなら却下する。</strong></p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+]]></content:encoded></item></channel></rss>

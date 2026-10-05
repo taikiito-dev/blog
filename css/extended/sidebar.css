@@ -1,0 +1,189 @@
+/* Floating quick-nav panel (calendar + tag cloud), shown in the blank
+   margin beside the centered content column on wide screens */
+.quick-panel {
+    position: fixed;
+    top: 110px;
+    right: 24px;
+    width: 220px;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 50;
+}
+
+.quick-box {
+    background: #ffffff;
+    border: 1px solid var(--govuk-border-colour, #b1b4b6);
+    border-radius: 0px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.quick-box-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--govuk-secondary-text-colour, #505a5f);
+    margin-bottom: 8px;
+}
+
+/* Calendar */
+.quick-cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.quick-cal-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--govuk-text-colour, #0b0c0c);
+}
+
+.quick-cal-nav {
+    background: none;
+    border: 1px solid var(--govuk-border-colour, #b1b4b6);
+    border-radius: 4px;
+    color: var(--govuk-secondary-text-colour, #505a5f);
+    width: 22px;
+    height: 22px;
+    line-height: 1;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.quick-cal-nav:hover {
+    color: var(--govuk-link-colour, #1a65a6);
+    border-color: var(--govuk-link-colour, #1a65a6);
+}
+
+.quick-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    text-align: center;
+}
+
+.quick-cal-weekdays {
+    margin-bottom: 4px;
+}
+
+.quick-cal-weekday {
+    font-size: 10px;
+    color: var(--govuk-secondary-text-colour, #505a5f);
+}
+
+.quick-cal-day {
+    font-size: 11px;
+    line-height: 22px;
+    height: 22px;
+    color: var(--govuk-text-colour, #0b0c0c);
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.quick-cal-day.empty {
+    visibility: hidden;
+}
+
+.quick-cal-day.has-post {
+    background: var(--govuk-link-colour, #1a65a6);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.quick-cal-day.has-post:hover {
+    opacity: 0.8;
+}
+
+/* Monthly archive buttons, inside the calendar box */
+.quick-cal-months {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--govuk-border-colour, #b1b4b6);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 160px;
+    overflow-y: auto;
+}
+
+.quick-month-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: var(--govuk-secondary-text-colour, #505a5f);
+    font-size: 12px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+}
+
+.quick-month-btn:hover {
+    background: #f3f2f1;
+    color: var(--govuk-link-colour, #1a65a6);
+}
+
+.quick-month-btn.active {
+    color: var(--govuk-link-colour, #1a65a6);
+    font-weight: 600;
+    background: #f3f2f1;
+}
+
+.quick-month-count {
+    font-size: 10px;
+    color: var(--govuk-secondary-text-colour, #505a5f);
+}
+
+/* Tag cloud */
+.quick-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.quick-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    background: #f3f2f1;
+    border: 1px solid var(--govuk-border-colour, #b1b4b6);
+    border-radius: 999px;
+    color: var(--govuk-secondary-text-colour, #505a5f);
+    font-size: 12px;
+    text-decoration: none;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.quick-tag:hover {
+    color: var(--govuk-link-colour, #1a65a6);
+    border-color: var(--govuk-link-colour, #1a65a6);
+}
+
+.quick-tag-count {
+    font-size: 10px;
+    color: var(--govuk-secondary-text-colour, #505a5f);
+}
+
+/* Only show where there's actually blank space beside the centered
+   content column. This threshold was calibrated for the old 720px
+   content width; content is now 960px (see extend_head.html), which
+   leaves less margin at any given viewport width, so the panel (220px
+   + 24px right offset = 244px) was down to a ~27px safety buffer at
+   the old 1550px cutoff. Bumped up for a comfortable margin again. */
+@media (max-width: 1600px) {
+    .quick-panel {
+        display: none;
+    }
+}

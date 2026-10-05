@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>復元テスト on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E5%BE%A9%E5%85%83%E3%83%86%E3%82%B9%E3%83%88/</link><description>Recent content in 復元テスト on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Mon, 05 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E5%BE%A9%E5%85%83%E3%83%86%E3%82%B9%E3%83%88/index.xml" rel="self" type="application/rss+xml"/><item><title>バックアップ先を2つから1つに減らした</title><link>https://offgrid.taikiito.com/guides/backup-consolidation/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/backup-consolidation/</guid><description>非公開のGitリポジトリとクラウドストレージの2系統にバックアップしていたが、片方を捨てて1系統に絞った。2系統は「2倍安全」ではなく「壊れたら困るものが2つ」で、どちらも検証されていなかった。一本化に必要だった棚卸しの手順、復元に使う鍵をどこに置くか、実際にやった復元テストまでの記録。</description><content:encoded><![CDATA[<p>自分のサーバーに写真・パスワード・ファイルを集めたあと、バックアップを<strong>2系統</strong>持っていた。GitHubの非公開リポジトリ(自分だけが見られるGitの保管場所)への日次バックアップと、クラウドのオブジェクトストレージ(Backblaze B2)への日次バックアップ。多いほうが安全だと思っていた。</p>
+<p>調べたら、どちらも完全ではなく、どちらも検証されていなかった。GitHub側を廃止して1系統に絞り、代わりに「本当に戻せるか」を確かめる作業を足した。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>常時起動しているLinuxサーバー1台に、パスワード管理・写真・ファイル置き場・認証を同居させた状態。土台は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a></li>
+<li>道具は<code>rclone</code>(いろいろなクラウドストレージへファイルを同期するコマンド)。送り先はBackblaze B2(安価なオブジェクトストレージ。1GBあたり月$0.006、最初の10GBは無料)</li>
+<li>もう1系統は、作業用ディレクトリ一式を毎日<code>git commit</code>して非公開リポジトリへ<code>push</code>する自作の仕組み</li>
+</ul>
+<h2 id="2系統が実際に守っていたもの">2系統が実際に守っていたもの</h2>
+<p>同じものを2箇所に置いているつもりだったが、並べたら役割が違っていた。GitHub側はテキスト類(会話ログ・設定・メモ)と添付ファイルで、強みは<strong>履歴</strong>——「このファイルは3週間前どう書かれていたか」を追える。B2側はデータベースのダンプ・写真ライブラリ・ファイル置き場の実データ・パスワードの保管庫で、強みは<strong>容量</strong>。つまり二重化ではなく<strong>分担</strong>で、片方だけでは静かに欠けが出る状態だった。</p>
+<p>実際に測ったら、添付ファイルが<strong>B2に638件、GitHubに460件、重複ゼロ</strong>。時期で真っ二つに割れていた。<code>git clone</code>だけで戻せば638件が消え、B2だけで戻せば460件が消える。</p>
+<h2 id="2倍安全ではなく壊れたら困るものが2つ">「2倍安全」ではなく「壊れたら困るものが2つ」</h2>
+<p>分担になっていた理由は単純で、<strong>2つあると、どちらも真剣に見なくなる</strong>。</p>
+<p>B2側の同期スクリプトのログを読んだら、<strong>34回の起動のうち完走は5回だけ</strong>だった。最後の処理で<code>sudo</code>がパスワードを求めて止まり、<code>set -e</code>(途中で失敗したらそこで中断する設定)で全体が終わっていた。データ本体の各工程は成功していたので実害はなかったが、問題はそこではない。<strong>「完走しました」のマーカーが1ヶ月出ていないのに、気づいていなかった。</strong></p>
+<p>これが冗長なバックアップ経路の本当のコストだと思う。ディスク代でもなく手間でもなく、<strong>どちらも検証されないこと</strong>。「もう片方があるから」と思っている限り、片方が壊れても痛みが出ないので、気づく機会そのものが無くなる。</p>
+<h2 id="githubがこの用途に向いていなかった理由">GitHubがこの用途に向いていなかった理由</h2>
+<ol>
+<li><strong>サイズと中身</strong>。Gitはテキストには強いが、<strong>画像のようなバイナリは版が増えるたびに丸ごと溜まる</strong>。<code>.git</code>(履歴の実体)が346MBあり、作業用ディレクトリ751MBの半分近くを占めていた(1年後には847MB)</li>
+<li><strong>履歴は消せない</strong>。消さないことが価値の仕組みなので、間違って入れたものが残る。実際、秘密情報を含むディレクトリ(APIトークン類やサーバーの秘密鍵)が<strong>気づかないうちに毎日pushされ続けていた</strong>。「除外設定に入れてある」と自分のメモに書いてあったが、入っていなかった</li>
+<li><strong>他人のアカウント方針の上に乗っている</strong>。容量制限も規約も将来どう変わるかは自分では決められない</li>
+<li><strong>そもそも用途が違った</strong>。置いていたのは日々の記録で、ソースコードではない。全ての版を永久に取っておく必要がない</li>
+</ol>
+<p>一方で**「履歴が追える」価値は本物だった<strong>ので代わりを用意した。B2の</strong>バージョン保持**(上書き・削除された古い版を一定期間取っておく設定)で、自分のバケット(ストレージ上のフォルダのような入れ物)は旧バージョンを30日保持している。実際にデータベースのダンプは26世代遡れた。30日の「取り消し」が成立していればGitの履歴機能の大部分は代替できる。なお<strong>公開しているもの(ブログ・ポートフォリオ)はGitHubのままにしている</strong>。廃止したのは「バックアップ置き場として使うこと」だけ。</p>
+<h2 id="一本化の本体は棚卸しだった">一本化の本体は棚卸しだった</h2>
+<p>ここが一番再利用できる部分だと思う。片方を止める作業の本体は、<strong>「GitHub側にしか無いものが、B2側に全部入っているか」を1件ずつ確認すること</strong>。やらずに止めると、欠けたことに気づくのは復元が必要になった日になる。</p>
+<p><strong>1. 止める側の中身を、実物から列挙する</strong></p>
+<p>設計書ではなく実際のファイル一覧から出す。自分はここで一度間違えた。手元のメモの箇条書きだけを読んで「テキスト類がB2に入っていない」と誤判断したが、スクリプト本文を開いたら既に実装済みだった。<strong>メモで判断せず、スクリプト本文とファイル一覧を実見する。</strong></p>
+<p><strong>2. 残す側の対象リストと突き合わせる</strong></p>
+<p>ここで<strong>本物の穴が見つかった</strong>。環境変数をまとめたファイル(<code>.env</code>。各種サービスのトークンが入っている)が、<strong>GitHubにもB2にも無かった</strong>。2系統あったのに、どちらにも無いものが存在した。</p>
+<p><strong>3. Gitの履歴そのものを、ファイルとして退避する</strong></p>
+<p>履歴は普通のファイル同期では運べない。<code>git bundle</code>(リポジトリ全体を1ファイルに固める機能)を使った。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">git bundle create /tmp/history-20260928.bundle --all
+</span></span><span class="line"><span class="cl">git bundle verify /tmp/history-20260928.bundle
+</span></span><span class="line"><span class="cl">rclone copy /tmp/history-20260928.bundle &lt;暗号化remote&gt;:&lt;保存先&gt;/
+</span></span></code></pre></div><ul>
+<li>🔴 <strong><code>root</code>で<code>git</code>を叩くと<code>detected dubious ownership</code>で弾かれる</strong>。ディレクトリの所有者ユーザーで実行する</li>
+<li>出来上がりは831MB。<strong>往復まで確認した</strong>——取り出してmd5(内容の指紋)が一致し、<code>git clone &lt;bundleファイル&gt; &lt;ディレクトリ&gt;</code>で162コミットが復元でき、履歴の中にしか無いPDFを元のサイズどおり取り出せた</li>
+<li>🔴 <strong>一度きりのスナップショット</strong>。以後履歴が伸びても自動では更新されない</li>
+</ul>
+<p><strong>4. 止める前に「止める側にしか無いコミット」がゼロだと確認する</strong></p>
+<p><code>git rev-list --count &lt;リモート&gt;/main --not --all</code>が<code>0</code>であること。</p>
+<p><strong>5. 浮いた分を別の軸に回す</strong></p>
+<p><strong>テキスト類だけを対象にした軽い同期を1日4回</strong>動かすようにした(全体の同期は従来どおり夜1回)。これでRPO(障害時に失われる最大の時間幅)が<strong>最大24時間から最大6時間</strong>に縮んだ。重い写真ライブラリに触らないので約10秒で完走する。加えて30日を超える長期の記録として、<strong>テキスト類のみの日付付き<code>tar.gz</code>スナップショットを週1回</strong>置いた。実測16MBなので年0.8GB、費用はほぼゼロ。</p>
+<ul>
+<li>🔴 <strong>バックアップを取る道具自体がバックアップ対象外だった</strong>。同期スクリプトを置いたディレクトリは、どちらの系統にも入っていなかった。サーバーが全損したらデータは戻るが<strong>戻し方を書いた道具が無い</strong></li>
+<li>🔴 <strong>データベースのダンプを取る行に管理者パスワードが直書きされていた</strong>。<strong>権限600の<code>.env</code>に切り出して読み込む</strong>形にし、読めなければ<code>exit 1</code>、変数が空なら<code>: &quot;${VAR:?未設定}&quot;</code>で止める(黙って空のパスワードで走らせないため)。渡し方は<code>-p'…'</code>のような引数ではなく環境変数経由にする——引数は<code>ps</code>で他のユーザーから見える。なお<strong>平文の秘密はスクリプト本文を直しても消えない</strong>。過去の退避ファイルと稼働中のコンテナの環境変数に同じ値が残っており、本当に消すにはパスワードの変更が必要だった</li>
+</ul>
+<h2 id="何を金庫に入れるか">何を金庫に入れるか</h2>
+<p><strong>バックアップを復元するための鍵が、バックアップの中にしか無いと、永久に開かない。</strong> いわゆるブートストラップ問題(起動するために起動済みの何かが必要になる循環)。自分の場合、B2から取り出すための接続情報(<code>rclone</code>の設定ファイル)はサーバーの中だけにあった。毎日バックアップは成功していたが、<strong>サーバーが丸ごと壊れた瞬間に、無事なデータを開ける人が誰もいなくなる</strong>。</p>
+<blockquote>
+<p><strong>再発行できる鍵は金庫に入れない。再発行できない鍵だけ入れる。</strong></p>
+</blockquote>
+<ul>
+<li><strong>入れる(再発行不能)</strong>: 暗号化パスワード(失うとバックアップが永久に読めない石になる)、ストレージ事業者のアカウントの2段階認証バックアップコード、復元用の接続情報</li>
+<li><strong>入れない(再発行可能)</strong>: 各種APIトークン、ストレージのアプリケーションキー。上位のアカウントにログインできれば1分で作り直せる</li>
+<li><strong>置くべきは鍵そのものではなく、上位の認証</strong>(アカウントのログイン情報と2段階認証)。それがあれば下位の鍵は何度でも生やせる</li>
+<li>🔴 <strong>何でも放り込むと、金庫自体が肥大した単一障害点になる</strong></li>
+</ul>
+<p>置き場所はパスワードマネージャー(<a href="/guides/1password-to-vaultwarden/">1PasswordからVaultwardenに移した</a>もの)にした。スマートフォンのアプリは一度ログインすればオフラインのキャッシュが残るので、サーバーが全損してもそこから取り出せる。ただし金庫自身がサーバー上で動いているので、<strong>スマートフォンとサーバーを同時に失うと詰む</strong>。対処は「紙でもう1部持つ」しかない。</p>
+<h2 id="暗号化とやらなかったこと">暗号化と、やらなかったこと</h2>
+<p>実査したら<strong>事業者側の暗号化(SSE)すら無効</strong>になっていて、写真は生のJPEGのままディスクに置かれていた。「バケットは非公開だから最低限守られている」という感覚は間違いだった。2種類あることを区別しておく。</p>
+<ul>
+<li><strong>事業者側の暗号化</strong>: 倉庫が金庫に入れてくれるが<strong>鍵は倉庫が持つ</strong>。退役ディスクの流出には効くが事業者自身には無力で、手間はゼロ。🔴 <strong>有効にしても遡らない</strong></li>
+<li><strong>送る前に自分で暗号化</strong>: 自分で鍵をかけた箱を渡す。事業者にもアカウント乗っ取りにも強いが、<strong>鍵を失えば永久に読めない</strong>し、既存分は全量を再アップロードになる</li>
+</ul>
+<p>やったのは前者を有効化したうえで、<strong>テキスト類・秘密情報・データベースのダンプだけを後者にする</strong>こと。<code>rclone</code>には<code>crypt</code>という、送信前に暗号化して保存名も不可読にする仕組みがある。初回は6,710オブジェクト・69MBで5分43秒、以後は差分で数十秒だった。</p>
+<p><strong>やらなかったこと</strong>。</p>
+<ul>
+<li><strong>写真ライブラリ131GBは自分で暗号化していない</strong>。全量の再アップロードになるのと、暗号化する動機(「事業者に読まれたくない」のか「凍結で消えるのが嫌」なのか)を整理できていなかったため。後者ならもう達成済みで、前者ならまだ未達。<strong>整理できていないまま重い工事をしない</strong></li>
+<li>🔴 <strong>パスワードの保管庫も、意図的に暗号化していない</strong>。中身はそれ自体がゼロ知識暗号化(サービス側も読めない方式)済みで平文ではなく、何より<strong>暗号化パスワードの保管場所がその金庫なので、暗号化すると循環依存になる</strong></li>
+</ul>
+<h2 id="誰も戻したことのないバックアップはバックアップではない">誰も戻したことのないバックアップは、バックアップではない</h2>
+<p><strong>1. 生のファイルから実際に復元して突き合わせる。</strong> 124ファイルが完全一致した。暗号化remote経由でちゃんと復号できることも同時に確かめられる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rclone copy &lt;暗号化remote&gt;:&lt;対象パス&gt; /tmp/restore-test/
+</span></span><span class="line"><span class="cl">diff -rq /tmp/restore-test/ /home/&lt;user&gt;/&lt;元のディレクトリ&gt;
+</span></span></code></pre></div><p><strong>2. 週次スナップショットを取り出して<code>tar xzf</code>で展開する。</strong> 6,644ファイル・74MBが正常に展開でき、自動処理の定義ファイル16本まで含まれていた。</p>
+<p><strong>3. 全ファイルを照合する。</strong> 差分19件。中身を見たら<strong>すべて同期が走った時刻より後に生成されたファイル</strong>で、取りこぼしはゼロだった。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rclone check --one-way &lt;ローカル&gt; &lt;暗号化remote&gt;:&lt;対象パス&gt;
+</span></span></code></pre></div><p><code>--one-way</code>はリモートにしかない古い版を差分に数えないので、検証にはこちらを使う。</p>
+<p>併せて<strong>事業者からの通知メールの読み方</strong>を決めた。「マスターキーが生成されました」のような通知は、<strong>自分がコンソールを触っていた日なら本人操作、触っていない日なら本物の警戒シグナル</strong>。先に線引きしないと、通知を全部無視する習慣がつく。</p>
+<h2 id="残った1系統の弱いところ">残った1系統の弱いところ</h2>
+<ul>
+<li><strong>事業者1社への依存は未対策</strong>。アカウントの凍結や会社都合には何の備えもない。別会社のストレージへ追記専用でもう1本(月€4前後)が答えだが、見送った</li>
+<li><strong>削除の伝播と容量の兼ね合いが未整理</strong>。送信側の鍵から削除権限を外すと<code>rclone sync</code>が使えず<code>copy</code>しかできなくなり、ローカルで消したものが残り続けて容量が増える。守りと費用がここで正面衝突する</li>
+<li><strong>一番大きい穴は、サーバーを乗っ取られた場合</strong>。1系統しかないので、送信に使っている鍵を盗られたらバックアップ本体を消される。これは別テーマとして切り出し、鍵の権限削減・削除が伝播しない複製先・サーバーの外で動く見張りの3層で作り直した。そちらは<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>に書いた</li>
+</ul>
+<p>費用は全バックアップ合計125GBで<strong>月約$0.69</strong>。一本化で減ったのは費用ではなく、<strong>気にかけておく仕組みの数</strong>だった。</p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+]]></content:encoded></item></channel></rss>

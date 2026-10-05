@@ -1,0 +1,1278 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>ガイド on Off-Grid</title><link>https://offgrid.taikiito.com/guides/</link><description>Recent content in ガイド on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Mon, 05 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/guides/index.xml" rel="self" type="application/rss+xml"/><item><title>自分の「サーバー」を持つとはどういうことか</title><link>https://offgrid.taikiito.com/guides/self-hosting-basics/</link><pubDate>Sun, 13 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/self-hosting-basics/</guid><description>他のガイドは実は『自分のサーバーが既にある』前提で書かれている。ターミナルもDockerも触ったことがない人向けに、サーバーとは何か、レンタルと自前どちらを選ぶべきか、実際に自分が何をしたかを説明する、このサイトの本当の出発点。</description><content:encoded><![CDATA[<p>正直に告白すると、<a href="/guides/google-photos-to-immich/">写真の移行</a>や<a href="/guides/google-drive-to-nextcloud/">ファイルの移行</a>など、他のガイドはすべて「ImmichやNextcloudが動くサーバーが、自分の手元に既にある」という前提で書かれている。ターミナル(文字を打ち込んで操作する黒い画面)を開いたこともない人がいきなりあの記事を読んでも、何をどこから始めればいいのか分からないはずだ。指摘を受けて、そこが一番の土台なのに書いていなかったことに気づいた。この記事は、その土台の話をする。</p>
+<h2 id="そもそもサーバーとは何か">そもそも「サーバー」とは何か</h2>
+<p>普段使っているパソコンやスマホは、使う時だけ電源を入れて、使い終わったら閉じたり寝かせたりする。<strong>サーバーとは、それと逆で、24時間365日ずっと電源が入っていて、インターネットの向こう側からいつでもアクセスできる状態のコンピュータ</strong>のことだ。</p>
+<p>Google Photosも、Gmailも、実態は「Googleが管理する巨大なサーバー群」に自分のデータを預けて、そこに常時アクセスしている状態にすぎない。「データ主権を取り戻す」とは、この「常時アクセスできる置き場所」を、Google任せではなく自分の管理下に置き換える、ということだ。そのためには、自分の管理下にある「常時起動しているコンピュータ」、つまり自分のサーバーが要る。</p>
+<h2 id="サーバーを持つ2つの道">サーバーを持つ2つの道</h2>
+<p>サーバーを持つには、大きく2つの選び方がある。</p>
+<p><strong>① レンタルサーバー(VPS)を借りる</strong> — 月額数百円〜数千円で、どこかのデータセンターにあるコンピュータの一部を間借りする方式。AWS Lightsail、さくらのVPS、カゴヤ CLOUD VPSなどが有名どころ。自分で機械を持たなくていい代わりに、月額費用がずっとかかり続ける。</p>
+<p><strong>② 自分の手元にあるPCを使う(自宅サーバー)</strong> — 使っていない古いPCや、ゲーミングPCのような性能の高いPCを、24時間つけっぱなしにして使う方式。初期投資(電気代はかかる)以外の追加費用がかからない代わりに、電源やネット回線が落ちたらサービスも止まる、という自己責任になる。</p>
+<p>自分は最初、AWS LightsailというVPSを使っていたが、途中で②の自宅サーバー(使っていたゲーミングPC)に切り替えた。理由は、写真管理ソフト(Immich)の顔認識機能がGPU(画像処理用の高性能な部品)を使うと速く動くのに、一般的なVPSにはGPUオプションが無いか、あっても高額だったため。自宅のゲーミングPCには既にGPUが載っていたので、それをそのまま活用できるほうが合理的だった。加えて、VPSの月額費用も浮いた。</p>
+<p><strong>とはいえ、どちらが正解ということはない。</strong> GPUを使う予定が無く、自宅に眠っているPCも無いなら、まずは安価なVPSを1つ借りるところから始めるほうが手軽だと思う。自分の場合はたまたま条件が噛み合って②を選んだ、という話として読んでほしい。</p>
+<h2 id="自分がどうやってこの作業を進めているか">自分がどうやってこの作業を進めているか</h2>
+<p>このサイトのガイドは、自分がターミナルに一つ一つコマンドを手打ちして進めたわけではない。実際には<strong>Claude(AIアシスタント)に「こうしたい」と会話しながら指示を出し、実際のコマンド実行やファイル編集はClaude側にやってもらう</strong>、という進め方をしている。使っているのはMulmoClaude(自分がGitHub上で公開している、Claudeを使ったAIアシスタントの土台)というソフトで、これ自体の成り立ちは<a href="/posts/">開発日誌</a>に書いている。</p>
+<p>このMulmoClaude自体も、ここまでの話と同じ「自分のサーバー」の上で動いている。<strong>最初はAWS Lightsail(レンタルサーバー)の上で動かしていたが、Immichの顔認識をGPUで速く処理したいという理由で自宅のゲーミングPC(GALLERIA)に切り替えた時、Nextcloud・VaultwardenといったほかのサービスもろともMulmoClaude自体も一緒にGALLERIA側へ引っ越した。</strong> つまり今は、この文章を書いているAI自身も含めて、全部が同じ自宅の1台のPCの上で動いている状態になっている。</p>
+<p>なので、このサイトの文章の「自分がやった」は、実際には「Claudeに頼んで、Claudeが実行した」を指していることがほとんどだと理解しておいてもらえればと思う。とはいえ、何をどうするかの判断・決断は全部自分がしているので、「作業の手を動かす部分をAIに任せている」くらいの温度感で読んでほしい。</p>
+<h2 id="出てくる専門用語を一通り">出てくる専門用語を一通り</h2>
+<p>ここから先のガイドで繰り返し出てくる言葉を、先にまとめて説明しておく。</p>
+<ul>
+<li><strong>ターミナル</strong> — マウスでクリックする代わりに、文字でコマンド(命令文)を打ち込んでコンピュータを操作するための画面。最初は怖く見えるが、実態は「決まった呪文を決まった場所にコピー&amp;ペーストするだけ」の作業がほとんどで、慣れの問題が大きい。</li>
+<li><strong>Docker(ドッカー)</strong> / <strong>docker-compose(ドッカーコンポーズ)</strong> — サーバー上でソフトを動かすための仕組み。1つ1つのソフトを「コンテナ」という隔離された箱に入れて動かすので、複数のソフトを同じサーバーに入れてもお互いが干渉しにくい。<code>docker-compose</code>は、その箱をいくつか組み合わせて一括で起動・停止するための設定ファイルの書き方。</li>
+<li><strong>ドメイン</strong> — <code>taikiito.com</code>のような、自分のサーバーにつける覚えやすい名前。年間数百円〜数千円で自分の名義で取得できる(自分はCloudflare Registrarで取得した)。</li>
+<li><strong>DNS</strong> — 「<code>taikiito.com</code>というドメインは、実際にはどのサーバーを指すか」をインターネット全体に教えるための、住所録のような仕組み。ドメインを取得したら、DNSの設定でどのサーバーに繋げるかを指定する。</li>
+<li><strong>Cloudflare Tunnel(クラウドフレア・トンネル)</strong> — 自宅のサーバーを、自宅のルーターの設定(ポート開放という、外から直接アクセスできる穴を開ける作業)をいじらずに、安全にインターネットへ公開するための仕組み。自分もこれを使っていて、ルーター側の設定は一切変更していない。ポート開放は誤って設定すると自宅のネットワーク全体が外部から丸見えになるリスクがあるため、この方式のほうが安心して扱える。</li>
+</ul>
+<p>これらのソフト自体は、すべて無料(OSS、オープンソースソフトウェア = 誰でも無料で使える公開されたソフト)で使える。かかる費用は基本的に「サーバー代(自宅の場合は電気代のみ)」と「ドメイン代(年数百円〜)」だけだ。</p>
+<h2 id="実際に手を動かす-最小構成でサーバーを1台立てる">実際に手を動かす: 最小構成でサーバーを1台立てる</h2>
+<p>ここから先は、自分が最初にやった手順そのままに、VPS(レンタルサーバー)でサーバーを1台立てるところまでを書く。<strong>自宅サーバー(Windows + WSL2)は環境依存が強すぎて万人向けに書き起こせないと判断し、まずは誰でも同じように再現できるVPSの手順に絞った。</strong> 自宅サーバーへの切り替えは、この記事の後半「自宅サーバーに切り替える場合」で触れる。</p>
+<h3 id="step-1-ドメインを取得する">Step 1: ドメインを取得する</h3>
+<p>まず自分のサーバーの「名前」になるドメインを取得する。自分は<a href="https://www.cloudflare.com/products/registrar/">Cloudflare</a>のRegistrar(ドメイン登録サービス)を使った。理由は、相場より安い実費に近い価格で提供されていて、WHOIS(ドメイン所有者情報)を公開しないプライバシー保護もデフォルトで付いてくるため。ダッシュボードの「Register a Domain」から、空いているドメイン名を選んで購入するだけで完了する。年間数百円〜数千円ほど。</p>
+<h3 id="step-2-vpsレンタルサーバーを契約する">Step 2: VPS(レンタルサーバー)を契約する</h3>
+<p>自分が最初に使ったのは<strong>AWS Lightsail</strong>、リージョンはシンガポール、OSはUbuntu(Linuxの一種)、**プランは月$7(メモリ1GB・2vCPU・SSD 40GB)**を選んだ。動画生成のような重い処理をする予定がなければ、この最小プランで十分動く。契約すると、そのサーバーの持ち主だけが入れる「IPアドレス」(サーバーの住所のようなもの)が発行される。</p>
+<p>VPSは他にもさくらのVPS・カゴヤ CLOUD VPS・DigitalOcean・Vultrなど選択肢は多い。自分がAWSを選んだ決め手は、シンガポール在住で近いリージョンが使えたのと、後々AWSの他サービス(バックアップ等)との連携がしやすそうだったため——ただしこの用途では正直どれを選んでも大差ない。</p>
+<h3 id="step-3-ターミナルからサーバーに接続しdockerを入れる">Step 3: ターミナルからサーバーに接続し、Dockerを入れる</h3>
+<p>契約すると、サーバーに接続するための「SSH鍵」(パスワードの代わりに使う、より安全な鍵ファイル)が発行される。ターミナル(黒い画面でコマンドを打ち込む操作)から、次のように接続する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">ssh -i 発行された鍵ファイル ubuntu@サーバーのIPアドレス
+</span></span></code></pre></div><p>接続できたら、Docker公式が配布しているインストールスクリプトを実行する。これ1行で、Dockerと<code>docker compose</code>がまとめて入る。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -fsSL https://get.docker.com <span class="p">|</span> sh
+</span></span><span class="line"><span class="cl">sudo usermod -aG docker <span class="nv">$USER</span>
+</span></span></code></pre></div><p>(2行目は、<code>sudo</code>〈管理者権限で実行〉を毎回付けなくてもDockerコマンドが使えるようにするおまじない。一度ログアウトしてから入り直すと反映される。)</p>
+<h3 id="step-4-cloudflare-tunnelでサーバーを安全に公開する">Step 4: Cloudflare Tunnelでサーバーを安全に公開する</h3>
+<p>サーバーは立ったが、まだ<code>taikiito.com</code>のようなドメインからはアクセスできない。ここで前述の<strong>Cloudflare Tunnel</strong>を使う。取得したドメインをCloudflareのネームサーバーに切り替えた上で(Cloudflareのダッシュボードの指示通りに進めれば数クリックで終わる)、サーバー側で次を実行する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># cloudflaredをインストール</span>
+</span></span><span class="line"><span class="cl">curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+</span></span><span class="line"><span class="cl">sudo dpkg -i cloudflared.deb
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># Cloudflareアカウントと連携(ブラウザが開くのでログインする)</span>
+</span></span><span class="line"><span class="cl">cloudflared tunnel login
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># トンネルを作成(名前は自分で決める。ここでは仮に my-server)</span>
+</span></span><span class="line"><span class="cl">cloudflared tunnel create my-server
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ドメインとトンネルを紐付ける</span>
+</span></span><span class="line"><span class="cl">cloudflared tunnel route dns my-server example.taikiito.com
+</span></span></code></pre></div><p>最後に、どのURLへのアクセスをサーバー内のどのポートに転送するかを設定ファイル(<code>~/.cloudflared/config.yml</code>)に書く。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">tunnel</span><span class="p">:</span><span class="w"> </span><span class="l">my-server</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="nt">credentials-file</span><span class="p">:</span><span class="w"> </span><span class="l">/home/ubuntu/.cloudflared/&lt;トンネルID&gt;.json</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="nt">ingress</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">example.taikiito.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http://localhost:8080</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http_status:404</span><span class="w">
+</span></span></span></code></pre></div><p>再起動しても自動で動き続けるよう、サービス化しておく。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo cloudflared service install
+</span></span></code></pre></div><p>ここまでできれば、あとはサーバー内の<code>localhost:8080</code>(上の設定例のポート番号)で何かソフトを動かせば、<code>https://example.taikiito.com</code>からアクセスできるようになる。ルーターのポート開放(外から直接アクセスできる穴を開ける、事故ると危険な設定)を一切いじらずに済むのがこの方式の利点。</p>
+<h3 id="step-5-動作確認">Step 5: 動作確認</h3>
+<p>具体的に何かソフトを動かして確認したい場合は、このサイトの次のガイド(<a href="/guides/google-photos-to-immich/">写真をGoogle PhotosからImmichに移す</a>)がそのままStep 6以降の実例になる——<code>docker-compose.yml</code>を書いてImmichを起動し、上のingress設定のポート番号をImmichのポートに合わせれば、そのまま公開まで到達できる。</p>
+<h2 id="自宅サーバーに切り替える場合">自宅サーバーに切り替える場合</h2>
+<p>自分は後になって、AWS Lightsail(VPS)から自宅のゲーミングPC(自宅サーバー)に切り替えた。理由は前述の通りGPU(画像処理用の高性能な部品)を使いたかったのと、月額費用を浮かせたかったため。ただしこの切り替えは、Windows PCの中でLinuxを動かす「WSL2」という仕組みや、再起動時の自動起動設定など、環境固有のハマりどころが多く、万人向けの手順としてはまだ書き起こせていない。GPUを使う予定がなければ、上記のVPS構成のままで十分運用できる。自宅サーバーへの興味がある場合は、今後別記事として書く予定。</p>
+<h2 id="正直な難易度感">正直な難易度感</h2>
+<p>ここまで読んで「思ったより大変そう」と感じたなら、その感覚は正しい。自分の場合も、自宅サーバーへの切り替えではWindowsとLinux(WSL2)の両方の知識が必要になったり、再起動のたびにサービスが自動で立ち上がらない不具合に何度も遭遇したりと、一筋縄ではいかない場面が何度もあった。上記のVPS手順自体はそこまで難しくないが、初めてターミナルを触る場合は1〜2時間はかかると思っておいてほしい。</p>
+<p>ただし、これは「一度整えてしまえば、あとはほぼ触らなくていい」類の作業でもある。土台さえできてしまえば、その後の<a href="/guides/google-photos-to-immich/">写真の移行</a>や<a href="/guides/1password-to-vaultwarden/">パスワードの移行</a>といった個別の作業は、ここまでの土台よりずっと軽い。</p>
+<h2 id="この先">この先</h2>
+<p>サーバーが立ち、ドメインからアクセスできる状態まで来たら、あとは個別のサービスを動かすだけ。まずは実際に何を移したかの記録から読んでもらえればと思う。→ <a href="/guides/google-photos-to-immich/">写真をGoogle PhotosからImmichに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-13: 初版 / 同日: 「自分がどうやってこの作業を進めているか」(MulmoClaude/Claudeの利用、Lightsail→GALLERIA移設)を追記 / 同日: VPS(AWS Lightsail)でのドメイン取得〜Docker〜Cloudflare Tunnelまでの具体的手順を追記</p>
+]]></content:encoded></item><item><title>写真をGoogle PhotosからImmichに移す</title><link>https://offgrid.taikiito.com/guides/google-photos-to-immich/</link><pubDate>Mon, 24 Aug 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/google-photos-to-immich/</guid><description>Googleフォトの全データを自前サーバー(Immich)に移行した時の記録。docker-composeでのImmich構築、immich-goの実際のコマンド、Takeoutの分割zipで踏んだ罠、本番実行の結果まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>Google Photosの全データ(3万件超、約119GB)を自前サーバー上のImmichというソフトに移した記録。前回の版は「何をしたか」の日記だったが、今回は実際に打ったコマンドやファイルの中身まで含めて書き直した。<strong>この記事だけで、自分がやったのと同じ環境を一から再現できることを目指している。</strong></p>
+<h2 id="前提-このガイドで想定している環境">前提: このガイドで想定している環境</h2>
+<p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
+<ul>
+<li>常時起動しているLinux環境(自分の場合はWindows機の中でWSL2〈Windows Subsystem for Linux 2、WindowsのなかでLinuxをそのまま動かす仕組み〉のUbuntu)</li>
+<li>Docker Engine(コンテナ、つまりソフトを隔離された箱に入れて動かす仕組み)と、そのおまけ機能である<code>docker compose</code>(複数のコンテナ設定をまとめて起動・停止するコマンド)が使える状態</li>
+<li>ターミナル(文字でコマンドを打ち込む黒い画面)の基本操作に抵抗がないこと</li>
+</ul>
+<p>GPU(グラフィック処理用の高性能な部品)は必須ではない。無くても写真の保管・閲覧は問題なくでき、違うのは顔認識やスマート検索(自然言語でのあいまい検索)の処理速度だけ。自分はたまたま手元にゲーミングPC(GeForce RTX 3070搭載)があったのでGPUを使う構成にした。GPUを使わない場合は、後述の「GPUを使う場合の追加設定」を丸ごと飛ばして進めて構わない。</p>
+<h2 id="step-1-immichをdocker-composeで動かす">Step 1: Immichをdocker-composeで動かす</h2>
+<p>まず作業用フォルダを作り、Immich公式が配布している設定ファイル一式をダウンロードする。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/immich <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/immich
+</span></span><span class="line"><span class="cl">curl -fL -o docker-compose.yml https://github.com/immich-app/immich/releases/latest/download/docker-compose.yml
+</span></span><span class="line"><span class="cl">curl -fL -o .env https://github.com/immich-app/immich/releases/latest/download/example.env
+</span></span><span class="line"><span class="cl">curl -fL -o hwaccel.ml.yml https://github.com/immich-app/immich/releases/latest/download/hwaccel.ml.yml
+</span></span></code></pre></div><p><strong>ここで一度ハマった</strong>: <code>curl</code>に<code>-L</code>(リダイレクト追従、GitHubのようにURLが転送される先でファイルを配っているサイトでは必須)を付け忘れて、中身が0バイトのファイルができてしまったことがあった。<code>-fL</code>(<code>-f</code>はエラー時に空ファイルを作らず失敗させる、<code>-L</code>はリダイレクト追従)の組み合わせで取り直して解決した。</p>
+<p>次に<code>.env</code>ファイルを編集する。最低限、以下の2点は必ず変更する。</p>
+<ul>
+<li><code>DB_PASSWORD</code> — デフォルトのままだと誰でも推測できるパスワードなので、自分だけの値に変更する</li>
+<li><code>UPLOAD_LOCATION</code> — 写真の実ファイルをどこに保存するかの場所。デフォルトの<code>./library</code>(このフォルダの中の<code>library</code>サブフォルダ)のままで問題ない</li>
+</ul>
+<p>セットアップ中に出てくる「Storage Template」という機能(保存されるファイルの命名・フォルダ構造を人間が読みやすい形に変える機能)は、オフのままにすることを勧める。写真の閲覧はどのみちImmichの画面経由が前提になるので、生ファイルの構造を人が読みやすくする必要性が薄いことと、後から有効化すると全件の再整理ジョブが走って重くなることが理由。</p>
+<p>準備ができたら起動する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker compose up -d
+</span></span><span class="line"><span class="cl">docker compose ps
+</span></span></code></pre></div><p><code>immich_server</code> / <code>immich_machine_learning</code> / <code>database</code>(PostgreSQL) / <code>redis</code>の4つのコンテナが<code>healthy</code>(正常稼働)と表示されれば成功。ブラウザで<code>http://localhost:2283</code>(自宅サーバーの場合はサーバーのIPアドレスに読み替える)を開き、管理者アカウントを作成する。</p>
+<h3 id="gpuを使う場合の追加設定任意">GPUを使う場合の追加設定(任意)</h3>
+<p>顔認識・スマート検索をGPUで高速に処理したい場合は、上記の<code>docker compose up -d</code>の前に以下を行う。</p>
+<ol>
+<li>WSL2からGPUが見えることを確認する: <code>nvidia-smi</code>(GPUの状態を表示するNVIDIA公式コマンド)を実行し、GPU名やドライバのバージョンが表示されればOK</li>
+<li>NVIDIA Container Toolkit(DockerコンテナからGPUを使えるようにする橋渡しソフト)を導入し、<code>nvidia-ctk runtime configure --runtime=docker</code>で設定を反映</li>
+<li><code>docker run --rm --gpus all ubuntu nvidia-smi</code>を実行し、コンテナの中からもGPUが見えることを確認する</li>
+<li><code>docker-compose.yml</code>の<code>immich-machine-learning</code>サービスを編集: イメージタグの末尾に<code>-cuda</code>を追加し、コメントアウトされている<code>extends: file: hwaccel.ml.yml / service: cuda</code>の行を有効化(元は<code>service: cpu</code>になっている行をコメントアウトし、<code>cuda</code>側を使う)</li>
+</ol>
+<p>この状態で<code>docker compose up -d</code>すれば、ログにCUDA関連のエラーが出ていないことを確認して完了。GPUを使わない場合はこの節をまるごと無視してよく、Immichは自動的にCPUで処理する。</p>
+<h2 id="step-2-取り込みツールimmich-goを導入する">Step 2: 取り込みツール<code>immich-go</code>を導入する</h2>
+<p>Immich公式のCLI(コマンドライン操作用ツール)である<code>immich upload</code>は<strong>使わない</strong>。理由は、Google Takeout(Googleのデータ一括エクスポート機能)でダウンロードした写真には、撮影日時やアルバム情報が入った<code>.json</code>という付属ファイル(サイドカーファイルと呼ばれる)が一緒に入っているが、公式CLIはこの<code>.json</code>を読まないため、<strong>アルバムの中身や正確な撮影日時が失われてしまう</strong>ため。</p>
+<p>代わりに使うのが、有志が開発した**<code>immich-go</code>**(自分が使ったのはv0.32.0、開発者はsimulot氏)というツール。Takeoutの<code>.json</code>サイドカーをちゃんと読んでアルバム・撮影日時・GPS情報を復元し、しかもzipファイルを展開せずそのまま読み込める(119GB分を解凍する広い置き場所を用意しなくていい)、重複した写真も自動で名寄せしてくれる。</p>
+<p>GitHubのリリースページから、自分のOS(今回はLinux/amd64)に合ったバイナリをダウンロードして展開し、実行権限を付ける。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -fL -o immich-go.tar.gz https://github.com/simulot/immich-go/releases/download/v0.32.0/immich-go_Linux_x86_64.tar.gz
+</span></span><span class="line"><span class="cl">tar -xzf immich-go.tar.gz
+</span></span><span class="line"><span class="cl">chmod +x immich-go
+</span></span></code></pre></div><p>(バージョンによって配布ファイル名やコマンドのオプション名が変わることがあるので、実行前に<code>./immich-go --help</code>で最新の使い方を確認するのを勧める。)</p>
+<p>Immich側の管理画面(Account Settings → API Keys)でAPIキーを1つ発行しておく。このキーを使ってimmich-goがImmichサーバーに写真をアップロードする。</p>
+<h2 id="step-3-google-takeoutで写真データをエクスポートする">Step 3: Google Takeoutで写真データをエクスポートする</h2>
+<p><a href="https://takeout.google.com">takeout.google.com</a>にアクセスし、「Google フォト」だけを選択してエクスポートを作成する。ファイル形式はzip、分割サイズは自分で選べる(容量が大きいとGoogleが複数のzipファイルに自動分割してくれる)。準備ができるとメールで通知が来て、ダウンロードページから一つずつ落としていく。</p>
+<p><strong>ここでも一度ハマった</strong>: 自分の場合は全部で12個に分割された(<code>takeout-...-001.zip</code>〜<code>-012.zip</code>)。ダウンロードし終わったつもりで作業を始めたら、<strong>途中の2つ(<code>-002</code>と<code>-003</code>)が抜けていた</strong>ことに後から気づいた。ダウンロードページに戻って抜けていた分だけ再取得し、連番が最後まで揃っていることを確認してから次に進んだ。件数が多いときは、連番が全部揃っているかを作業開始前に必ず確認するべき、という教訓。</p>
+<h2 id="step-4-長時間処理に備えてtmuxの中で作業する">Step 4: 長時間処理に備えて<code>tmux</code>の中で作業する</h2>
+<p>数万件・100GB超のアップロードは何時間もかかる処理になる。ターミナルの画面(WindowsならPowerShellやWSLの窓)を誤って閉じてしまうと処理も一緒に止まってしまうので、<strong><code>tmux</code></strong>(ターミナルの中に「もう一つの独立したターミナル」を作れるツール)のセッションの中で実行する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">tmux new -s immich-import
+</span></span></code></pre></div><p>これで新しいセッションに入る。ここから先の作業はこのセッションの中で行い、たとえ元のウィンドウを閉じても処理は裏側で動き続ける(再接続するには<code>tmux attach -t immich-import</code>)。</p>
+<h2 id="step-5-まず--dry-runで確認する">Step 5: まず<code>--dry-run</code>で確認する</h2>
+<p>いきなり本番実行するのは怖いので、実際には何もアップロードせず結果だけ教えてくれる<code>--dry-run</code>オプションを付けて試す。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">./immich-go upload from-google-photos <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --server<span class="o">=</span>http://localhost:2283 <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --api-key<span class="o">=</span>&lt;Step2で発行したAPIキー&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --dry-run <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/Downloads/takeout-*.zip
+</span></span></code></pre></div><p>自分の場合の出力はこうだった。</p>
+<pre tabindex="0"><code>Total Assets: 32218
+Associated metadata: 32211
+Missing metadata: 7
+Errors: 0
+</code></pre><p>3万2千件のうち、日付やアルバム情報(メタデータ)が紐づかなかったのはわずか7件、エラーはゼロ。この結果を見て「時系列が全部壊れる」ような大事故にはならなさそうだと判断し、<code>--include-unmatched</code>(メタデータが無い写真も強引に取り込むオプション)は付けずに本番実行することにした。</p>
+<h2 id="step-6-本番実行">Step 6: 本番実行</h2>
+<p><code>--dry-run</code>を外すだけで、実際のアップロードが始まる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">./immich-go upload from-google-photos <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --server<span class="o">=</span>http://localhost:2283 <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --api-key<span class="o">=</span>&lt;APIキー&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/Downloads/takeout-*.zip
+</span></span></code></pre></div><p>結果はこうだった。</p>
+<pre tabindex="0"><code>Uploaded successfully: 29408
+Metadata updated: 30794
+Discarded local duplicate: 1048
+Errors: 2
+Missing metadata: 7
+</code></pre><p>3万件近くが無事アップロードされ、1,048件は重複と判定されてスキップされた(むしろ取り込み過ぎを防いでくれるので助かる動き)。エラーは2件だけ。ログファイル(<code>~/immich-import.log</code>)を見ると、写真本体が消えたわけではなく、「アルバムを作れなかった(<code>failed to create album</code>)」「タグを付けられなかった(<code>failed to add assets to tag</code>)」といった付随的な失敗だけだった。</p>
+<h2 id="step-7-取り込み直後に焦った話バックグラウンドジョブの確認">Step 7: 取り込み直後に焦った話(バックグラウンドジョブの確認)</h2>
+<p>取り込み後、Immichの管理画面で最近の写真に「Error」のようなマークが出ていて、一瞬「本体が壊れたか」と焦った。よく見ると、管理画面(Administration → Jobs)にサムネイル生成(Generate Thumbnails)・顔認識(Facial Recognition)・文字認識(OCR)といった**後処理(バックグラウンドジョブ)**がまだ大量に残っている状態だった。つまり、アップロード自体は終わっていても、Immich側の後片付け処理がまだ終わっていなかっただけ。数時間待って、これらのジョブがすべて完了したのを確認してから見直したら、表示は正常に戻っていた。<strong>取り込み直後に何かエラーっぽい表示が出ても、すぐパニックにならず、まずバックグラウンドジョブが終わっているか確認する</strong>、というのが得た教訓。</p>
+<h2 id="step-8-バックアップに追加する">Step 8: バックアップに追加する</h2>
+<p>写真ファイルだけをバックアップしても、アルバム構成・撮影日時の補正結果・顔認識結果はすべてPostgreSQL(Immichが使っているデータベース)の中に入っているため、<strong>データベースのバックアップも一緒に取らないと意味がない</strong>。自分は既存のバックアップスクリプト(<code>~/backup-scripts/backup-to-b2.sh</code>、Backblaze B2というオンラインストレージへ<code>rclone</code>で同期するもの)に以下の2つを追記した。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># データベースのダンプ</span>
+</span></span><span class="line"><span class="cl">docker compose -f ~/immich/docker-compose.yml <span class="nb">exec</span> -T database <span class="se">\
+</span></span></span><span class="line"><span class="cl">  pg_dumpall --clean --if-exists --username<span class="o">=</span>postgres <span class="p">|</span> gzip &gt; /tmp/immich-db.sql.gz
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 写真本体の同期(サムネイルと変換済み動画はImmichが再生成できるので除外する)</span>
+</span></span><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/immich/library <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/immich/library&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --exclude <span class="s2">&#34;thumbs/**&#34;</span> --exclude <span class="s2">&#34;encoded-video/**&#34;</span>
+</span></span></code></pre></div><p><strong>注意点が2つ</strong>。1つ目は、<code>thumbs/</code>と<code>encoded-video/</code>(Immichが自動生成する派生ファイル)を除外しないと、バックアップ容量が無駄に膨らむこと。2つ目は、119GBのような大容量を初回にいきなり日次の自動実行(cron)に任せると、家庭のインターネット回線の上り速度によっては半日〜丸1日かかってしまい、日中の回線を占有してしまうこと。初回だけは<code>--bwlimit</code>(転送速度の上限を指定するオプション)を付けて手動で実行し、完了を確認してから自動実行に組み込むことを勧める。</p>
+<h2 id="結果と現状の進捗">結果と現状の進捗</h2>
+<p>ブラウザでImmichを開いて確認したところ、昔の写真もちゃんと時系列順に並んでいた。「日付が全部壊れた」ような状態にはならず、実用上問題のない移行ができたと判断している。</p>
+<p>2026-09-12時点の進捗として追記すると、Google Photosからの移行は完了しているが、実はiPhone側の「iCloud写真」はまだオンのままで、GoogleとImmich・iCloudの3箇所に同時保存されている状態が続いている。写真の管理元を完全にImmich一本にするには、(1)しばらくImmichと並行運用して安定を確認、(2)iPhoneの「iCloud写真」をオフにして以降はImmichアプリの自動バックアップだけに切り替え、(3)必要ならiCloudのストレージプランを見直す、という手順が残っている。Apple純正の「写真」アプリ自体をやめるつもりはなく、OS標準のビューア・共有機能としては使い続け、バックアップ・データの主管をImmichに置く役割分担にする方針。この手順は急がず進める予定で、実施したらここに追記する。</p>
+<p>次は、同じ考え方でGoogle Driveのファイルを移した話。→ <a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-08-24: 初版 / 2026-09-12: 「現状の進捗」を追記(iCloud写真トグルOFF化の計画) / 2026-09-13: docker-composeでのImmich構築・immich-goの実コマンド・バックアップスクリプトの追記まで、再現可能なレベルに全面書き直し</p>
+]]></content:encoded></item><item><title>ファイルをGoogle DriveからNextcloudに移す</title><link>https://offgrid.taikiito.com/guides/google-drive-to-nextcloud/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/google-drive-to-nextcloud/</guid><description>Google Driveのファイルを自前サーバー(Nextcloud)に移行した時の記録。docker-composeでのNextcloud構築、Cloudflare Tunnelでの公開、rcloneでのバックアップ設定まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>Google Driveのファイルを自分のサーバー上のNextcloudというソフトに移した記録。前回の版は経緯中心だったので、今回は実際に使ったdocker-composeの設定内容やコマンドまで書き足した。<strong>この記事だけで、Nextcloudを自分のサーバーに構築するところまで再現できることを目指している。</strong></p>
+<h2 id="前提">前提</h2>
+<p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
+<ul>
+<li>常時起動しているLinux環境(Docker Engineが使える状態)</li>
+<li>自分名義のドメイン、およびCloudflare(無料プランで可)でそのドメインを管理していること</li>
+<li>Cloudflare Tunnel(<code>cloudflared</code>というソフトを使い、自宅のルーターの設定を一切いじらずに自宅サーバーを安全にインターネット公開する仕組み)がすでに動いている状態。導入手順は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を参照</li>
+</ul>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>写真をImmichに移した(<a href="/guides/google-photos-to-immich/">前の記事</a>)のと同じ理由で、Google Driveに置きっぱなしにしていたファイルも自分の手元に戻したいと思った。写真ほど量は多くない(実質100〜150MB程度)が、契約書や身分証のコピーなど「人に預けたくないもの」が混ざっていたのが動機だった。</p>
+<h2 id="step-1-nextcloudを選び全部は移さないと決めた">Step 1: Nextcloudを選び、全部は移さないと決めた</h2>
+<p>Google Driveの代わりになる自前ホスト型のソフトはいくつかある。今回は次の4つを比べた。</p>
+<ul>
+<li><strong>Nextcloud</strong> — ファイル同期に加えて、連絡先・カレンダー・メモアプリなど周辺機能が豊富。後から機能を足しやすい。</li>
+<li><strong>Seafile</strong> — ファイル同期に特化していて速いという評判だが、周辺機能はNextcloudほど無い。</li>
+<li><strong>Syncthing</strong> — サーバーを介さず端末同士が直接同期する仕組み。管理はシンプルだが、Google Driveのような「どこからでもブラウザで見る」用途には向かない。</li>
+<li><strong>Filestash</strong> — 既存のストレージ(自分のNASなど)にWeb UIを被せるツール。今回は土台のストレージ自体を新規に用意する必要があったので、ここでは選択肢から外れた。</li>
+</ul>
+<p>最終的に、**拡張性(今後、連絡先やカレンダーも同じ場所に集約したくなる見込みがあった)**を決め手にNextcloudにした。実際にこの後、<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先・カレンダーも同じNextcloudに移す</a>ことになったので、この判断は結果的に正しかった。</p>
+<p>写真の時は「全部Immichに取り込む」という単純な方針にしたが、Google Driveは事情が違った。中身を確認すると、自分のファイルの他に、家族と共有しているフォルダが2つ(iPhoneの体組成計・血圧データを自動書き出しする仕組みと、ビザ手続き関連の共有フォルダ)混ざっていた。この2つは「相手(連携先アプリや家族)がGoogle前提で動いている」ため、無理にNextcloudへ移すと連携が壊れる。<strong>移行の効果(データ主権が増える度合い)と、移すコスト・壊れるリスクを天秤にかけて、この2つはGoogle側に残すと決めた。</strong> 残りの自分専用ファイル(契約書などの<code>archive</code>フォルダ)だけをNextcloudに移した。</p>
+<h2 id="step-2-docker-composeでnextcloudを構築する">Step 2: docker-composeでNextcloudを構築する</h2>
+<p>作業用フォルダを作り、<code>docker-compose.yml</code>を用意する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/nextcloud <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/nextcloud
+</span></span></code></pre></div><p><code>docker-compose.yml</code>の中身(Nextcloud本体<code>app</code>と、データを整理して保存しておくデータベースソフト<code>db</code>〈MariaDB〉の2つのコンテナをセットで起動する構成):</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">services</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">db</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">mariadb:11</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l">always</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">./db:/var/lib/mysql</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">environment</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_ROOT_PASSWORD=&lt;自分で決めた強力なパスワード&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_PASSWORD=&lt;自分で決めた強力なパスワード&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_DATABASE=nextcloud</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_USER=nextcloud</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">app</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">nextcloud:latest</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l">always</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="m">127.0.0.1</span><span class="p">:</span><span class="m">8081</span><span class="p">:</span><span class="m">80</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">links</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">db</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">./data:/var/www/html</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">environment</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_PASSWORD=&lt;自分で決めた強力なパスワード&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_DATABASE=nextcloud</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_USER=nextcloud</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">MYSQL_HOST=db</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">NEXTCLOUD_ADMIN_USER=admin</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">NEXTCLOUD_ADMIN_PASSWORD=&lt;自分で決めた強力なパスワード&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">NEXTCLOUD_TRUSTED_DOMAINS=drive.example.com</span><span class="w">
+</span></span></span></code></pre></div><p><code>ports</code>を<code>127.0.0.1:8081:80</code>(自分のマシンの中からしかアクセスできない設定)にしているのがポイント。外部への公開はこのあとCloudflare Tunnel経由で行うので、Nextcloud自体を直接インターネットに晒す必要はない。<code>NEXTCLOUD_TRUSTED_DOMAINS</code>には、実際に使う自分のドメイン(例: <code>drive.taikiito.com</code>)を入れる。</p>
+<p>起動する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker compose up -d
+</span></span><span class="line"><span class="cl">docker compose ps
+</span></span></code></pre></div><p><code>app</code>・<code>db</code>の2つが起動していることを確認したら、<code>http://localhost:8081</code>にアクセスして管理者アカウント(<code>NEXTCLOUD_ADMIN_USER</code>/<code>NEXTCLOUD_ADMIN_PASSWORD</code>で指定した内容)でログインできることを確認する。</p>
+<p><strong>Nextcloudの管理者ユーザー名は一度決めると後から変更できない</strong>ので、<code>admin</code>のような分かりやすい名前で最初から決めておくとよい。</p>
+<h2 id="step-3-cloudflare-tunnelで公開する">Step 3: Cloudflare Tunnelで公開する</h2>
+<p><code>/etc/cloudflared/config.yml</code>(Cloudflare Tunnelの設定ファイル)の<code>ingress</code>(どのドメイン宛のアクセスを、サーバー内のどのポートに転送するかのルール一覧)に、Nextcloud用の行を追記する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ingress</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">drive.taikiito.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http://localhost:8081</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># ...他のサービスの行がここに続く...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http_status:404</span><span class="w">
+</span></span></span></code></pre></div><p><strong>注意点</strong>: <code>service:</code>行のインデント(行頭の空白)は他の行と正確に揃えること。ここが1マスでもずれるとYAML(設定ファイルの記述形式)の解析エラーになり、Cloudflare Tunnel全体が落ちて他のサービスまで巻き込んで止まる、という事故を実際に経験している。編集後は<code>cloudflared tunnel ingress validate</code>で文法チェックしてから<code>sudo systemctl restart cloudflared</code>で反映するのが安全。</p>
+<p>DNS側は、Cloudflareの管理画面(またはAPI)で<code>drive</code>(サブドメイン部分)のCNAMEレコードを<code>&lt;トンネルID&gt;.cfargotunnel.com</code>に向ける。反映後、<code>https://drive.taikiito.com</code>でNextcloudのログイン画面が表示されれば成功。</p>
+<p><strong>Nextcloud特有の注意点</strong>: Nextcloud(内部でApacheというソフトを使っている)は、自分がHTTPS経由でアクセスされていることを正しく認識できないと、ログイン後に無限リダイレクトを起こすことがある。Cloudflare Tunnelは末端(サーバーとの接続)を暗号化しないHTTP接続で待ち受けるため、この設定が必要になる場合がある。症状が出た場合は、Nextcloudの<code>config/config.php</code>に以下を追記して回避する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-php" data-lang="php"><span class="line"><span class="cl"><span class="s1">&#39;overwriteprotocol&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;https&#39;</span><span class="p">,</span>
+</span></span></code></pre></div><h2 id="step-4-macと同期する">Step 4: Macと同期する</h2>
+<p>ここからは、サーバーさえ用意できていれば誰でもできる部分。Google DriveにはMacの「Finder」(ファイル一覧の画面)に統合される専用アプリがあったが、Nextcloudにも同じような公式デスクトップアプリがある。これをインストールしてログインすると、Finder上にNextcloudのフォルダが表示され、Google Driveの時とほぼ同じ感覚でファイルを開いたり保存したりできる。同期は「全部」ではなく<strong>フォルダ単位で選べる</strong>。最初はNextcloudが用意するお試し用のサンプルフォルダ(Documents、Photos、Templatesなど)が並んでいたが、これは削除してよい。本物のデータが入っているのは、移行した<code>archive</code>フォルダだけだった。</p>
+<h2 id="step-5-バックアップを設定する">Step 5: バックアップを設定する</h2>
+<p>「移した先が壊れたら意味がない」ので、移行作業そのものと同じくらいバックアップ体制を大事にしている。<code>rclone</code>(色々なオンラインストレージをコマンドラインから操作できるツール)を使い、Backblaze B2という安価なオンラインストレージへ、Nextcloudのデータを毎日自動でコピーする設定にした。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># データベースのダンプ</span>
+</span></span><span class="line"><span class="cl">docker compose -f ~/nextcloud/docker-compose.yml <span class="nb">exec</span> -T db <span class="se">\
+</span></span></span><span class="line"><span class="cl">  mysqldump -u nextcloud -p&lt;パスワード&gt; nextcloud <span class="p">|</span> gzip &gt; /tmp/nextcloud-db.sql.gz
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ファイル本体の同期</span>
+</span></span><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/nextcloud/data <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/nextcloud/data&#34;</span>
+</span></span></code></pre></div><p>これを日次のcron(定期実行の仕組み)に登録しておけば、毎晩自動でバックアップが取られる。</p>
+<h2 id="つまづいた所積み残し">つまづいた所・積み残し</h2>
+<p><strong>9.68GBの謎</strong>: 作業の途中、Googleのストレージ画面で「Driveが9.68GB使用中」と表示されているのに気づいた。しかし実際に移行した中身は100〜150MB程度しかない。90倍以上の差があり、計算が全く合わなかった。調べてみると、以前どこかのタイミングで大きなファイルを削除した際、<strong>ゴミ箱を空にしていなかった</strong>可能性が濃厚だという所まで辿り着いた。Googleドライブのゴミ箱は自動では空にならず、手動で「ゴミ箱を空にする」を押さない限り容量を圧迫し続ける。ここは正直に書いておくと、<strong>この謎は最終的に自分の手では確認しきれず、保留のまま</strong>になっている。</p>
+<p><strong>家族との共有</strong>: Google Driveで便利だったことの一つに、家族とのフォルダ共有がある。Nextcloudでも同じことは可能で、家族専用アカウントを作って権限を細かく設定する方法と、アカウント不要のリンク共有で手軽に済ませる方法の2通りがある。これは記事執筆時点でまだどちらにするか決めきれていない、<strong>現在進行系の課題</strong>として正直に残しておく。</p>
+<h2 id="結果">結果</h2>
+<p>自分専用のファイルはNextcloud経由でMacからGoogle Driveと変わらない感覚で使えるようになった。家族共有フォルダ2つは「無理に移さない」という判断のままGoogleに残っており、これはこれで納得している状態。</p>
+<p>次は、同じNextcloudに連絡先とカレンダーも集約した話。→ <a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item><item><title>パスワードを1PasswordからVaultwardenに移す</title><link>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</guid><description>1Passwordを解約し、自前ホストのVaultwardenにパスワードを一本化した記録。docker-composeでの構築、Cloudflare Tunnelでの公開、パスワード・パスキーそれぞれの移行手順まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>1Passwordで管理していたパスワードとパスキーを、自分のサーバー上で動かすVaultwardenというソフトに移した記録。パスワード自体の移行はエクスポート・インポートで数分で終わるが、パスキー(WebAuthnという国際標準規格で実現されている、パスワードの代わりに指紋・顔認証などでログインする仕組み)は仕組み上コピーができず、サイトごとに手作業で登録し直す必要があった。</p>
+<h2 id="前提">前提</h2>
+<p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
+<ul>
+<li>常時起動しているLinux環境(Docker Engineが使える状態)</li>
+<li>自分名義のドメイン、Cloudflare Tunnelが動いている状態(導入手順は<a href="/guides/google-drive-to-nextcloud/">前々回の記事</a>のStep 3と同じ)</li>
+</ul>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>写真(<a href="/guides/google-photos-to-immich/">前の記事</a>)やファイル(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)と同じ理由で、1Passwordに預けていたパスワードも自分の手元に戻したいと思った。加えて、1Passwordは年額のサブスクリプションなので、自前ホストに切り替えれば単純にコストも減らせる。</p>
+<h2 id="vaultwardenを選んだ理由">Vaultwardenを選んだ理由</h2>
+<p>パスワードマネージャーの自前ホスト選択肢は複数ある。</p>
+<ul>
+<li><strong>Vaultwarden</strong> — Bitwardenというサービスの非公式互換サーバー実装。公式のBitwardenアプリ・ブラウザ拡張機能がそのまま使え、UIの完成度も高い。ゼロ知識暗号化(サーバー側もマスターパスワードを知らない設計)。</li>
+<li><strong>KeePassXC</strong> — サーバーを立てず、暗号化されたファイル1つで管理するタイプ。オフラインで完結するが、複数端末間の同期を自分で用意する必要がある(クラウドストレージと組み合わせるのが一般的)。</li>
+<li><strong>Bitwarden公式のクラウド版</strong> — セルフホストではなく、Bitwarden社のサーバーに預ける形。1Passwordと似た構図になるため、今回の「自分の手元に取り戻す」という目的には合わない。</li>
+</ul>
+<p>普段使っているNextcloud・Immichと同じサーバー上に同居させられる手軽さと、公式アプリがそのまま使える点を決め手にVaultwardenにした。</p>
+<h2 id="step-1-docker-composeでvaultwardenを構築する">Step 1: docker-composeでVaultwardenを構築する</h2>
+<p>Vaultwardenは公式イメージを使えばコンテナ1つで完結し、Nextcloudのようにデータベースを別途用意する必要もない分、今回の中では一番シンプルな部類だった。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/vaultwarden <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/vaultwarden
+</span></span></code></pre></div><p><code>docker-compose.yml</code>:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">services</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="nt">vaultwarden</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l">vaultwarden/server:latest</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">restart</span><span class="p">:</span><span class="w"> </span><span class="l">always</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">environment</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">DOMAIN=https://vault.example.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">ADMIN_TOKEN=&lt;自分で決めた長いランダム文字列&gt;</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">SIGNUPS_ALLOWED=false</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">volumes</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="l">./vw-data:/data</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">      </span>- <span class="m">127.0.0.1</span><span class="p">:</span><span class="m">8082</span><span class="p">:</span><span class="m">80</span><span class="w">
+</span></span></span></code></pre></div><p>いくつか説明が要る項目がある。</p>
+<ul>
+<li><code>DOMAIN</code> — 最終的に外部からアクセスする本物のURL(自分のドメイン)を指定する。ここがずれているとパスキー(WebAuthn)登録時にエラーになることがある。</li>
+<li><code>ADMIN_TOKEN</code> — サーバーの管理画面(<code>/admin</code>)に入るための鍵。長いランダム文字列にし、他の誰にも教えない。</li>
+<li><code>SIGNUPS_ALLOWED=false</code> — 新規アカウント登録を締め切る設定。自分専用サーバーなので、自分のアカウントを最初に1つ作ったらこれをオフにして、他人が勝手にアカウントを作れないようにする。</li>
+</ul>
+<p>起動する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker compose up -d
+</span></span><span class="line"><span class="cl">docker compose ps
+</span></span></code></pre></div><p><code>http://localhost:8082</code>にアクセスし、「Create Account」から自分のアカウントを作成する。作成が終わったら<code>docker-compose.yml</code>を編集して<code>SIGNUPS_ALLOWED=false</code>に変更し、<code>docker compose up -d</code>で反映しておく。</p>
+<h2 id="step-2-cloudflare-tunnelで公開する">Step 2: Cloudflare Tunnelで公開する</h2>
+<p>Nextcloudの時(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)と同じ要領で、<code>/etc/cloudflared/config.yml</code>にVaultwarden用の行を追記する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ingress</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">vault.taikiito.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http://localhost:8082</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># ...他のサービスの行がここに続く...</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http_status:404</span><span class="w">
+</span></span></span></code></pre></div><p>編集後は<code>cloudflared tunnel ingress validate</code>で文法チェックしてから<code>sudo systemctl restart cloudflared</code>。DNS側もCloudflareの管理画面で<code>vault</code>のCNAMEレコードを<code>&lt;トンネルID&gt;.cfargotunnel.com</code>に向けておく。</p>
+<h2 id="step-3-ブラウザスマホから接続する">Step 3: ブラウザ・スマホから接続する</h2>
+<p>ブラウザはChrome・Firefoxの両方にBitwarden拡張機能を追加し、接続先の設定(拡張機能アイコン → 設定 → Self-hosted environment)に自分の<code>vault.taikiito.com</code>を入力する。スマートフォン用の公式Bitwardenアプリも同様に接続先を変更するだけで使える。</p>
+<p>パスワード自体の移行は、1Password側でエクスポートしたデータ(CSV形式など)をVaultwardenの「Import data」機能でインポートするだけで数分で終わった。ここは特につまづくところがなかった。</p>
+<h2 id="step-4-パスキーの移行">Step 4: パスキーの移行</h2>
+<p>パスワードと違い、パスキー(WebAuthn)はエクスポート・インポートで移せない仕様になっている。サイトごとに「旧パスキーを削除 → 新しいマネージャーで再登録」という地道な作業が必要だった。手元の1Passwordを棚卸ししたところ、登録済みのパスキーは全15件。</p>
+<p>作業中に見つかった落とし穴:</p>
+<ul>
+<li><strong>ブラウザ拡張機能の競合</strong>: 1Password拡張機能を有効にしたままだと、WebAuthnのリクエストを1Password側が横取りしてしまい、Bitwarden/Vaultwarden拡張機能が反応できない。<code>chrome://extensions</code>で1Password拡張機能を完全にOFFにする必要があった。</li>
+<li><strong>スマホ側の割り込み</strong>: モバイル版Bitwardenアプリでパスキーを新規登録する際、Touch ID/Face IDのようなOS標準の認証より先にBitwarden拡張機能側が割り込んでしまい、登録に失敗することがあった。</li>
+<li><strong>iCloud Keychainを使う場合の見落としがちな設定</strong>: macOSでiCloudキーチェーン経由のパスキー登録をするには、システム設定 → 一般 → AutoFill &amp; Passwords の「Passwords」トグルが事前にONになっている必要がある(初期状態はOFF)。</li>
+<li><strong>削除する前に、実際に使っているか確認する</strong>: 「もう使っていないはず」と思っていたサービスのパスキーが、実は仕事の特定システムのログインで現役だと後から判明した件があった。1Password内の一覧だけを見て「使っていなさそう」で判断せず、実際に使う場面があるかを確認してから削除する方が安全だった。</li>
+</ul>
+<p>全部をVaultwardenに寄せたわけではなく、用途によって使い分けている。<strong>会社PC(Windows)からのログインが必要なアカウント</strong>はブラウザ拡張機能のインストールが要らずQRコードでのクロスデバイス認証に対応しているiCloud Keychainへ、<strong>個人利用でデータ主権の方針に寄せたいアカウント</strong>はパスワードと同じ場所で一元管理できるVaultwardenへ、という基準にした。</p>
+<h2 id="step-5-バックアップを設定する">Step 5: バックアップを設定する</h2>
+<p>Nextcloud・Immichと同じく<code>rclone</code>でBackblaze B2へ日次バックアップする。Vaultwardenの場合はデータベース(SQLite、1ファイルにまとまった軽量なデータベース形式)がそのままフォルダの中に入っているので、フォルダごと同期するだけでよい。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/vaultwarden/vw-data <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/vaultwarden&#34;</span>
+</span></span></code></pre></div><p><strong>このバックアップの取り出し鍵自体もバックアップしておく</strong>、という一段階上の注意点がある。<code>rclone</code>の設定ファイル(<code>~/.config/rclone/rclone.conf</code>、B2に接続するための鍵が入っている)がサーバー本体にしか無いと、サーバーが完全に壊れた時にバックアップを取り出す鍵ごと失われてしまう。自分はこの設定ファイルの中身を、Vaultwarden自身にSecure Note(パスワード以外のメモも安全に保存できる機能)として複製保存しておくことで、この「鶏と卵」問題を解決した。Vaultwardenはクライアントアプリに一度ログインしておけばオフラインキャッシュが残るため、サーバーが全損してもスマホから鍵を取り出せる。このバックアップ自体を「乗っ取られても消されない」形にする話は<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>に別途書いた。</p>
+<h2 id="結果">結果</h2>
+<p>パスワード15件・パスキー15件、全て移行完了。1Passwordは解約し、年間の固定費を1本減らせた。パスワードの移行自体は簡単だが、パスキーは仕組み上コピーできないので、サイトごとの再登録作業を見込んでおくとよい。</p>
+<p>次は、連絡先とカレンダーをNextcloudに集約した話。→ <a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item><item><title>連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</title><link>https://offgrid.taikiito.com/guides/icloud-google-to-nextcloud-contacts-calendar/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-google-to-nextcloud-contacts-calendar/</guid><description>iCloud連絡先81件・Google連絡先553件をNextcloud Contactsへ、Googleカレンダーの個人予定232件をNextcloud Calendarへ移した記録。アプリパスワードの発行方法、CalDAV/CardDAVへ直接PUTする実際のコマンドまで書いた。</description><content:encoded><![CDATA[<p>連絡先とカレンダーを、Nextcloudの標準機能(Contacts・Calendar)に一本化した記録。すでにファイル(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)で使っていたNextcloudに機能を足すだけなので、新しいサーバーを立てる作業は無かった。件数が多かった分、Web UIのインポート機能が信頼できず、結局CalDAV(カレンダーの同期方法を定めた業界標準規格)・CardDAV(連絡先の同期方法を定めた業界標準規格)という仕組みへ直接データを送り込む方式に切り替えることになった。</p>
+<h2 id="前提">前提</h2>
+<p>すでにNextcloudが動いていることを前提にする。まだの場合は先に<a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a>を読んでほしい。</p>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>連絡先はiCloudとGoogleの両方に分散していた。カレンダーは個人の予定をGoogleカレンダーで管理していた。どちらも「今後もGoogle/Appleに預け続けるほどの理由がない」データなので、ファイルや写真と同じ流れでNextcloudに集約することにした。同期方式は特定の会社に縛られない業界標準の規格(CardDAV・CalDAV)なので、Mac標準の「連絡先」「カレンダー」アプリやiPhoneからもそのまま繋げられる。</p>
+<h2 id="step-1-nextcloudのアプリパスワードを発行する">Step 1: Nextcloudのアプリパスワードを発行する</h2>
+<p>まず、CardDAV/CalDAV経由でアクセスするための専用パスワードを発行する。Nextcloud本体のログインパスワードをそのまま外部アプリに渡すのは避け、用途ごとに無効化できる「アプリパスワード」を使うのが基本。</p>
+<p>Nextcloudの画面右上のアイコン → <strong>個人設定(Personal settings)</strong> → <strong>セキュリティ(Security)</strong> → 「新しいアプリパスワードを作成」から、名前(例: <code>contacts-migration</code>)を付けて発行する。表示されたパスワードは、この画面を閉じると二度と表示されないので、一時的にメモしておく。</p>
+<h2 id="step-2-連絡先をエクスポートする633件">Step 2: 連絡先をエクスポートする(633件)</h2>
+<p>Google連絡先553件・iCloud連絡先81件を、それぞれvCard形式(連絡先データの標準的なファイル形式、拡張子<code>.vcf</code>)で書き出す。</p>
+<ul>
+<li><strong>Google連絡先</strong>: <a href="https://contacts.google.com">contacts.google.com</a> → 左メニュー「エクスポート」→ vCard形式を選択</li>
+<li><strong>iCloud連絡先</strong>: <a href="https://icloud.com">icloud.com</a> → 連絡先 → 全て選択 → 右下の歯車アイコン → 「vCardを書き出す」</li>
+</ul>
+<p>重複1件を除いた633件を、まとめた1つの<code>.vcf</code>ファイルにしておく(vCard形式は複数の連絡先を1ファイルに連結できる)。</p>
+<h2 id="step-3-carddavへ直接putする">Step 3: CardDAVへ直接PUTする</h2>
+<p>Nextcloud Web UI(ブラウザ上の管理画面)の「連絡先をインポート」機能も試したが、件数が多いと不安定だったため、CardDAVのエンドポイント(データの送り先URL)へ、1件ずつ<code>PUT</code>(データをサーバーへ送り込む処理)する方式に切り替えた。</p>
+<p>まず、まとめた<code>.vcf</code>ファイルを連絡先1件ずつのファイルに分割する(Pythonの<code>vobject</code>ライブラリや、<code>csplit</code>のようなテキスト分割コマンドで、<code>BEGIN:VCARD</code>〜<code>END:VCARD</code>の区切りごとに切り出す)。分割できたら、1件ずつ以下のようにアップロードする。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -u <span class="s2">&#34;admin:&lt;Step1のアプリパスワード&gt;&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  -X PUT <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --data-binary @contact-001.vcf <span class="se">\
+</span></span></span><span class="line"><span class="cl">  -H <span class="s2">&#34;Content-Type: text/vcard; charset=utf-8&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.taikiito.com/remote.php/dav/addressbooks/users/admin/contacts/contact-001.vcf&#34;</span>
+</span></span></code></pre></div><p>これを633件分、シェルスクリプトの<code>for</code>ループなどで繰り返す。1件ずつリソースとしてサーバーに送り込む地道なやり方だが、Web UIのインポートより確実に反映される。</p>
+<h2 id="step-4-macで連絡先を同期する">Step 4: Macで連絡先を同期する</h2>
+<p>Macの「連絡先」アプリ → 環境設定 → アカウント → 「アカウントを追加」→「他のアカウント」→「CardDAVアカウントを追加」。</p>
+<p>ここでハマったポイントがある。macOSは通常、サーバーアドレスを短く入力するだけで<code>.well-known/carddav</code>という決まったパスへ自動でアクセスし、正しいCardDAVのURLへリダイレクトしてくれる仕組みになっている。ところが、Cloudflare経由のリダイレクト処理の影響で、この自動検出がうまく機能しなかった。</p>
+<p><strong>解決策</strong>: サーバーアドレスの欄に、自動検出用の短いURL(<code>drive.taikiito.com</code>)ではなく、以下のフルパスを直接入力する。</p>
+<pre tabindex="0"><code>https://drive.taikiito.com/remote.php/dav/principals/users/admin/
+</code></pre><p>ユーザー名は<code>admin</code>(Nextcloudのユーザー名)、パスワードはStep 1で発行したアプリパスワードを使う。iPhoneの「連絡先」アプリでも同じ設定項目がある。</p>
+<h2 id="step-5-カレンダーの移行232件">Step 5: カレンダーの移行(232件)</h2>
+<p>個人用のGoogleカレンダーに入っていた予定(2019〜2029年、232件)をNextcloud Calendarの「Personal」カレンダーへ移す。</p>
+<p>まず<a href="https://calendar.google.com">calendar.google.com</a>の設定画面から、対象のカレンダーを<code>.ics</code>ファイル(カレンダーの予定データをやり取りするための標準的なファイル形式)としてエクスポートする。</p>
+<p>最初はNextcloud Web UIの「カレンダーをインポート」機能で<code>.ics</code>ファイルをそのまま読み込ませようとしたが、「could not be parsed」(うまく読み取れなかった、というエラーメッセージ)というエラーで通らなかった。<code>.ics</code>ファイルの行折り返し(RFC5545というカレンダーデータの技術仕様で決められたルール)を手直ししても解決しなかったため、連絡先と同じくCalDAVへ直接PUTする方式に切り替えた。</p>
+<p><code>.ics</code>ファイルを1イベントずつに分割し(<code>BEGIN:VEVENT</code>〜<code>END:VEVENT</code>の区切りで切り出す)、以下のようにアップロードする。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -u <span class="s2">&#34;admin:&lt;アプリパスワード&gt;&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  -X PUT <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --data-binary @event-001.ics <span class="se">\
+</span></span></span><span class="line"><span class="cl">  -H <span class="s2">&#34;Content-Type: text/calendar; charset=utf-8&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.taikiito.com/remote.php/dav/calendars/users/admin/personal/event-001.ics&#34;</span>
+</span></span></code></pre></div><p>232件全てこの方式でアップロードしたところ、全て成功した。反映を確認したうえで、Google Calendar側の元データは削除した。ただし、妻と共有しているカレンダーはGoogleに残す判断にした(相手がGoogle前提で使っているため)。ファイル移行の時の「移す理由が移さない理由に勝つものだけ移す」という基準を、ここでも踏襲した形だ。</p>
+<h2 id="つまづいた所">つまづいた所</h2>
+<p><strong>1. Web UIの一括インポートは大量データに弱い</strong>: 連絡先・カレンダーともに、NextcloudのWeb UIインポート機能は件数が多いと信頼できなかった。少数なら問題ないと思うが、数百件規模ならCalDAV/CardDAVへ直接PUTする方式を最初から選んだ方が早い、というのが今回の教訓。</p>
+<p><strong>2. <code>.well-known/carddav</code>のリダイレクトが失敗する</strong>: 上記Step 4の通り、自動検出をあきらめてフルパスを直接指定することで解決した。同じ症状はCalDAV側(<code>.well-known/caldav</code>)でも起こりうるので、うまくいかない場合は同じ対処(フルパス直接指定)を試すとよい。</p>
+<p>積み残しもある。祖父の命日のような毎年繰り返す予定は、Google側で表示されていた2025〜2029年分のインスタンスだけを削除しており、繰り返しルールそのもの(マスター)は消していない。2030年以降にまた自動で出現する可能性があるため、気になったら改めてGoogle Calendar側で対応する必要がある。また、Gmailにはフライトやレストランの予約確認メールを自動でGoogleカレンダーに追加してくれる機能があるが、これは自前のメール+Nextcloudカレンダーの組み合わせには存在しない、Google独自の仕組みで、メール・カレンダーのどちらか片方だけ移しても再現できない。同等の仕組みを自作するなら別プロジェクトになるので、今回は見送っている。</p>
+<h2 id="結果">結果</h2>
+<p>連絡先633件・カレンダー232件、どちらも移行完了。MacとiPhoneから、Google/iCloudの時とほぼ変わらない感覚で使えている。大量データの移行はWeb UIのインポートを過信せず、CalDAV/CardDAVへの直接PUTを検討するとよい、というのが一番の学びだった。</p>
+<p>次は、メモをJoplinに移そうとして、結局全部は移さなかった話。→ <a href="/guides/icloud-notes-to-joplin/">メモをiCloud NotesからJoplinに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: アプリパスワードの発行手順・実際のcurl PUTコマンドを追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item><item><title>メモをiCloud NotesからJoplinに移す(で、結局移さなかった話)</title><link>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</guid><description>iCloud Notes 1,649件をJoplinに一本化しようとして、結局は「過去分は移さず、新規メモだけJoplinで書く」という決着にした記録。Nextcloud WebDAV同期の実際の設定手順、iPhone発熱問題も。</description><content:encoded><![CDATA[<p>iCloud Notesに溜まっていたメモを、自前で管理できるJoplinというソフトに移そうとした記録。結論から書くと、過去の1,649件は結局移行せず、Joplinは新規メモ専用として運用することにした。「全部きれいに移す」ことにこだわらなかった判断の話でもある。</p>
+<h2 id="前提">前提</h2>
+<p>すでにNextcloudが動いていることを前提にする。まだの場合は先に<a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a>を読んでほしい。Joplin自体は自分でサーバーを用意する必要がなく、既存のNextcloudをファイル置き場として使うだけなので、新しいDockerコンテナを立てる作業は無い。</p>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>iCloud Notesには、思いついたことをその場で書き留めたメモが1,649件溜まっていた。写真やファイルと同じく、Appleに預けっぱなしのデータを自分の手元に戻したいと考え、Joplinの導入を決めた。</p>
+<h2 id="step-1-joplinを選ぶ">Step 1: Joplinを選ぶ</h2>
+<p>メモアプリの自前ホスト選択肢もいくつかあるが、Markdown形式(見出しや箇条書きなどを簡単な記号だけで書ける、プレーンテキストに近いメモの書き方)でメモを書けること、Nextcloud WebDAV(ファイルをネットワーク越しにやり取りするための標準規格。専用サーバーソフトを別途用意しなくても、既存のNextcloudがそのまま使える)経由で同期できること、Mac・iPhone両方に公式アプリがあることを決め手にJoplinにした。</p>
+<h2 id="step-2-nextcloud側にjoplin専用フォルダとアプリパスワードを用意する">Step 2: Nextcloud側にJoplin専用フォルダとアプリパスワードを用意する</h2>
+<p>Nextcloudのブラウザ画面から、Files(ファイル)アプリで新しいフォルダ(例: <code>Joplin</code>)を作成する。</p>
+<p>次に、<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">前の記事</a>のStep 1と同じ要領で、Joplin専用のアプリパスワードを発行する。個人設定 → セキュリティ → 「新しいアプリパスワードを作成」で、名前を<code>joplin-sync</code>のように分かりやすくしておく。</p>
+<h2 id="step-3-joplinアプリ側でwebdav同期を設定する">Step 3: Joplinアプリ側でWebDAV同期を設定する</h2>
+<p>Mac・iPhoneの両方に公式Joplinアプリをインストールする。設定画面から以下の通り入力する。</p>
+<ul>
+<li>同期対象: <strong>WebDAV</strong></li>
+<li>WebDAVの URL: <code>https://drive.taikiito.com/remote.php/dav/files/admin/Joplin/</code>(<code>admin</code>の部分はNextcloudのユーザー名、末尾の<code>Joplin/</code>はStep 2で作ったフォルダ名)</li>
+<li>ユーザー名: Nextcloudのユーザー名(<code>admin</code>)</li>
+<li>パスワード: Step 2で発行したアプリパスワード</li>
+</ul>
+<p>設定後、同期ボタンを押して接続が成功することを確認する。Mac・iPhoneの両方に同じ設定を入れることで、同じNextcloudフォルダを見に行く形になる。</p>
+<p><strong>同期は「自動」ではなく「手動」に設定している。</strong> 理由は、iPhoneで自動同期(バックグラウンドでの定期的なポーリング)を有効にすると本体が発熱する症状が出たため。常時バックグラウンドで同期し続けるより、メモを書いたタイミングで自分で同期ボタンを押す運用の方が、今のところ実用上困らないと判断した。</p>
+<h2 id="step-4-過去の1649件をどうするか検討する">Step 4: 過去の1,649件をどうするか検討する</h2>
+<p>ここまで環境は整ったが、肝心の「iCloud Notesの過去メモをどうやってJoplinに移すか」で立ち止まった。</p>
+<p>エクスポート自体は可能(Macの「メモ」アプリからPDFや個別ファイルとして書き出せる)だが、実際に中身を見返してみると、大した情報が入っていないメモがほとんどだった。買い物リストの切れ端、一度きりのちょっとしたメモ、すでに用が済んでいる下書きなど。1,649件を一つ一つ精査して移す価値があるかというと、かかる手間に見合わないと判断した。</p>
+<p>最終的に、<strong>過去の1,649件はiCloud Notes側にそのまま残し、Joplinは今後書く新規メモ専用として運用する</strong>ことにした。「全部を完璧に移してから使い始める」のではなく、「新しい方から始めて、今後蓄積されるものだけを自分の手元で管理する」という割り切り方だ。ファイル移行の時の「移す理由が移さない理由に勝つものだけ移す」という基準の延長線上にある判断でもある。</p>
+<h2 id="結果">結果</h2>
+<p>Joplinは新規メモの置き場として運用中。iCloud Notesの過去メモはアーカイブとしてそのまま残しているが、能動的に見返すことはほとんどない。「完全移行」にこだわらず、価値のある部分だけを新しい仕組みに乗せる、という判断も移行の一つの形だと思っている。</p>
+<p>次は、メールをGmailから自分のドメインに移した、一番苦労した話。→ <a href="/guides/gmail-to-own-domain/">メールをGmailから自分のドメインに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: NextcloudのWebDAV同期の実際の設定手順(URL・アプリパスワード)を追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item><item><title>メールをGmailから自分のドメイン(iCloud+カスタムドメイン)に移す</title><link>https://offgrid.taikiito.com/guides/gmail-to-own-domain/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/gmail-to-own-domain/</guid><description>Gmailを卒業し、自分のドメインのメールアドレス(iCloud+カスタムドメイン機能)に一本化した記録。DNSレコードの実際の設定値、Thunderbirdの3層アカウント構造でハマった話、復旧作業中に4,293件のメールを誤って喪失し原本から復元した話まで、正直に書く。</description><content:encoded><![CDATA[<p>長年使っていたGmailをやめて、自分のドメインのメールアドレスに主メールを一本化した記録。土台はiCloud+の「カスタムメールドメイン」機能で、既にiPhoneのバックアップ用にiCloud+を契約していたため追加コストはかからなかった。作業自体は数日がかりで、途中で本当にメールを失いかけた場面もあった。この記事はその過程を、うまくいかなかった所も含めて正直に書く。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>自分名義のドメイン(取得方法は各ドメインレジストラのサイトを参照。自分はCloudflare Registrarを使った)</li>
+<li>iCloud+の契約(月額サブスクリプション。iPhoneのバックアップ用など、何らかの理由ですでに契約していれば追加コストはかからない)</li>
+<li>ドメインのDNS(「<code>taikiito.com</code>というドメインは実際にはどのサーバーを指すか」をインターネット全体に教えるための住所録のような仕組み)を自分で編集できる状態(Cloudflareなど)</li>
+</ul>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>Gmailは便利だが、Googleに完全に預けているアカウントでもある。自分名義のドメインを取得したことで、自分のドメインでメールを受け取れる状態が整った。iCloud+はもともとiPhoneのバックアップ用に契約していたので、カスタムドメインのメールボックスを足しても容量を共有するだけで実質タダ。これなら移行のコストに見合うと判断した。</p>
+<h2 id="何に移すか-icloud-vs-fastmailで迷った話">何に移すか: iCloud+ vs Fastmailで迷った話</h2>
+<p>自前ドメインでメールを使う場合、有名な選択肢としてFastmailがある。料金以外の軸(標準プロトコル対応、Apple以外の端末での使い勝手、エイリアスの上限、送信ドメインとしての評判、データの持ち出しやすさ)で比較検討した。</p>
+<p>比較の途中で、自分の思い込みが一つ崩れた。iCloud MailはApple製品専用だとばかり思っていたが、実際には標準のIMAP/SMTP(メールの受信・送信をやり取りするための業界共通の通信規格。この2つに対応していれば、どのメールソフトからでも接続できる)にアプリ専用パスワードでアクセスすれば、Thunderbirdのような普通のメールクライアント(メールを読み書きするためのアプリ)からも使える。「ロックインされて出られなくなる」という一番の懸念はほぼ杞憂だった。すでに契約しているiCloud+の容量を共有できて実質無料な点も踏まえ、Fastmailへの乗り換えは見送り、iCloud+のカスタムドメイン機能を使うことにした。</p>
+<h2 id="step-1-icloudでカスタムドメインを設定する">Step 1: iCloud+でカスタムドメインを設定する</h2>
+<p>iPhoneの「設定」アプリ → 自分の名前(Apple ID) → iCloud → 「メール」→「カスタムメールドメイン」から設定を開始する(Mac版System Settingsからも同じ設定にたどり着ける)。ドメイン名(例: <code>taikiito.com</code>)を入力すると、iCloud側が必要なDNSレコードを画面に表示してくれるので、それを自分のドメインのDNS管理画面(Cloudflareなど)にそのまま追加する。実際に追加したレコードは以下の3種類だった。</p>
+<table>
+	<thead>
+			<tr>
+					<th>種類</th>
+					<th>内容</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>MX</td>
+					<td><code>mx01.mail.icloud.com</code> / <code>mx02.mail.icloud.com</code>(メールの受け取り先を指定)</td>
+			</tr>
+			<tr>
+					<td>SPF (TXTレコード)</td>
+					<td><code>v=spf1 include:icloud.com ~all</code>(このドメインからのメールはiCloud経由が正当だと示す)</td>
+			</tr>
+			<tr>
+					<td>DKIM (CNAMEレコード)</td>
+					<td><code>sig1._domainkey</code> → <code>sig1.dkim.taikiito.com.at.icloudmailadmin.com</code>(メールが改ざんされていないことを証明する電子署名の仕組み)</td>
+			</tr>
+	</tbody>
+</table>
+<p>iCloud+の設定ウィザードはこの3つだけを要求し、<strong>DMARC(後述、なりすまし対策をさらに強化するレコード)は必須ではなく任意</strong>なので、最初は追加しなくても動く。反映には数分〜数十分かかる。全て緑のチェックマークになれば、そのドメインでメールアドレス(自分の場合は<code>me@taikiito.com</code>)を作成できる。</p>
+<h2 id="step-2-会社のメール環境への到達を確認する">Step 2: 会社のメール環境への到達を確認する</h2>
+<p>自分の場合、<code>me@taikiito.com</code>からGmailへは問題なく届いたが、会社のメール(Microsoft 365ベース)には<strong>エラーも通知もなく、静かに届かない</strong>という問題が起きた。SPF/DKIMを見直しても直らなかったため、DMARC(TXTレコード)を追加した。</p>
+<pre tabindex="0"><code>_dmarc.taikiito.com  TXT  &#34;v=DMARC1; p=none; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
+</code></pre><p><code>p=none</code>はまず様子見のモード(ポリシー違反があっても何もしない、レポートだけ受け取る)。これでも解決しなかったが、SPF/DKIM/DMARCの設定自体には問題が無いことが確認できたので、<strong>原因は取得したばかりのドメインが「送信履歴の無い新規ドメイン」として会社側のメールフィルタに警戒されていることだと判断し、時間経過で解決するのを待つ方針にした</strong>。実際、数日後には特に追加の変更をしないまま届くようになった。<strong>新しく取ったドメインでメールを送る場合、最初の数日〜1週間は主要な送信先に届かないことがある</strong>と見込んでおくとよい。</p>
+<h2 id="step-3-なりすまし対策を強化するspfdmarcの締め上げ">Step 3: なりすまし対策を強化する(SPF/DMARCの締め上げ)</h2>
+<p>ドメインの送信環境が安定してきたら、なりすまし対策を強める。最終的には以下の設定にした。</p>
+<pre tabindex="0"><code>_dmarc.taikiito.com  TXT  &#34;v=DMARC1; p=reject; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
+</code></pre><p><code>p=none</code>(様子見) → <code>p=quarantine</code>(怪しいメールを迷惑メール行き) → <code>p=reject</code>(なりすましメールを完全拒否)の順に段階を踏むのが一般的だが、自分の場合は送信経路がiCloudのみでSPF/DKIMがすでに正常に機能していたため、リスク評価をした上で段階を飛ばして<code>p=reject</code>まで一気に進めた。SPFも<code>~all</code>(該当しない送信元は「疑わしい」扱い)から<code>-all</code>(該当しない送信元は「完全に拒否」)へ強化した。</p>
+<p><strong>注意</strong>: <code>p=reject</code>にすると、このドメインからのメールを送るときに使う経路(自分の場合はiCloudのみ)以外からは一切メールが届かなくなる。今後、別のメールサービスを追加で使う場合は、SPFレコードに新しい送信元を<code>include:</code>で追加し忘れないこと。</p>
+<h2 id="step-4-gmailからの引っ越しで3つハマったこと">Step 4: Gmailからの引っ越しで3つハマったこと</h2>
+<p><strong>1. Thunderbirdの「3層構造」に気づかず認証が通らなかった</strong></p>
+<p>WindowsでThunderbirdを使って移行作業をしようとしたところ、何度設定してもIMAP/SMTPの認証が通らなかった。原因は、iCloudのアカウント構造が3層になっていたこと。</p>
+<ul>
+<li>表向きのApple IDサインイン用メールアドレス</li>
+<li>実際のIMAP/SMTP認証に使う、真のiCloudアカウントアドレス(<code>@icloud.com</code>形式)</li>
+<li>送受信に使う見た目のアドレス(カスタムドメインのエイリアス)</li>
+</ul>
+<p>Thunderbirdの手動設定画面で、サーバー情報は以下のようにする。</p>
+<table>
+	<thead>
+			<tr>
+					<th>項目</th>
+					<th>値</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>受信サーバー(IMAP)</td>
+					<td><code>imap.mail.me.com</code>、ポート993、SSL/TLS</td>
+			</tr>
+			<tr>
+					<td>送信サーバー(SMTP)</td>
+					<td><code>smtp.mail.me.com</code>、ポート587、STARTTLS</td>
+			</tr>
+			<tr>
+					<td>ユーザー名</td>
+					<td><strong>真のiCloudアカウントアドレス(<code>@icloud.com</code>形式)をフルで入力</strong></td>
+			</tr>
+			<tr>
+					<td>パスワード</td>
+					<td>Apple IDの「Appleパスワード」ではなく、Apple ID管理画面で発行する「App用パスワード」</td>
+			</tr>
+	</tbody>
+</table>
+<p>ポイントは<strong>ユーザー名欄</strong>で、一番上のApple IDのアドレスでも、送受信に使うカスタムドメインのアドレスでもなく、<strong>中間層の真のiCloudアカウントアドレスをフルで入力する</strong>必要がある。これはApple公式の設定手順のどこにも明記されておらず、自力で突き止めるまで何度も認証エラーに悩まされた。</p>
+<p><strong>2. 「完了」と判断したが、実は直近1〜2ヶ月分が抜けていた</strong></p>
+<p>Gmailの全メール(46,544件)をThunderbird経由でiCloud側へ移す自作スクリプトを作り、実行した。進捗ログを見ながら待ち、件数がおおよそ一致したことを確認して「移行完了」と判断した。</p>
+<p>ところが後日、送信済みメールを見返していて、直近のメールが見当たらないことに気づいた。調べると、スクリプトは古いメールから新しいメールへ順番に処理する作りで、確認した時点では全体の約8割(37,362件/46,544件)までしか進んでおらず、<strong>直近1〜2ヶ月分がまだ移行されていない状態で「完了」と誤判断していた</strong>ことが分かった。「件数がざっくり合っている」だけでは、移行完了の確認として不十分だったという教訓。</p>
+<p><strong>3. 復旧作業中に4,293件を誤って喪失、Google Takeoutの原本から復元</strong></p>
+<p>上記の見落としを受けて調査していたところ、さらに深刻な問題が見つかった。iCloud側で重複メールを整理する作業をしていた際、<strong>4,293件のメールを誤って消してしまっていた</strong>。加えて、作業の混乱の中でThunderbirdのローカルインポートフォルダ自体も誤って削除してしまい、復元の頼みの綱を一つ失った。</p>
+<p>幸い、Gmailの公式エクスポート機能(Google Takeout、<a href="/guides/google-photos-to-immich/">写真移行の記事</a>で使ったのと同じ機能)で取得していた元データ(zipファイル、Gmailの全メールをmbox形式(メールをまとめて1つのファイルに保存する一般的な形式)で含む)がゴミ箱に残っていた。これは「Thunderbirdの中間コピー」ではなく「Gmail公式のエクスポート原本」なので、むしろ最も確実な復旧元だった。</p>
+<p>Message-ID(メール1通ごとの一意な識別子、ヘッダーに必ず含まれる)単位で「Takeoutの原本」と「今iCloud側にあるメール」を突き合わせる復旧スクリプトを書き、欠落していたメールを復元した。最終的に、iCloudの1通あたりのサイズ上限を超えている(添付ファイルが大きい)ため原理的に復元不可能な2〜3件を除いて、ほぼ完全に復旧できた。</p>
+<p><strong>このとき得た一番の教訓</strong>: 大量データの移行を「件数がだいたい合っている」だけで完了と判断しない。Message-IDで突き合わせる方式が、確実に検証する唯一の方法だった。<strong>そしてGoogle Takeoutのような「移行元の公式エクスポート」は、移行作業が終わるまで絶対に消さないこと。</strong></p>
+<h2 id="step-5-移行後の後片付け">Step 5: 移行後の後片付け</h2>
+<p>Gmail側に<code>me@taikiito.com</code>への自動転送(Forwarding、Gmailの設定 → 「メール転送とPOP/IMAP」から設定できる)を設定し、移行後にGmail宛へ届く新着メールも自動的に新しいアドレスへ流れるようにした。Google Takeoutのバックアップzipは、Backblaze B2とNextcloudの両方に保存。この3点(バックアップ済み・移行件数の整合性確認済み・新着メールの転送設定済み)を確認したうえで、Gmail側の整理に着手した。</p>
+<p>整理は、GmailのAPI(他のプログラムからGmailを操作するための窓口)や管理画面からではなく、IMAP(前述の受信用の通信規格)を直接操作する自作スクリプトで、指定日より前の全メール(49,755件)をGmailの「ゴミ箱」フォルダへ移動する処理を実行した。Gmailのゴミ箱は30日後に自動で完全削除される仕組みなので、今のところ<strong>即座に完全削除したわけではなく、猶予期間を残した状態</strong>にしてある。この記事を書いている時点では、Gmail側のメールはゴミ箱送りまで完了しているが、<strong>Googleアカウント自体はまだ削除していない</strong>。しばらく<code>me@taikiito.com</code>側の運用が安定するのを見届けてから、次の判断(アカウント自体を消すかどうか)をするつもりでいる。</p>
+<h2 id="結果">結果</h2>
+<p><code>me@taikiito.com</code>が主メールとして定着し、日常的に使っている。途中でメールを実際に失いかけた一件は、この移行作業の中で一番肝を冷やした部分だったが、Google Takeoutで原本のバックアップを取っておいたことが最終的に救いになった。<strong>大量データを移す時は、移行先だけでなく移行元の生データも別途バックアップしておく</strong>、というのが今回一番強く実感した教訓だった。</p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: DNSレコードの実際の設定値・Thunderbirdのサーバー設定項目を追記し、再現可能なレベルに書き直し</p>
+]]></content:encoded></item><item><title>バックアップを「消されても戻せる」形にする</title><link>https://offgrid.taikiito.com/guides/backup-ransomware-resistant/</link><pubDate>Thu, 01 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/backup-ransomware-resistant/</guid><description>毎晩クラウドへバックアップしていたが、サーバーが乗っ取られたらバックアップごと消されると気づいた。鍵の権限削減・削除が伝播しない複製バケット・サーバーの外で動く見張りの3層で、ハードウェアを増やさずに作り直した記録。踏んだ落とし穴も全部書いた。</description><content:encoded><![CDATA[<p>写真・パスワード・ファイルを自分のサーバーに集めたあと、毎晩クラウドストレージ(Backblaze B2)へバックアップを取る仕組みを作って安心していた。ところが鍵の権限を実際に調べてみたら、<strong>サーバーを乗っ取られた時点でバックアップも全部消せる状態</strong>だった。それを作り直した記録。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>常時起動しているLinux環境と、そこから<code>rclone</code>(いろいろなクラウドストレージへファイルを同期するコマンド)で日次バックアップを取っている状態</li>
+<li>バックアップ先はBackblaze B2(安価なオブジェクトストレージ。1GBあたり月$0.005前後)</li>
+<li>構築の土台は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a></li>
+</ul>
+<h2 id="何が問題だったか">何が問題だったか</h2>
+<p>心配していたのは<strong>ランサムウェア</strong>(侵入したうえでファイルを暗号化し、戻す鍵と引き換えに金銭を要求する攻撃)のような、サーバーを乗っ取られるケース。</p>
+<p>「B2側に30日間のバージョン保持(上書き・削除された古い版を30日間取っておく設定)があるから、仮に荒らされても戻せる」と考えていた。これが成立していなかった。</p>
+<p>サーバーに置いていたB2のアプリケーションキー(APIから操作するための鍵。権限を選んで発行できる)の権限を一覧してみると、18個の権限が付いていた。問題はこの3つ。</p>
+<ul>
+<li><code>deleteFiles</code> — ファイルの版そのものを完全削除できる</li>
+<li><code>writeBucketLifecycleRules</code> — ライフサイクルルール(古い版をいつ消すかの設定)を書き換えられる。「0日で消す」に変えれば30日の保持は即座に無意味になる</li>
+<li><code>writeBucketReplications</code> — 複製ルールを止められる</li>
+</ul>
+<p>つまり<strong>鍵を1本盗られたら、バックアップ本体も、それを守るはずの設定も、まとめて壊せる</strong>。実際に同期スクリプトが使っていたのは<code>listBuckets, listFiles, readFiles, writeFiles, deleteFiles</code>の5つだけで、残りは余分だった。</p>
+<p>もう1つ、根本的な制約を自分に課した。<strong>「予備のハードウェアをもう1台持つ」案は採らない</strong>。将来は拠点を移して身軽に暮らしたいと思っているので、機械を持ち続ける前提の設計にはしたくなかった。ハードウェア不要・手作業ゼロで回る形に限定して考えた結果、3層構成になった。</p>
+<h2 id="層0-鍵の権限を必要最小限にする">層0: 鍵の権限を必要最小限にする</h2>
+<p>まずサーバー上の鍵を、実際に使う5権限ちょうどの新しい鍵に差し替えた。</p>
+<p><strong>ここで分かった制約: B2のWeb管理画面の鍵発行UIでは権限を細かく選べない</strong>。「読み書き」のような粗い単位しかないので、<code>b2</code>コマンド(Backblaze公式のCLI = コマンドライン操作ツール)が必須になる。全権限を持つマスター鍵を扱う作業なので、サーバー上ではなく手元のPCから実行した。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">b2 account authorize
+</span></span><span class="line"><span class="cl">b2 key create --bucket &lt;バケット名&gt; &lt;鍵の名前&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl">  listBuckets,listFiles,readFiles,writeFiles,deleteFiles
+</span></span><span class="line"><span class="cl">b2 key list --long     <span class="c1"># 権限が5つちょうどか確認</span>
+</span></span><span class="line"><span class="cl">b2 key delete &lt;旧鍵のID&gt;
+</span></span></code></pre></div><ul>
+<li><strong><code>b2 account authorize</code>と<code>b2 key create</code>の出力は、どこにも貼り付けない</strong>。鍵の本体(パスワード相当の文字列)が含まれる。自分はこの作業中にターミナルの出力をそのままAIチャットに貼ってしまい、鍵が会話ログに残った。同日中にマスター鍵の再発行と露出した鍵の削除で無効化したので実害はなかったが、<strong>確認は<code>b2 key list --long</code>で行う</strong>のが正しい(鍵のIDと権限しか出さず、本体は出ない)。</li>
+<li><strong>鍵の状態確認はWeb管理画面を信じない</strong>。削除済みの鍵が残って見えたり、新規作成した鍵が出てこなかったりした。<code>b2 key list</code>を正とする。</li>
+</ul>
+<p>層0は次の層1と<strong>セット</strong>。層0をやらずに複製ルールだけ作っても、<code>writeBucketReplications</code>を持った鍵でルールごと止められてしまう。</p>
+<h2 id="層1-削除が伝播しない複製先を作る">層1: 削除が伝播しない複製先を作る</h2>
+<p>B2には<strong>Cloud Replication</strong>という、バケット(ストレージ上のフォルダのような入れ物)の内容を別のバケットへ自動複製する機能がある。決定的な仕様はこれ。</p>
+<blockquote>
+<p><strong>削除と hideマーカー(B2が「削除された」印として置く目印)は複製されない。</strong></p>
+</blockquote>
+<p>つまり複製先は、構造的に<strong>append-only</strong>(追加だけができて削除が伝わらない)なミラーになる。元のバケットでファイルが消されても、複製先には残り続ける。これがランサムウェア対策の本体になる。</p>
+<p>同一アカウント内の別バケットへの複製で十分と判断した。理由は、<strong>サーバー上の鍵は元のバケットに限定されているので、別バケットには構造的に届かない</strong>から。別アカウントが必須になるのは「別リージョンへ複製する場合」だけで、同一アカウント・同一リージョンの別バケットへの複製は普通にできる。別アカウント構成と差が出るのは「B2のログイン自体を乗っ取られた場合」と「リージョン障害」の2つだけで、前者は後述の2段階認証のほうが本質的な対策になる。</p>
+<p>複製元を読む鍵・複製先に書く鍵は<strong>B2が自動で2本発行し、どちらもB2の内部にしか存在しない</strong>(サーバー上に置かれない)。侵害経路にならないのがこの構成の強み。</p>
+<p>複製先のライフサイクル設定でUIに落とし穴が2つあった。</p>
+<ul>
+<li>🔴 <strong>「Keep only the last version」(最新の版だけ残す)を選んではいけない</strong>。上書き攻撃を受けた瞬間に正常な旧版が消え、複製先を用意した意味がなくなる。必ず<code>Use custom lifecycle rules</code>を選ぶ。</li>
+<li>🔴 <strong><code>Days Till Hide</code>は必ず空にする</strong>。ここに数字を入れると、現役のバックアップ本体が自動削除される。埋めるのは「古い版を何日後に消すか」の1箇所だけ。</li>
+</ul>
+<p>自分は<strong>古い版を180日で削除</strong>に設定した。毎晩上書きされるデータベースのダンプ(写真サーバー188MB + ファイルサーバー18MB + 認証サーバー13MB ≒ 日220MB)が積み上がって年80GB増える計算だったため。180日なら約40GBで頭打ちになる。<strong>保護が弱まるわけではない</strong>——削除は複製されないので消されたファイルには無関係で、上書き攻撃は次の層2が1週間以内に検知する。</p>
+<p>複製元141.5GB・118,503ファイルに対して、複製先は149.0GB・118,976ファイルで完了。<strong>複製先のほうが大きいのは設計どおり</strong>(元で消えた・上書きされたファイルが残り続けるので膨らむ)。初回コピーは数日かかった。</p>
+<ul>
+<li><strong>初回コピーの進捗はAPIでは測れない</strong>。B2が複製の状態フラグを付けるのはルール作成後に新規アップロードされたファイルだけで、既存ファイルの後追いコピー分は全件「未設定」のまま。進捗はWeb管理画面の複製先バケットのファイル数で見るしかない。</li>
+<li><strong>初回コピー完了を待つ必要はない</strong>(層2の判定は「減った/増えていない」なのでコピー中に誤報は出ない)。ただし<strong>ライフサイクル設定は初回コピー完了まで触らない</strong>——コピー中の変更は直後のファイルが消える危険があると公式ドキュメントに明記されている。</li>
+<li>コストは複製分で<strong>月$0.70</strong>。複製の転送料は無料。</li>
+</ul>
+<h2 id="層2-サーバーの外に見張りを置く">層2: サーバーの外に見張りを置く</h2>
+<p>複製が本当に続いているかを誰も見ていなければ、仕組みは静かに壊れる。そこで<strong>デッドマンスイッチ</strong>(定期的な生存信号が途絶えたら警報を出す仕掛け)を用意した。</p>
+<p>肝は<strong>サーバーの外で動かすこと</strong>。サーバー監視には別途Uptime Kumaを使っているが、これはサーバー自身の上で動いているので、<strong>サーバーごと死んだら自分の死を通報できない</strong>。</p>
+<p>実装はGitHub上の非公開リポジトリ1つ + <strong>GitHub Actions</strong>(GitHubが提供する、決めた時刻やイベントでスクリプトを自動実行する仕組み)。週1回、複製先バケットを走査して、次のどれかに当たったらTelegramへ通報する。</p>
+<ol>
+<li>ファイル件数が前回より減った</li>
+<li>合計サイズが前回比1%を超えて減った</li>
+<li>21日間まったく増えていない</li>
+<li>B2へ接続・認証できない</li>
+</ol>
+<p>観測値はリポジトリ内のJSONファイルにコミットして、次回の比較基準にする。外部ライブラリは使わず標準ライブラリだけでB2のAPIを直接叩く作りにした(依存が増えると、それ自体が壊れる原因になる)。見張り用の鍵は<strong>複製先バケット限定・読み取り専用</strong>なので、こちらはWeb画面の発行UIで作れる。</p>
+<ul>
+<li>件数の減少は「複製先を直接触られた」ことのシグナルとして意味が強い(削除は複製されないので、正常運用では減らない)。</li>
+<li><strong>上書き破壊の検知は不完全</strong>だと正確に理解しておく。同サイズ・より大きいサイズで上書きされた場合は検知できない。ただしその場合も版管理で旧版が残るので復元は可能で、守りは版管理側が担っている。</li>
+<li><strong>GitHub Actionsの定時実行は大幅に遅れる</strong>。<code>0 1 * * 1</code>(毎週月曜01:00 UTC)と書いたジョブが実際に走ったのは06:16 UTCで、<strong>5時間16分遅れ</strong>だった。<code>:00</code>は最も混雑する分なので、奇数分(<code>17 1 * * 1</code>など)にずらすと改善する。週次監視なら遅延自体は無害だが、<strong>時刻を当てにした説明を書かないこと</strong>。</li>
+<li><strong>通報が空振りする状態で放置してはいけない</strong>。鍵をGitHubのSecrets(リポジトリに暗号化して保存する秘密情報)に登録する前に初回の定時実行が走り、認証情報が無くて失敗した。設計どおりの挙動だが、これを放置すると毎週失敗通知が来て、<strong>デッドマンスイッチの警報を無視する習慣がつく</strong>。それが一番の実害。</li>
+</ul>
+<h2 id="踏んだ落とし穴-鍵の差し替えが設定ファイルを作り直していた">踏んだ落とし穴: 「鍵の差し替え」が設定ファイルを作り直していた</h2>
+<p>層0の鍵差し替えには、以前自分で書いた<code>rotate-b2-key.sh</code>というスクリプトを使った。これが<code>rclone</code>の設定ファイル(<code>rclone.conf</code>)を<strong>丸ごと作り直す</strong>作りになっていた。</p>
+<p>同じ日の朝に、送信前に自前で暗号化するための設定ブロックをこのファイルに追加していた。スクリプトはそのブロックを知らないので、鍵の差し替え自体は成功したのに<strong>直後のバックアップが「設定ブロックが見つからない」で全滅</strong>した。</p>
+<ul>
+<li><strong>教訓: 構成に新しい設定ブロックを足したら、そのファイルを書き換える既存スクリプトを洗い出す</strong>。「鍵の差し替え」という名前から、設定ファイル全体を作り直しているとは読み取れなかった。</li>
+<li>スクリプトは、丸ごと上書きをやめて該当2行だけを置換する形に直した。加えて<strong>書き込む前に「設定ブロックが減っていないか」「新しい鍵IDが入ったか」を検査し、1つでも失敗したら一切書かずに中止する</strong>ようにした。</li>
+<li>🔴 <strong>もう1つの地雷</strong>: 設定ファイルは<code>root</code>用と一般ユーザー用の2箇所にあり、復旧を片方だけやって放置していた。バックアップは<code>root</code>で動くので「成功」と出続け、<strong>一般ユーザーで実行したときだけ静かに失敗する</strong>状態になっていた。</li>
+<li><strong>教訓: 「両方必要」と書いた手順は、実施後に必ず両方を実測で確認する</strong>。<code>grep &quot;^\[&quot; &lt;設定ファイル1&gt; &lt;設定ファイル2&gt;</code>のようにセクション名だけ出すコマンドなら値が漏れないので、安心して結果を見られる。</li>
+<li>おまけの罠として、<code>ssh サーバー 'bash -s' &lt;&lt;'EOF'</code>形式のヒアドキュメント(複数行のスクリプトを流し込む書き方)は<code>ssh</code>の標準入力と競合して出力が二重化し、成功したのか失敗したのか読めなくなった。<strong>サーバー操作は1行の<code>ssh サーバー '...'</code>に分解して1つずつ流す</strong>のが確実だった。</li>
+</ul>
+<h2 id="2段階認証が1段階だった">2段階認証が1段階だった</h2>
+<p>作業中にもっと基本的な穴が見つかった。「2段階認証は済んでいる(ログインのたびにメールでコードが来る)」と認識していたが、これはBackblazeが既定で有効にしている<strong>メールMFA</strong>(多要素認証)だった。</p>
+<p><strong>コードの送り先も、パスワードリセットの送り先も、同じメールアドレス</strong>。つまりメールボックス1つ取られると2要素が1要素に潰れる。同一アカウント構成を選んだ結果、このアカウントが全データの唯一のオフサイトコピーを持っているので、ここが設計上の最大の残留リスクだった。</p>
+<p><strong>TOTP</strong>(認証アプリが30秒ごとに生成する6桁コード方式)に切り替えて解消した。</p>
+<ul>
+<li>認証アプリは<strong>Ente Auth のオフラインモード</strong>(アカウント登録なしで使える)を選んだ。Google Authenticatorは、自分がGoogleアカウントを削除する方針で同期が使えないこと、Google Playが載らない端末への移行を検討していることの2点で不適だった。アプリ登録が必要なものだと、復旧手段がまた別の会社のアカウントに依存して、断ち切った鎖を作り直すことになる。</li>
+<li><strong>バックアップコードは必ず生成してパスワードマネージャーに保存する。ただしTOTPそのものは同じ金庫に入れない</strong>(同じ場所に入れたら1要素に戻る)。TOTPはスマートフォンのアプリに、バックアップコードはVaultwardenに置いた。</li>
+</ul>
+<h2 id="残る鶏と卵">残る「鶏と卵」</h2>
+<p>この構成にも、原理的に閉じない循環が残っている。</p>
+<ul>
+<li>B2に入るには → TOTP(スマートフォン)</li>
+<li>スマートフォンを失くしたら → バックアップコード(Vaultwarden)</li>
+<li>VaultwardenはサーバーVPS上 → サーバーを失ったらB2から復元が必要 → B2に入る必要がある</li>
+</ul>
+<p><strong>スマートフォンとサーバーを同時に失うと詰む</strong>。対処は「バックアップコードを紙でもう1箇所持つ」しかない。これは<a href="/guides/1password-to-vaultwarden/">パスワードの移行の記事</a>で書いた、バックアップの取り出し鍵自体をどこに置くかという問題とまったく同じ構造になっている。<strong>自前で持つほど、最後の1本をどこに置くかという問題に必ず行き着く。</strong></p>
+<h2 id="結果とやらなかったこと">結果と、やらなかったこと</h2>
+<p>鍵の権限削減・append-onlyな複製先・サーバー外の見張りの3層が稼働状態になった。追加費用は複製分の月$0.70だけで、ハードウェアは1台も増えていない。</p>
+<p>やらなかったことも書いておく。<strong>Backblazeというプロバイダ1社に依存している</strong>のは未対策のまま。アカウントの凍結や会社都合に備えるなら、別会社のストレージへもう1本(追記専用の設定で月€4前後)が答えになるが、今回は見送った。手を広げる前に、今ある3層が本当に回り続けるかを数ヶ月見ておきたかった。</p>
+<p><strong>更新履歴</strong> — 2026-10-01: 初版</p>
+]]></content:encoded></item><item><title>自宅サーバーが5.5日止まったので海外VPSへ移った</title><link>https://offgrid.taikiito.com/guides/home-server-to-vps/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/home-server-to-vps/</guid><description>自宅のWindowsノートPCが原因不明のまま5.5日間フリーズし、写真・パスワード・ファイルのサーバーが全部止まった。壊れた機械から転送するのではなく、毎晩取っていたクラウドバックアップからVPS側へ引っ張って復元する方式で、26分の停止で移行した記録。公開IPになって初めて露出した穴とその塞ぎ方も書いた。</description><content:encoded><![CDATA[<p>写真・パスワード・ファイルの置き場を全部自宅のPC1台に集めていた。そのPCが<strong>5.5日間フリーズしたまま</strong>動かなくなり、全部止まった。家を離れていた期間だったので、帰るまで何もできなかった。原因は結局特定できていない。</p>
+<p>その障害の記録と、そこから海外VPS(レンタルサーバー)へ移った記録。<strong>壊れた機械からデータを転送するのではなく、毎晩取っていたクラウドバックアップからVPS側へ引っ張って復元した</strong>のが一番再利用できる部分だと思う。実際の停止時間は26分だった。そして移行後、<strong>自宅のルーターの内側にいたから気づかずに済んでいた穴</strong>が一気に表に出た。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>自宅のWindows機〈ノート型〉(WSL〈Windowsの中でLinuxを動かす仕組み〉上でサーバーを動かしていた)で、Immich(写真)・Nextcloud(ファイル)・Vaultwarden(パスワード)・Authentik(ログインの入口)など<strong>常時14コンテナ</strong>を動かしている状態</li>
+<li>外部公開はCloudflare Tunnel(ルーターに穴を開けずにサーバーを公開する仕組み)経由で、ルーターのポート開放は一切していない</li>
+<li>毎晩<code>rclone</code>(いろいろなクラウドストレージへファイルを同期するコマンド)でBackblaze B2(安価なオブジェクトストレージ)へ日次バックアップを取っている</li>
+<li>構築の土台は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>、バックアップの設計は<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a></li>
+</ul>
+<h2 id="何が死んだのか">何が死んだのか</h2>
+<p>最初の症状は、自分のドメインを開くと<strong>Cloudflare Error 1033</strong>(トンネルの出口であるサーバー側にCloudflareが接続できない時のエラー)が出たこと。Cloudflareの障害情報ページには何も出ていない。別経路のリモートデスクトップで見ると「最後のオンライン 12:07」でオフライン表示。<strong>トンネルが切れたのではなく、サーバーの入っているPC自体が落ちている。</strong></p>
+<p>遠隔からできることは何もなかった。SSHも入れない。Cloudflare Tunnelは「サーバーが生きていれば外から入れる」仕組みなので、サーバーが死ぬと一緒に死ぬ。</p>
+<p>帰ってから見たPCの状態がこれ。<strong>電源は入っていて画面も出ているのに、マウスカーソルが一切動かない。</strong> キーボードも効かない。ブルースクリーンも出ていない。電源ボタンの長押しで強制終了して再起動したら、何事もなかったように復旧した。</p>
+<p>後日イベントログを調べて停止時間が確定した。</p>
+<pre tabindex="0"><code>EventLog ID 6008
+&#34;The previous system shutdown at 11:11:13 AM on 9/21/2026 was unexpected.&#34;
+</code></pre><p>このログが記録されたのは<strong>9/26 23:45</strong>(自分が強制再起動した時刻)。つまり<strong>9/21 11:11:13にハングして、そこから5日半固まったまま</strong>だった。</p>
+<ul>
+<li>9/21〜9/26の間、Systemログに<strong>イベントが1件も記録されていない</strong>。完全な空白。瞬断の繰り返しではなく、OSが本当に何も処理できない「サイレントハング」だった裏付けになる。</li>
+<li><strong>ブルースクリーンのダンプファイルが無い</strong>(残っていたのは1年半前の古いものだけ)。<strong>ディスプレイドライバのクラッシュログも0件</strong>。写真の顔認識にGPU(画像処理用の高性能な部品)を使っていたのでGPUドライバのハングが一番疑わしい候補だったが、<strong>ログが書かれる前に固まった可能性もあり確定できなかった。</strong></li>
+</ul>
+<p><strong>根本原因は今も分かっていない。</strong> BSODもエラーログも残さず固まる種類の故障は、原因究明が原理的に難しい。</p>
+<p>🔴 <strong>ここで一度、原因を誤診した。</strong> 強制再起動後に別のソフトの認証セッションが切れていたので、最初はそれが5.5日の原因だと分析した。実際は「PCが固まっていた」が唯一の原因で、セッション切れは再起動後に浮上した<strong>二次的な問題</strong>だった。<strong>復旧直後に見つかった不具合は、障害の原因ではなく結果であることがある。</strong> 時系列のログで裏を取るまで原因を名指ししない。</p>
+<h2 id="なぜvpsに移ることにしたか">なぜVPSに移ることにしたか</h2>
+<p>最初に考えたのは、もっと安い対策ばかりだった。ウォッチドッグタイマー(固まったら自動でリセットする機能)、GPUドライバの更新、旅行時はSSHできる端末を必ず携帯する運用ルール。</p>
+<p>🔴 <strong>「スマートプラグで遠隔から電源を入れ直す」案は、そもそも使えなかった。</strong> サーバーにしていたのはノート型のWindows機で、<strong>内蔵バッテリーがあるのでコンセントを切っても電源は落ちない</strong>。ノートPCを常時稼働のサーバーに流用するのは「静かで省電力」という利点があって自分もそれで選んだのだが、<strong>固まったときに遠隔で殴る手段を一つ失う</strong>という代償がついてくる。これは置き場所を決める段階で知っておきたかった。「WindowsをやめてこのPCを素のLinux専用機にする」案も検討したが<strong>否定的</strong>な結論になった。マウスも効かないOS全体の停止なのでLinux側だけの不調ではなく、<strong>原因がGPUドライバなら素のLinuxでも再発しうるので、OS再インストール＋全サービス移行という大工事に見合う保証がない</strong>。</p>
+<p>それでも移行を決めた理由は、<strong>数日後に同じサイレントフリーズが再発した</strong>こと。原因が分からない以上「次はいつ、どれだけ止まるか」が見積もれない。<strong>データセンターの機械なら、少なくとも電源とネットワークと物理的な復旧は他人の仕事になる。</strong></p>
+<h2 id="vpsの比較で実際に効いた軸">VPSの比較で実際に効いた軸</h2>
+<p><strong>2026年9月時点</strong>の調査値。今は変わっているはず。</p>
+<table>
+	<thead>
+			<tr>
+					<th>候補</th>
+					<th>スペックと価格の感覚</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Contabo</td>
+					<td>6vCPU / 12GB RAM / 200GB SSD が月$9前後。容量あたりで圧倒的に安い</td>
+			</tr>
+			<tr>
+					<td>Vultr</td>
+					<td>2vCPU / 8GB で月$24〜48</td>
+			</tr>
+			<tr>
+					<td>DigitalOcean</td>
+					<td>2vCPU / 4GB で月$24</td>
+			</tr>
+			<tr>
+					<td>Hetzner</td>
+					<td>単価は安いが月間転送量の上限が低く、写真用途では超過料金のリスク</td>
+			</tr>
+			<tr>
+					<td>Oracle Cloud Free Tier</td>
+					<td>2 OCPU / 12GB ARM が無料枠</td>
+			</tr>
+			<tr>
+					<td>国内VPS</td>
+					<td>2コア / 2GB / SSD 200GB が月770円〜。ただし週1回程度の数秒〜数分の瞬断報告あり</td>
+			</tr>
+			<tr>
+					<td>AWS Lightsail</td>
+					<td>以前使っていたが、この用途では割高だったので自宅運用に移った経緯がある</td>
+			</tr>
+	</tbody>
+</table>
+<p>効いた軸は4つ。</p>
+<p><strong>① ディスク容量が最優先。</strong> 写真のライブラリが実測115GB、ファイル同期が16.6GB。OS・Docker・データベースを含めて170〜180GBと見積もり、200GBのプランにした。「写真が増えるたびに月額が雪だるま式に増えるのが嫌だ」という条件があったので、<strong>同じ値段でどれだけディスクが付いてくるか</strong>が一番差の出る軸になった。</p>
+<p><strong>② メモリは写真の量ではなくコンテナの数で決まる。</strong> ここは一度自分で間違えかけた。「古い写真をクラウドへ逃がすならメモリも小さくていいのでは」と考えたが違う。常時14コンテナが動いていて、以前メモリ不足で全サービスが繰り返し落ちた実績がある。しかも<strong>VPSにはGPUが無いので、顔認識や画像検索の処理をCPUとメモリでやることになり、必要メモリはむしろ増える</strong>。8GBではなく12GBから始め、安定を確認してから下のプランへ落とす順序にした。</p>
+<p><strong>③ リージョン(どの国のデータセンターか)は在庫で決まった。</strong> 第一候補にしていたリージョンは<strong>月+$4.90の追加料金</strong>がつく上に、申し込み画面で<strong>在庫切れ</strong>だった。追加料金ゼロで常に在庫があるリージョンに変えたら、結果として<strong>バックアップ先のB2との経路が短くなり、復元も移行後の日次バックアップも速くなる</strong>という副産物があった。「近いほうが良いに決まっている」と思い込んでいた軸が、実際には料金・在庫・バックアップ先との距離で裏返った。</p>
+<p><strong>④ 遅延は実測すると論点が変わる。</strong> 申し込み画面の「近いリージョン4ms、遠いリージョン158ms」は<strong>生のネットワーク遅延で、Cloudflare Tunnel経由の実構成には当てはまらない</strong>。自宅のPCで動かしていた時点ですでに写真サーバーの初期応答は73〜87msだった。DNSがCloudflareを指しているので、自宅のWiFiからでも一度エッジへ出て戻る経路になり、「目の前にあるから速い」状態には元々なっていなかった。移行後は<strong>0.55〜0.7秒</strong>(自宅PC時代は0.3秒前後)。比較のためにGoogle Photosのアプリ画面を測ると248〜255msで、<strong>「すでに受け入れている遅さ」と同程度</strong>だと分かったので許容できる論点に落ちた。</p>
+<ul>
+<li>🔴 サムネイルをCloudflare側にキャッシュさせれば速くなるが、<strong>それは自分の写真をCloudflareに置かせることになるのでやらない</strong>。速度のために主権を手放すなら移行の意味がない。</li>
+</ul>
+<p>契約は6vCPU / 12GB RAM / 200GB SSD / 転送量無制限、Ubuntu 24.04、<strong>1ヶ月契約で月$9.00、初期費用ゼロ</strong>。年契約の割引は見送った。原因不明の障害から逃げるための移行で、移行先が気に入らなかった時にすぐ降りられないのは本末転倒だから。</p>
+<h2 id="移行方式-壊れた機械から運ぶのをやめる">移行方式: 壊れた機械から運ぶのをやめる</h2>
+<p>ここが今回の中心。</p>
+<p>普通に考えると、移行とは<strong>旧サーバー → 新サーバー</strong>へデータを直接転送することだ。ランブックの最初の案もそうなっていた。150GBを<code>rsync</code>(差分だけコピーするコマンド)で送る、数時間〜半日かかる、という計画。</p>
+<p>これを見て思ったのが、**「毎晩クラウドにバックアップを取っているのだから、新サーバーがそこからダウンロードすればいいのでは?」**だった。採用した。</p>
+<pre tabindex="0"><code>これまでの案:  自宅PC ──(細い家庭回線)──&gt; 新VPS
+採用した案:    自宅PC ──&gt; B2(クラウド) ──(データセンター間)──&gt; 新VPS
+</code></pre><ol>
+<li><strong>自宅の細い上り回線に依存しない</strong>。VPS↔B2はデータセンター間なので桁違いに速く、実測で約30MB/sだった。</li>
+<li><strong>旧サーバーが移行作業中ずっと安定している必要がない</strong>。これが決定的だった。5.5日固まる機械を、半日の転送が終わるまで無事でいてくれと祈りながら使うのは設計として間違っている。</li>
+<li><strong>既にそこにあるので準備作業がゼロ</strong>。写真の本体もデータベースのダンプ(中身を1つのファイルに書き出したもの)も毎晩同期済み。</li>
+<li><strong>ついでに災害復旧の予行演習になる</strong>。「クラウドのコピーしか残っていない状態から戻せるか」を本番で一度やることになるので、バックアップが本当に使えるのかが確定する。</li>
+</ol>
+<h3 id="鶏と卵の問題は先に解いてあった">鶏と卵の問題は先に解いてあった</h3>
+<p>前提がある。<strong>B2から引っ張るにはB2へのアクセス鍵が必要</strong>で、その鍵が旧サーバーの中にしか無ければ、サーバーを失った時点で何も取り出せない。</p>
+<p>ここは1ヶ月前に手を打ってあった。<strong>B2アクセス用の<code>rclone</code>設定、Cloudflare Tunnelの設定、<code>docker-compose.yml</code>一式、環境変数ファイルの内容を、Vaultwarden(自分のパスワード管理サーバー)にSecure Note 4件として複製保存していた。</strong> Vaultwardenのモバイルアプリはオフラインキャッシュを持つので、サーバーに一切アクセスできなくてもスマートフォンから取り出せる。後日<strong>このメモに書かれた値だけで</strong>B2上の全データが見えることを実測で確認した。🔴 <strong>この検証は鍵を入れ替えるたびに毎回やる。</strong> 「保存したつもり」で中身が古い、という事故が一番ありそうな場所だから。</p>
+<h2 id="ランブックの形">ランブックの形</h2>
+<p>手順はPhase A〜Hに分けて1つの文書にした。<strong>実行中にその場で考える余地を削るのが目的</strong>で、特にDNSの切り替えは後戻りの判断が数秒で要る。</p>
+<pre tabindex="0"><code>Phase A  旧サーバーを止めて最終バックアップ
+Phase B  Vaultwardenから鍵4件を取り出す
+Phase C  新VPSの初期設定(ユーザー・SSH鍵・Docker)
+Phase D  B2から rclone copy でデータを引っ張る
+Phase E  データベースのダンプをリストア
+Phase F  docker-compose を復元してコンテナ起動
+Phase G  新しいトンネルを作ってDNSを1本ずつ切替
+Phase H  移行後(バックアップの再構築・監視・検証)
+</code></pre><p>書き上げた最初の版には穴が4つあり、実行前のレビューで直した。</p>
+<ul>
+<li><strong>稼働中のままコピーしたパスワードデータは壊れている可能性がある。</strong> Vaultwardenのデータベースファイルは書き込み中にコピーすると不整合になりうる。当日は<strong>コンテナを止めてから</strong>バックアップを手動実行する手順に変えた。これで「日次バックアップから最大24時間分が欠ける」問題も同時に消える。</li>
+<li>🔴 <strong>イメージのバージョンを固定せずに復元すると壊れる。</strong> データベースのダンプは、取得した時点のソフトのバージョンの構造に紐づいている。<code>docker compose pull</code>で最新版を取ると構造が合わなくなる。</li>
+<li><strong>環境変数ファイルの復元元を間違って書いていた。</strong> 以前使っていたパスワード管理サービスは解約済みで、正しくはVaultwardenだった。<strong>手順書は、書いた時点では正しくても構成変更で腐る。</strong></li>
+<li>🔴 <strong>同じトンネルを2台のホストで同時に動かしてはいけない。</strong> リクエストが2台にランダムに振り分けられて、「たまに繋がらない」という一番デバッグしづらい障害になる。<strong>新しいトンネルを別に作って、DNSを1本ずつ向け替える</strong>形にした。</li>
+</ul>
+<p>他に決めておいたこと。</p>
+<ul>
+<li><strong><code>rclone copy</code>を使い、<code>sync</code>は使わない</strong>。<code>sync</code>は転送元に無いファイルを転送先から消す。過去にこれで必要なディレクトリを消して障害にした実績がある。</li>
+<li><strong>切替順序</strong>: 一番軽いパスワードサーバー → <strong>ログインの入口(最重要。落ちると他のサービスにログインできなくなる)</strong> → ファイル → 写真 → 残り。<strong>旧サーバーへのSSH経路は一番最後。</strong> 先に向け替えると旧サーバーに入れなくなって確認作業ができない。</li>
+<li><strong>DNSのTTL(切替が反映されるまでの待ち時間)を事前に短くする手順は不要だった。</strong> 対象レコードは全部Cloudflareのプロキシを通る設定で、外に返るアドレスは切替前後で変わらない。振り分けはCloudflare内部で起きるので<strong>書き換えの数秒後に反映され、戻すのも数秒</strong>。TTLを下げる必要があるのは、プロキシを通さずサーバーのアドレスを直接返している場合だけ。</li>
+</ul>
+<h2 id="実際の停止時間は26分">実際の停止時間は26分</h2>
+<p><strong>15:19にサービスを止めて、15:45に全部復帰した。</strong> 写真150GBを運ぶ移行としては想定よりはるかに短い。クラウド経由にしたことで、一番重い写真の転送が「停止中にやる作業」から外れたのが効いている。</p>
+<p>復元後の検証値は、写真<strong>59,104ファイル</strong>(<code>rclone check</code>でB2との差分ゼロ)、写真サーバーの登録件数<strong>29,720件</strong>、ファイル同期サーバー144テーブル・<strong>16.6GB</strong>、ログイン入口のユーザー3件。</p>
+<h3 id="ランブックに書いていなかった落とし穴">ランブックに書いていなかった落とし穴</h3>
+<ul>
+<li>🔴 <strong>浮動タグが他にもあった。</strong> バージョン固定は写真サーバーだけ警告していたが、ファイル同期・データベース・パスワード管理も<code>:latest</code>(常に最新を取るタグ)のままだった。<strong>旧サーバーで実際に動いているイメージのダイジェスト(内容に対する一意の識別子)を全部調べて固定した</strong>。<code>docker inspect</code>の<code>.Image</code>はそのマシンの中だけのIDでダウンロードには使えないので<code>RepoDigests</code>を使う。</li>
+<li>🔴 <strong>写真サーバーが起動ループした。</strong> <code>Failed to read /data/encoded-video/.immich</code>。サムネイルと変換済み動画のフォルダをバックアップ対象から外していたため、<strong>そのフォルダにある整合性チェック用の目印ファイルまで一緒に欠けていた</strong>。空のフォルダではなく「目印だけがある」状態が必要だった。</li>
+<li><strong>ファイル同期サーバーが<code>Cannot write into &quot;config&quot; directory!</code>で503。</strong> <code>rclone</code>はファイルの所有者情報を保持しないので、復元したファイルが全部自分のユーザーの所有になっていた。<strong>クラウド経由の復元では所有者が落ちることを前提に、復元後のチェック項目に入れておく。</strong></li>
+<li>🔴 <strong>ユーザーのIDが揃っていなかった。</strong> 新VPSに旧サーバーと<strong>同じ名前</strong>のユーザーを作ってパスを揃えたので、設定ファイルを無改造で使い回せた。これは正解だった。ただし名前は同じでも<strong>内部の数値のID</strong>が1つずれていて、一部のコンテナ内で<code>No user exists for uid 1001</code>で落ちた。<strong>名前だけでなく数値IDまで揃える必要がある。</strong></li>
+<li><strong>「Dockerのデータとワークスペースを移せば終わり」ではなかった。</strong> 動画変換用のコマンドや日本語フォントといった<strong>ホスト側のOSパッケージ</strong>が新VPSに無く、移行の夜に機能が動かないことで発覚した。さらに<code>cron</code>(定時実行の仕組み)自体が未インストールで、登録コマンドが<strong>黙って失敗</strong>していた。バックアップの自動実行が最初から動いていないところだった。</li>
+<li>🔴 <strong>写真46件が旧サーバーにしか存在しなかった。</strong> 復元結果をファイル単位で突き合わせて翌日見つけた。<strong>データベースには46件の記録があるのに、写真の実体がVPSにもB2にも無い</strong>。原因は、移行当日の最終バックアップで<strong>データベースのダンプは成功し、写真の同期ステップが完走しないまま終わっていた</strong>こと。しかも旧スクリプトはステップごとの成否をログに出していなかったので<strong>無言で失敗した</strong>。旧サーバーがまだ生きていたので手元から押し出して復旧できたが、運が良かっただけ。
+<ul>
+<li><strong>教訓1: 復元の検証を「ファイル数の一致」でやってはいけない。</strong> 60,525件と60,619件で0.15%差。見逃す水準だった。<strong>データベースに記録されているパスが1件ずつ実在するか</strong>を全件突き合わせる必要がある。</li>
+<li><strong>教訓2: バックアップスクリプトはステップごとにOK/FAILをログへ出す。</strong> まさにこの欠陥を直すつもりだった移行当日に、その欠陥に刺された。</li>
+</ul>
+</li>
+</ul>
+<h2 id="公開ipになって初めて出た問題">公開IPになって初めて出た問題</h2>
+<p>ここが<strong>一番多くの人が外すところ</strong>だと思う。移行そのものより危ない。</p>
+<p><strong>自宅のPCはルーターの内側にいた。</strong> だから、どのサービスが「外から直接届く形」で動いていようが、外からは届かなかった。Cloudflare Tunnelという1本の出口だけが外部との接点だった。<strong>VPSは公開IPを持っている。</strong> 全部のポート(通信の入口の番号)が、世界中から直接叩ける状態で始まる。ランブックにこの観点は1行も無かった。</p>
+<h3 id="-中身が剥き出しで公開されていた">① 中身が剥き出しで公開されていた</h3>
+<p><strong>写真サーバーのログイン画面が生で公開</strong>されていた。Cloudflare側のログイン要求を通らない素の入口。<strong>ログイン入口サーバーのHTTPSポートも公開</strong>で、本来Cloudflare側の防御を通ってから届くはずのものが迂回できる状態。小さな静的サイトのポートも開いていた。</p>
+<p>原因は<code>docker-compose.yml</code>の<code>ports:</code>の書き方。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="s1">&#39;2283:2283&#39;</span><span class="w">            </span><span class="c"># 🔴 これは全てのネットワークに向けて開く</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="s1">&#39;127.0.0.1:2283:2283&#39;</span><span class="w">  </span><span class="c"># ✅ 自分自身からしか届かない</span><span class="w">
+</span></span></span></code></pre></div><p><strong>自宅では両方とも同じ結果になる</strong>ので、違いに気づく機会がなかった。トンネル経由で公開する構成なら、外に向けて開く必要は最初から無い。</p>
+<p>応急処置としてファイアウォールで遮断し、<strong>後日、設定ファイル側を<code>127.0.0.1</code>に直して「ファイアウォールで塞いでいる」状態をやめた</strong>。この順序は意図的で、ファイアウォールなら数秒で塞げるがコンテナの作り直しは止まる時間が出るから。ただし<strong>応急処置で終わらせない</strong>。ファイアウォールは1行消えれば無防備に戻るが、そもそも誰も外向きに待ち受けていなければ消しようがない。</p>
+<h3 id="-sshのパスワードログインが無効にしたのに有効だった">② SSHのパスワードログインが「無効にしたのに有効」だった</h3>
+<pre tabindex="0"><code>/etc/ssh/sshd_config.d/50-cloud-init.conf   ← PasswordAuthentication yes
+/etc/ssh/sshd_config.d/99-hardening.conf    ← PasswordAuthentication no(自分が書いた)
+</code></pre><p><strong>SSHのサーバーは「最初に見つけた値」を採用する。</strong> 番号が小さいファイルが先に読まれるので、99番に書いた自分の設定は永遠に負ける。VPSの初期設定が置いていった50番のファイルを無効化して解決した。🔴 <strong>設定を書いたら、書いたことを確認するのではなく、効いているかを確認する。</strong> 鍵でログインできることと、パスワードが本当に拒否されることの両方を実測する。</p>
+<h3 id="-ipv6が完全に丸腰だった">③ IPv6が完全に丸腰だった</h3>
+<p>ここが一番ひやりとした。遮断はしたが、<strong>IPv4のファイアウォールだけ</strong>だった。</p>
+<p>VPSにはIPv6のアドレスも付いている。確認すると、<strong>IPv6側のファイアウォールのルールは空、ポリシーは全通過</strong>。コンテナはIPv4とIPv6の両方で待ち受けていたので、<strong>塞いだつもりの写真サーバーのログイン画面は、IPv6経由では公開されたまま</strong>だった。🔴 <strong>IPv4を塞いだら必ずIPv6も確認する。</strong> 設定は完全に別物で、片方だけやっても「塞いだ」とは言えない。</p>
+<h3 id="-認証なしのポート19本が素通しだった">④ 認証なしのポート19本が素通しだった</h3>
+<p>自分のアシスタントが外部サービスと喋るための中継プロセスが、<strong>ポート19本で認証なしで待ち受けていた</strong>。ファイアウォールのルールも無かった。<strong>この中の1本は自分のメールの受信箱に繋がっていた。</strong> 写真のログイン画面(少なくともパスワードは要求する)より危険度は上だった。</p>
+<p>思い込みが穴を作った。<strong>「外に出ているポートは<code>docker-compose</code>の<code>ports:</code>に書いてあるものだけ」<strong>と思っていた。これらはコンテナではなく</strong>ホスト上で直接動いているプロセス</strong>なので、Docker向けのファイアウォール設定では止まらない。棚卸しの書き方にも罠がある。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 🔴 これでは漏れる</span>
+</span></span><span class="line"><span class="cl">ss -tlnp <span class="p">|</span> grep 0.0.0.0
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ✅ 「自分自身以外」を除外方式で全部出す</span>
+</span></span><span class="line"><span class="cl">ss -tlnp <span class="p">|</span> grep -vE <span class="s2">&#34;127\.0\.0\.|\[::1\]&#34;</span>
+</span></span></code></pre></div><p>待ち受けアドレスの表記は<code>0.0.0.0:PORT</code>だけではない。<strong><code>*:PORT</code>という表記(IPv4とIPv6の両方で待ち受け)もあり、<code>0.0.0.0</code>では引っかからない。</strong> 19本はこの形で見落とされていた。**「危ないものを探す」のではなく「安全なものを除外して残り全部を見る」**書き方にしないと漏れる。</p>
+<p>後日これも応急処置をやめて根本を直した。使っていた中継ソフトには<strong>待ち受けアドレスを指定するオプションが存在しなかった</strong>ので、ソフト側のコードを1行書き換える形になった。直した後の確認が気持ちよかった。<strong>公開IPへは「接続拒否」が返る</strong> — ファイアウォールで弾いているのではなく、そもそも誰も待ち受けていない状態になった。これが一番強い証明。</p>
+<h3 id="-ファイアウォールの確認はそのサーバー自身からでは絶対にできない">⑤ ファイアウォールの確認は、そのサーバー自身からでは絶対にできない</h3>
+<p>遮断ルールには「外部から来た通信に対して」という条件が付く。<strong>VPSの中から自分の公開アドレスに繋ごうとすると内部の経路を通るので、必ず「繋がる」と出る。</strong> 塞がっているのに塞がっていないように見える。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 別のパソコンから実行する(VPS内からでは意味がない)</span>
+</span></span><span class="line"><span class="cl">nc -vz &lt;サーバーのアドレス&gt; <span class="m">2283</span>   <span class="c1"># → Operation timed out  が正しい</span>
+</span></span><span class="line"><span class="cl">nc -vz &lt;サーバーのアドレス&gt; <span class="m">22</span>     <span class="c1"># → succeeded!            が正しい</span>
+</span></span><span class="line"><span class="cl">nc -vz -6 &lt;IPv6アドレス&gt; <span class="m">2283</span>      <span class="c1"># IPv6も必ず測る</span>
+</span></span></code></pre></div><p>この外部からの実測を、<strong>VPSを再起動した後・ファイアウォールを触った後・<code>docker-compose</code>を触った後に回す定型チェック</strong>として手順書に書き出した。</p>
+<h3 id="-監視が自分の死を通報できない">⑥ 監視が自分の死を通報できない</h3>
+<p>死活監視にUptime Kumaを使っているが、<strong>それが監視対象と同じVPSの上で動いている</strong>。VPSごと落ちたら監視も一緒に落ちて通知が飛ばない。<strong>一番知りたい障害だけ通報されない。</strong> <a href="/guides/backup-ransomware-resistant/">バックアップの記事</a>で書いたデッドマンスイッチ(生存信号が途絶えたら警報を出す仕掛け)と同じ構造なので、B2の複製先を見張らせていたGitHub Actions(GitHubが決めた時刻にスクリプトを自動実行する仕組み)に死活監視を1本足して解決した。<strong>サーバーの外で動くので、サーバーが丸ごと死んでも黙らない。</strong></p>
+<h2 id="再起動して自分で戻ってくるかを確かめる">再起動して自分で戻ってくるかを確かめる</h2>
+<p><strong>移行が完了した状態は、一度も再起動していない状態</strong>でもある。「今動いている」と「電源が落ちても自分で戻ってくる」は別の話で、自宅サーバー時代は再起動のたびに何かが立ち上がらない問題に何度も遭遇していた。</p>
+<p>事前に、systemdのユニット7件がすべて<code>enabled</code>(起動時に自動で立ち上がる設定)か、コンテナ14個の再起動ポリシーが<code>unless-stopped</code>か<code>always</code>かを確認した。<strong>ファイアウォールのルールを永続化する仕組みも必ず含める</strong> — ここが抜けると再起動で遮断ルールが消え、さっき塞いだ穴が全部開く。厄介な事情が1つあって、<strong>自分のアシスタント自身がこのVPSの上で動いているので、再起動すると自分との会話も切れる</strong>。1分の猶予を置いて再起動し、<strong>復旧手順をチャットの外に控えておく</strong>段取りにした。自分を再起動する作業は、自分以外の場所に手順を置いてから実行する。</p>
+<p>結果は成功。<strong>22秒で起動</strong>し、systemd 7件・コンテナ14個すべて稼働、全9サービスがHTTP 200/302、データも再起動前と完全一致。そして<strong>外部のパソコンからの<code>nc</code>実測で、遮断したポートは<code>Operation timed out</code>、SSHは<code>succeeded!</code></strong> — 永続化が再起動をまたいで効いていることを外部視点で立証できた。</p>
+<p>後日ディスクを増設した時に<strong>こちらの意図しない強制リセットが起きた</strong>(公式ヘルプには「再起動不要」と書かれていたが実態は違った)。その時も全部がデータ欠損ゼロで自動復帰したので、この検証が本物だったことは意図せず二重に確認できた。<strong>増設系の作業は、公式が無停止と書いていてもダウンタイムを見込む。</strong></p>
+<h2 id="結果">結果</h2>
+<ul>
+<li>原因不明の5.5日間停止から、<strong>26分の停止で海外VPSへ移行</strong>した。月額は$9.00から始まり、後にディスク増設で$12.60</li>
+<li>応答は0.3秒前後から0.55〜0.7秒に落ちた。<strong>遅くなったのは事実</strong>で、これは引き受けた</li>
+<li>公開IPになって初めて出た露出を6種類見つけて塞いだ。<strong>うち2種類(IPv6と、認証なしの19本)は最初の対処では見落としていた</strong></li>
+</ul>
+<p><strong>旧サーバーはすぐ捨てずに2週間温存した</strong>。これは正解で、移行翌日に「写真46件が旧サーバーにしか無い」と判明した時に助かった。復元の検証が全部終わるまでは、古い機械を消してはいけない。</p>
+<p>そして<strong>ハングの原因は今も分かっていない</strong>。分からないまま、分からないものに依存する構成をやめた、というのが今回やったことの全部だ。</p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+]]></content:encoded></item><item><title>写真サーバーの容量が足りない問題に、遠回りして決着をつけた</title><link>https://offgrid.taikiito.com/guides/photo-storage-capacity/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/photo-storage-capacity/</guid><description>自前の写真サーバーは写真が増えるほど容量が足りなくなる。古い写真を安いクラウドストレージへ追い出す仕掛けを一晩かけて作り、10枚で実証まで通したあとに、VPS業者が月数ドルでSSDを増設できることに気づいて全部捨てた記録。測った数字と踏んだ罠を書いた。</description><content:encoded><![CDATA[<p>写真を自分のサーバーに置くようにしてから、ずっと気になっていたことがある。<strong>写真は毎年増えるのに、サーバーのディスクは契約した大きさのまま</strong>だということ。</p>
+<p>結論を先に書くと、自分は<strong>古い写真を安いオブジェクトストレージへ追い出す仕掛け</strong>を一晩かけて作り、動くところまで確認してから、<strong>全部捨てた</strong>。業者が月$3.60でディスクを足せると分かったからだ。その遠回りの中身を書く。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>写真は<a href="/guides/google-photos-to-immich/">Google PhotosからImmichに移した</a>状態（Immich = 自前サーバーで動かす写真管理ソフト）</li>
+<li>サーバーは<a href="/guides/home-server-to-vps/">自宅PCからVPSへ移した</a>直後（VPS = 仮想専用サーバー。業者のデータセンターにある自分専用のLinuxマシンを借りる形）。Contaboの6vCPU / 12GB RAM / <strong>SSD 200GB</strong> のプランで月$9.00（2026年9月時点）</li>
+<li>バックアップ先はBackblaze B2（安価なオブジェクトストレージ。2026年9月時点で1TBあたり月$6.95）。構成は<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a></li>
+<li>土台の考え方は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a></li>
+</ul>
+<h2 id="まず現実を測った">まず現実を測った</h2>
+<p>移行直後のディスクはこうだった。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">df -h /
+</span></span><span class="line"><span class="cl"><span class="c1"># 使用 164GB / 193GB、空き 29GB</span>
+</span></span></code></pre></div><p>しかもこの時点でサムネイル（一覧表示用の縮小画像）がまだ生成されていなかった。以前のサーバーでは9.6GBあったので、それが戻ると<strong>空きは約19GB</strong>。200GBのプランを選んだ数日後にもう先が見えた。</p>
+<p>次に増える速さを測った。Immichのデータベースに撮影年が入っているので、年ごとに集計できる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="k">extract</span><span class="p">(</span><span class="k">year</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="s2">&#34;fileCreatedAt&#34;</span><span class="p">),</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="n">pg_size_pretty</span><span class="p">(</span><span class="k">sum</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="s2">&#34;fileSizeInByte&#34;</span><span class="p">))</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="k">from</span><span class="w"> </span><span class="n">asset</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">asset_exif</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="s2">&#34;assetId&#34;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">id</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="s2">&#34;deletedAt&#34;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></div><p>実測（写真の実体は合計115GB）。</p>
+<ul>
+<li><strong>直近3年分の合計で約22GB</strong>。年あたり3〜10GBのペース</li>
+<li><strong>それより古い分が約19,000件・約93GB</strong></li>
+</ul>
+<p>つまり<strong>今の撮り方で年10GB弱</strong>。29GBの空きは3年もたない。いずれRAW（カメラが記録した無加工のデータ。1枚25〜50MB）で撮り始めたら桁が変わる。「毎年ちょっとずつ月額が増えていく」のが一番嫌だったので、<strong>容量と月額を切り離す</strong>方法を探し始めた。</p>
+<h2 id="最初の案-古い写真を安いストレージへ追い出す">最初の案: 古い写真を安いストレージへ追い出す</h2>
+<p><strong>サーバーのSSDには直近1〜2年の「よく見る」写真だけ置き、古い写真はB2に預けて見たいときだけ取り出す。</strong> SSDの使用量が年によらず一定になるので月額が増えない。B2には毎晩のバックアップで全写真の実体がすでにあるから、<strong>アップロードすらいらない</strong>のが魅力だった。</p>
+<h3 id="方式をいくつか捨てた">方式をいくつか捨てた</h3>
+<ul>
+<li>🔴 <strong>Immichの「External Library」（外部ライブラリ）機能は使えない</strong>。サーバーの外のフォルダを読み込む機能だが、<strong>すでにImmichの中にある写真を引き取れず、新規の写真として再登録される</strong>。アルバム・顔認識の結果・お気に入りが失われる恐れがある。</li>
+<li>🔴 <strong>「年ごとのフォルダを切り出す」はそもそも不可能</strong>。ディスク上の写真は<code>library/upload/&lt;ユーザーID&gt;/&lt;16進2桁&gt;/&lt;16進2桁&gt;/&lt;ランダムな名前&gt;.拡張子</code>という形で、<strong>ランダムな名前のハッシュで256×256のフォルダに均等にばらまかれている</strong>。年ごとのフォルダは存在しない。</li>
+</ul>
+<p>残ったのは、<strong>写真ファイル1個ずつをシンボリックリンク（ファイルの位置を指すだけのショートカット）に置き換え、リンク先をB2をフォルダとして見せた場所に向ける</strong>方式。データベースに一切触らないので、Immichから見れば何も変わらない。B2をフォルダとして見せる部分は<code>rclone</code>（いろいろなクラウドストレージへファイルを同期するコマンド）のマウント機能で、読み取り専用で常駐させた。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># /etc/systemd/system/rclone-immich-cold.service の要点</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ExecStart</span><span class="o">=</span>/usr/local/bin/rclone mount &lt;リモート名&gt;:&lt;バケット&gt;/immich-cold <span class="se">\
+</span></span></span><span class="line"><span class="cl">  /home/&lt;user&gt;/immich/library/cold <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --read-only --allow-other --uid <span class="m">1001</span> --gid <span class="m">1001</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --vfs-cache-mode full --vfs-cache-max-size 3G --dir-cache-time 24h
+</span></span></code></pre></div><p>ここで踏んだもの。</p>
+<ul>
+<li><strong><code>rclone</code>の場所は<code>/usr/local/bin/rclone</code>で、<code>/usr/bin/rclone</code>ではなかった</strong>。systemd（Linuxの常駐サービス管理）はそれだけの理由で<code>203/EXEC</code>と言って起動に失敗する。<code>which rclone</code>で確かめる。<code>--allow-other</code>には<code>/etc/fuse.conf</code>への<code>user_allow_other</code>の追記も必要。</li>
+<li><strong><code>--dir-cache-time</code>は必ず延ばす</strong>。既定の5分だと期限切れごとにフォルダ一覧の問い合わせが全件走る。24時間にした。</li>
+<li>🔴 <strong>Immichのコンテナ設定で写真フォルダのマウント指定に<code>:rslave</code>を付けないと見えない</strong>。<code>docker-compose.yml</code>の<code>${UPLOAD_LOCATION}:/data</code>を<code>${UPLOAD_LOCATION}:/data:rslave</code>にする。コンテナ（ソフトを隔離した箱に入れて動かす仕組み）へのフォルダ受け渡しは既定で「あとから生えたマウントを伝えない」ので、<strong>ホスト側で後から作ったマウントはコンテナの中からは空に見える</strong>。ここで30分溶かした。なお<code>docker compose up -d immich_server</code>は<code>no such service</code>になる——<strong>設定上のサービス名はハイフンの<code>immich-server</code>、コンテナ名がアンダースコアの<code>immich_server</code></strong>。</li>
+</ul>
+<h3 id="一番危なかったのはバックアップスクリプトだった">一番危なかったのはバックアップスクリプトだった</h3>
+<p>実験で確証を取った、本当の地雷。毎晩のバックアップは<code>rclone sync</code>（送り元に無いものは送り先からも消す片方向ミラー）で動いている。<strong>ローカルの写真をシンボリックリンクに置き換えると、<code>rclone</code>は<code>Can't follow symlink without -L/--copy-links</code>と言ってそれをスキップし、「送り元に無い」と判断してB2側の実体を削除する。</strong></p>
+<ul>
+<li>🔴 <strong>行き先が存在しない壊れたリンクでも同じ挙動で、しかも終了コードは0</strong>（＝成功として記録される）。失敗として検知できない。つまり<strong>最も危険な順序は「B2へコピーする前にシンボリックリンクを作ってしまう」こと</strong>で、やると、その夜のバックアップがB2にある唯一の実体を無言で消す。</li>
+<li><code>--copy-links</code>を付ける解決策は不可。B2に二重保存になって容量が倍になる。</li>
+</ul>
+<p>正解は<code>--exclude &quot;cold/**&quot;</code>で追い出し先を同期対象から外し、<strong>かつ順序を守ること</strong>。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 1. B2の中で複製（同一バケット内のサーバーサイドコピー＝転送ゼロ・一瞬）</span>
+</span></span><span class="line"><span class="cl">rclone copyto REMOTE/immich/library/&lt;rel&gt; REMOTE/immich-cold/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 2. 宛先のサイズを照合</span>
+</span></span><span class="line"><span class="cl">rclone lsl REMOTE/immich-cold/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 3. ローカルの実体は「削除」ではなく退避（ロールバックできるように）</span>
+</span></span><span class="line"><span class="cl">mv library/upload/&lt;rel&gt; /root/poc-staging/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 4. 相対パスのリンクを張る（library まで ちょうど4階層）</span>
+</span></span><span class="line"><span class="cl">ln -s <span class="s2">&#34;../../../../cold/&lt;rel&gt;&#34;</span> library/upload/&lt;rel&gt;
+</span></span><span class="line"><span class="cl">chown -h &lt;user&gt;:&lt;user&gt; library/upload/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 5. リンク越しに md5 を照合。違ったら即ロールバック</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 6. 全件の検証が終わってから、はじめて旧パスを削除</span>
+</span></span><span class="line"><span class="cl">rclone deletefile REMOTE/immich/library/&lt;rel&gt;
+</span></span></code></pre></div><ul>
+<li><strong>存在確認に<code>rclone lsjson</code>を使ってはいけない</strong>。存在しないファイルを渡すとフォルダとして扱われ、空の一覧と<strong>終了コード0</strong>を返す。これで一度「B2にある」と誤判断した。<strong><code>rclone lsl</code>の出力が空でないことを見る。</strong></li>
+</ul>
+<h3 id="10枚で通して確認したこと">10枚で通して、確認したこと</h3>
+<p>PoC（Proof of Concept = 動くことを示すための小さな実装）として写真10枚・46MBで最後まで通した。ホストからもコンテナの中からも同じmd5で読め、ImmichのAPI経由でオリジナル画像が10/10でHTTP 200かつmd5一致、サムネイルは10/10がローカルから配信（<strong>一覧の表示速度は一切変わらない</strong>）、エラーログなし。B2からの初回読み込みは<strong>0.39秒</strong>（636KB）、キャッシュ後は<strong>0.017秒</strong>。</p>
+<p>そして<strong>最も確認したかったこと: マウントが切れたらどうなるか</strong>。<code>systemctl stop</code>で接続を落として測った。</p>
+<ul>
+<li>オリジナル画像は<strong>404</strong>、サムネイルは<strong>200のまま</strong></li>
+<li>写真のレコード件数は<strong>前・中・後で29,716件のまま不変</strong>、該当写真の削除日時もnullのまま</li>
+<li>マウントを戻すと即座に200に復帰</li>
+</ul>
+<p>つまり<strong>Immichは、ファイルが読めなくなっても勝手にレコードを消したりゴミ箱に落としたりしない</strong>。これが成立しなければ全部やめるつもりだった。</p>
+<p>安全網が既にあったことも実測した。<strong>B2のバケットは「隠してから30日で削除」の設定にしてあり、<code>rclone deletefile</code>は既定でハード削除ではなく論理削除</strong>。だから消したファイルは30日間復元できる。15分前に消した2.1MBのHEICを<code>rclone lsf --b2-versions</code>で版名（<code>&lt;名前&gt;-v&lt;日時&gt;.&lt;拡張子&gt;</code>）を調べて取り出し、md5一致まで確認した（<strong><code>--b2-versions</code>を付けても元のファイル名を渡すと失敗する</strong>ので、必ず版名で指定する）。これで「スクリプトのミスで写真が消える」は<strong>永久喪失ではなく30日以内なら戻せるミス</strong>に格下げされた。残る課題は復元手段ではなく<strong>30日以内に気づくこと</strong>になる。</p>
+<h2 id="途中で前提そのものを疑った">途中で前提そのものを疑った</h2>
+<p>10枚が通った時点でB2からの読み出し速度を測り直して、気が変わった。197MBのデータベースダンプが6.58秒＝<strong>約30MB/s</strong>、17MBの写真が単一ストリームで0.52秒＝<strong>約33MB/s（265Mbps）</strong>。一方で手元の動画は535本・平均11.6MB、ビットレートは平均7.3Mbps・上位5%で17.9Mbps・最大67.5Mbps。<strong>最も重い動画でも4倍近い余裕がある。</strong></p>
+<p>それなら「古い写真を追い出す」のではなく、<strong>写真の置き場そのものをB2にすればいい</strong>のではないか。SSDの天井が消える。コストも、写真をB2に置けば月$10前後、1TBまで増えても月$16で、大きいディスクのプランへ引っ越す月$19より安い。<strong>安いほうが天井も無い</strong>という綺麗な結論になりかけた。</p>
+<p>そこで手を止めて2つ調べた。</p>
+<h3 id="自分以外に誰がやっているのか">自分以外に誰がやっているのか</h3>
+<ul>
+<li><strong>主流は「オリジナルはローカル、クラウドはバックアップ専用」</strong>。<a href="https://docs.immich.app/administration/backup-and-restore/">Immich公式のバックアップ手順</a>もローカル本番を前提に書かれている。クラウドを本番の置き場にしている例は少数派・実験的で、数少ない実践者は「わずかなレイテンシのゆらぎでマウントが壊れる」「ローカルキャッシュがすぐ溢れる」と報告している。</li>
+<li><strong>「クラウドが唯一のコピー」でやっている人は、調べた範囲で1人も見つからなかった。</strong> 定番は3コピー（本番＋ローカルの2本目＋クラウド）。</li>
+<li>🔴 <strong>Immichに未解決の不具合がある</strong>: <a href="https://github.com/immich-app/immich/issues/10480">issue #10480</a> — サムネイル生成が同じファイルを2回読むため、リモートストレージでは<strong>ダウンロード量が実データの8〜10倍</strong>に膨らむ。16,000ファイル・110GBで900GBという報告がある。B2の無料ダウンロード枠は保存量の3倍/月なので、<strong>サムネイルの全件再生成を一度回すと枠を超えて課金が出る</strong>。</li>
+<li><strong>Immich本体のS3対応（オブジェクトストレージへの公式対応）は期待できない</strong>。2026年時点で未実装、ロードマップにも無い。**「待つ」は非現実的で、マウント方式が唯一の道（公式サポート外）**という整理になった。</li>
+<li>追い風もあった。<strong>B2のAPI呼び出し課金が2026-05-01に全廃された</strong>（代わりに保存料が$6→$6.95/TB/月に値上げ）ので、「マウントが大量の一覧取得を発行して請求が爆発する」という有名な事故モード（過去に約$598の実例がある）は構造的に消えていた。</li>
+</ul>
+<h3 id="暗号化のコストを測った">暗号化のコストを測った</h3>
+<p>クラウドに本番を置くなら預け先に中身を読まれない形にしたい。界隈の多数派も「上げる前に自分で暗号化する」だった。そして改めて気づいたのだが、<strong>自分の既存のバックアップは暗号化されていなかった</strong>。毎晩のバックアップを始めた時点で、預け先は写真59,000枚を読める状態だった。</p>
+<p>17MBの写真で測った結果は、<strong>暗号化あり0.63〜0.95秒 / 平文0.46〜0.53秒</strong>。差は0.2〜0.4秒でボトルネックは回線のまま。<strong>暗号化は速度面の障害にはならない。</strong></p>
+<ul>
+<li>⚠️ <strong>最初の計測では「暗号化7.01秒 vs 平文0.46秒＝15倍」と誤った結論を出した</strong>。原因は、比較した2つのマウントで<code>--vfs-read-chunk-size</code>などの設定が揃っていなかったこと。<strong>ベンチマークは条件を揃える。</strong> 危うく「暗号化は無理」と誤った判断を下すところだった。</li>
+<li>代償は速度ではなく別の2つ。①預け先のファイル名が不可読な文字列になり管理画面から中身を確認できない ②<strong>既存の115GBを暗号化し直すには全部アップロードし直す必要があり、「移行作業ゼロ」という最大の利点が消える</strong>。</li>
+</ul>
+<h2 id="本命の答えはボタンひとつだった">本命の答えは、ボタンひとつだった</h2>
+<p>ここまで自分は「B2へ追い出す」「オブジェクトストレージを本番にする」「大きいプランへ引っ越す」の3つを丁寧に比較していた。そして<strong>契約しているVPSの管理画面を開いて、「ディスクだけ足す」という選択肢を一度も検討していなかったことに気づいた。</strong></p>
+<p>Contaboの管理画面には**「Extend SSD Storage」ボタン**がある。<a href="https://help.contabo.com/en/support/solutions/articles/103000404620-can-i-add-more-ssd-storage-to-my-vps-or-vds-dedicated-server-">公式ヘルプ</a>にも、既存のVPSにSSDを足せる・再インストール不要・移行不要と書いてある。200GBを400GBにした。</p>
+<p>月額の増分で並べるとこうなる（2026年9月時点）。</p>
+<table>
+	<thead>
+			<tr>
+					<th>選択肢</th>
+					<th>月額の増分</th>
+					<th>必要な作業</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>SSDを200GB増設</strong></td>
+					<td><strong>+$3.60</strong></td>
+					<td><strong>なし</strong></td>
+			</tr>
+			<tr>
+					<td>B2へ追い出す（200GB相当）</td>
+					<td>+$0.87</td>
+					<td>マウント常駐＋リンク張り＋見張り＋孤児掃除</td>
+			</tr>
+			<tr>
+					<td>同社のオブジェクトストレージ（最小250GB）</td>
+					<td>+$2.99</td>
+					<td>同じくマウントが必要</td>
+			</tr>
+			<tr>
+					<td>大きいプランへ引っ越す</td>
+					<td>+$8〜10</td>
+					<td>データ移行、数分の停止</td>
+			</tr>
+	</tbody>
+</table>
+<p><strong>差額が月$2〜3しかないなら、その$2で複雑さを全部買い取れる。</strong> 一晩かけて作った仕掛けは、この表の2行目のためのものだった。</p>
+<h3 id="増設の実作業">増設の実作業</h3>
+<p>公式ヘルプの「activated right away（即座に有効、再起動不要）」は実態と違った。⚠️ <strong>増設は業者側の強制リセットを伴った</strong>——正常なシャットダウンの記録がなく、前のログが突然途切れている。<strong>増設するときはダウンタイムを見込むこと。</strong> 結果的に、<strong>予期しない電源断からの自動復旧が完全に機能することが実証できた</strong>（コンテナ14個・常駐サービス7件・公開している9サービスすべて復帰、写真のデータ欠損ゼロ）。棚からぼた餅の検証になった。</p>
+<p><strong>増えた分は既存ディスクの拡大として現れた</strong>（別のディスクとしてではない）。ただし<strong>パーティションとファイルシステムは自動では広がらない</strong>ので、ここだけ手作業。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 作業前に、必ず手動でバックアップを一度完走させる</span>
+</span></span><span class="line"><span class="cl">/root/backup-scripts/backup-to-b2.sh
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">growpart --dry-run /dev/sda <span class="m">1</span>   <span class="c1"># まず空振りで確認</span>
+</span></span><span class="line"><span class="cl">growpart /dev/sda <span class="m">1</span>             <span class="c1"># パーティションを広げる</span>
+</span></span><span class="line"><span class="cl">resize2fs /dev/sda1             <span class="c1"># ファイルシステムを広げる</span>
+</span></span></code></pre></div><ul>
+<li>ルートのパーティションテーブルを書き換える操作なので、<strong>直前のバックアップは作法として必須</strong>。</li>
+<li>対象が最後のパーティションで、直後に連続した空き領域がある理想的なケースだった。ext4に<code>resize_inode</code>があるので<strong>マウントしたまま、無停止でオンライン拡張できた</strong>。</li>
+<li>結果: パーティション199GB→399GB、ファイルシステム193GB→387GB、<strong>使用率93%→46%、空き16GB→209GB</strong>。RAWを30MB換算で約7,000枚の余裕。</li>
+<li><strong>料金の実績は月$9.00 → $12.60。100GBあたり月$1.80（＝$18/TB/月）。</strong></li>
+</ul>
+<h2 id="仕掛けは完全に撤去した">仕掛けは完全に撤去した</h2>
+<p>増設で解決したので、一晩かけて作ったものは全部元に戻した。<strong>「使っていないだけ」で残すのが一番たちが悪い</strong>——あとでバックアップスクリプトを触ったときに、忘れた除外設定が事故になる。退避していた10枚の実体を元の場所に戻してB2へ再アップロードし、追い出し先のプレフィックスを削除。常駐マウントのサービスを停止・無効化・削除し、マウント用フォルダと<code>/etc/fuse.conf</code>の追記も撤去。バックアップスクリプトの<code>--exclude &quot;cold/**&quot;</code>とコンテナ設定の<code>:rslave</code>は、<strong>事前に取った<code>.bak</code>との差分で元と一致することを確認してから<code>.bak</code>も消した</strong>。撤去後の検証は10枚のmd5一致・シンボリックリンク0件・API 10/10・B2側も10/10復元・レコード件数29,716件で不変。</p>
+<p>残したのは<strong>メモだけ</strong>。実際に効いた相対パスとmd5の一覧を<code>/root/notes/</code>に置いてある。将来TB級になってオブジェクトストレージが本当に必要になったとき、この一晩をゼロからやり直さずに済むように。</p>
+<h2 id="単価で見るといつか判断が逆転する">単価で見ると、いつか判断が逆転する</h2>
+<p>増設が常に正解ではない。1TBあたりの単価では<strong>増設が一番高い</strong>（VPSのSSD増設 <strong>$18/TB</strong> ＞ 同社オブジェクトストレージ $11.96/TB ＞ B2 <strong>$6.95/TB</strong>）。200GBでは差額が月$2程度にしかならないから複雑さを避けるのが正解だった、という話にすぎない。分岐点は2つ決めてある。<strong>追い出したい古い写真が1TBを超えたらB2方式を再検討する</strong>（差額が年$132になり、ようやくマウント方式の複雑さを引き受ける価値が出る）。<strong>1TB規模ならプランごと乗り換えたほうが安い</strong>（現プラン＋800GB増設の月$23.40に対し、1TBのSSDが付いたプランは月$15前後。ただし数分の停止を伴うし、<strong>SSDからNVMeへの変更は再インストール必須</strong>なので絶対に選ばない）。</p>
+<p>残っている課題も書いておく。<strong>写真の2本目のコピーは引き続きバックアップ先の1本だけ</strong>で、以前使っていた自宅のPCに全量が残っているうちは3コピーだが、あれを片付けるときに決め直す必要がある。<strong>バックアップの暗号化も未着手</strong>——速度は問題にならないと測れたが、115GBを全部アップロードし直すコストが残っている。</p>
+<h2 id="この遠回りから取ったもの">この遠回りから取ったもの</h2>
+<p>一晩かけて作って、10枚で実証して、全部捨てた。<strong>月$3.60のボタンを先に押していれば丸ごと要らなかった作業</strong>だ。素直に書くと、「どう作るか」を考えるのが面白くて、「買えば済むか」を確かめる手順を飛ばしていた。</p>
+<p><strong>構成を変える検討を始めるときは、まず今契約しているサービスの管理画面に、その問題をそのまま解決するボタンが無いかを確認する。</strong> 自分は3つの案を丁寧に比較表にしておいて、「ディスクだけ足す」をその表に入れていなかった。<strong>選択肢の作り方を間違えると、どれだけ丁寧に比べても正解には当たらない。</strong></p>
+<p>捨てた作業から残ったものもある。マウントが切れてもImmichのレコードは壊れないこと、削除が30日間は取り返せること、<code>rclone sync</code>がリンクを見て送り先を消すこと、暗号化が速度の障害にならないこと、サムネイルの全件再生成が課金を踏むこと。これは<strong>どの方式を選んでも効く知識</strong>で、1TBを超えた日に取り出せる形でメモに残した。遠回りの元は取れていないが、ゼロでもない。</p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+]]></content:encoded></item><item><title>バックアップ先を2つから1つに減らした</title><link>https://offgrid.taikiito.com/guides/backup-consolidation/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/backup-consolidation/</guid><description>非公開のGitリポジトリとクラウドストレージの2系統にバックアップしていたが、片方を捨てて1系統に絞った。2系統は「2倍安全」ではなく「壊れたら困るものが2つ」で、どちらも検証されていなかった。一本化に必要だった棚卸しの手順、復元に使う鍵をどこに置くか、実際にやった復元テストまでの記録。</description><content:encoded><![CDATA[<p>自分のサーバーに写真・パスワード・ファイルを集めたあと、バックアップを<strong>2系統</strong>持っていた。GitHubの非公開リポジトリ(自分だけが見られるGitの保管場所)への日次バックアップと、クラウドのオブジェクトストレージ(Backblaze B2)への日次バックアップ。多いほうが安全だと思っていた。</p>
+<p>調べたら、どちらも完全ではなく、どちらも検証されていなかった。GitHub側を廃止して1系統に絞り、代わりに「本当に戻せるか」を確かめる作業を足した。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>常時起動しているLinuxサーバー1台に、パスワード管理・写真・ファイル置き場・認証を同居させた状態。土台は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a></li>
+<li>道具は<code>rclone</code>(いろいろなクラウドストレージへファイルを同期するコマンド)。送り先はBackblaze B2(安価なオブジェクトストレージ。1GBあたり月$0.006、最初の10GBは無料)</li>
+<li>もう1系統は、作業用ディレクトリ一式を毎日<code>git commit</code>して非公開リポジトリへ<code>push</code>する自作の仕組み</li>
+</ul>
+<h2 id="2系統が実際に守っていたもの">2系統が実際に守っていたもの</h2>
+<p>同じものを2箇所に置いているつもりだったが、並べたら役割が違っていた。GitHub側はテキスト類(会話ログ・設定・メモ)と添付ファイルで、強みは<strong>履歴</strong>——「このファイルは3週間前どう書かれていたか」を追える。B2側はデータベースのダンプ・写真ライブラリ・ファイル置き場の実データ・パスワードの保管庫で、強みは<strong>容量</strong>。つまり二重化ではなく<strong>分担</strong>で、片方だけでは静かに欠けが出る状態だった。</p>
+<p>実際に測ったら、添付ファイルが<strong>B2に638件、GitHubに460件、重複ゼロ</strong>。時期で真っ二つに割れていた。<code>git clone</code>だけで戻せば638件が消え、B2だけで戻せば460件が消える。</p>
+<h2 id="2倍安全ではなく壊れたら困るものが2つ">「2倍安全」ではなく「壊れたら困るものが2つ」</h2>
+<p>分担になっていた理由は単純で、<strong>2つあると、どちらも真剣に見なくなる</strong>。</p>
+<p>B2側の同期スクリプトのログを読んだら、<strong>34回の起動のうち完走は5回だけ</strong>だった。最後の処理で<code>sudo</code>がパスワードを求めて止まり、<code>set -e</code>(途中で失敗したらそこで中断する設定)で全体が終わっていた。データ本体の各工程は成功していたので実害はなかったが、問題はそこではない。<strong>「完走しました」のマーカーが1ヶ月出ていないのに、気づいていなかった。</strong></p>
+<p>これが冗長なバックアップ経路の本当のコストだと思う。ディスク代でもなく手間でもなく、<strong>どちらも検証されないこと</strong>。「もう片方があるから」と思っている限り、片方が壊れても痛みが出ないので、気づく機会そのものが無くなる。</p>
+<h2 id="githubがこの用途に向いていなかった理由">GitHubがこの用途に向いていなかった理由</h2>
+<ol>
+<li><strong>サイズと中身</strong>。Gitはテキストには強いが、<strong>画像のようなバイナリは版が増えるたびに丸ごと溜まる</strong>。<code>.git</code>(履歴の実体)が346MBあり、作業用ディレクトリ751MBの半分近くを占めていた(1年後には847MB)</li>
+<li><strong>履歴は消せない</strong>。消さないことが価値の仕組みなので、間違って入れたものが残る。実際、秘密情報を含むディレクトリ(APIトークン類やサーバーの秘密鍵)が<strong>気づかないうちに毎日pushされ続けていた</strong>。「除外設定に入れてある」と自分のメモに書いてあったが、入っていなかった</li>
+<li><strong>他人のアカウント方針の上に乗っている</strong>。容量制限も規約も将来どう変わるかは自分では決められない</li>
+<li><strong>そもそも用途が違った</strong>。置いていたのは日々の記録で、ソースコードではない。全ての版を永久に取っておく必要がない</li>
+</ol>
+<p>一方で**「履歴が追える」価値は本物だった<strong>ので代わりを用意した。B2の</strong>バージョン保持**(上書き・削除された古い版を一定期間取っておく設定)で、自分のバケット(ストレージ上のフォルダのような入れ物)は旧バージョンを30日保持している。実際にデータベースのダンプは26世代遡れた。30日の「取り消し」が成立していればGitの履歴機能の大部分は代替できる。なお<strong>公開しているもの(ブログ・ポートフォリオ)はGitHubのままにしている</strong>。廃止したのは「バックアップ置き場として使うこと」だけ。</p>
+<h2 id="一本化の本体は棚卸しだった">一本化の本体は棚卸しだった</h2>
+<p>ここが一番再利用できる部分だと思う。片方を止める作業の本体は、<strong>「GitHub側にしか無いものが、B2側に全部入っているか」を1件ずつ確認すること</strong>。やらずに止めると、欠けたことに気づくのは復元が必要になった日になる。</p>
+<p><strong>1. 止める側の中身を、実物から列挙する</strong></p>
+<p>設計書ではなく実際のファイル一覧から出す。自分はここで一度間違えた。手元のメモの箇条書きだけを読んで「テキスト類がB2に入っていない」と誤判断したが、スクリプト本文を開いたら既に実装済みだった。<strong>メモで判断せず、スクリプト本文とファイル一覧を実見する。</strong></p>
+<p><strong>2. 残す側の対象リストと突き合わせる</strong></p>
+<p>ここで<strong>本物の穴が見つかった</strong>。環境変数をまとめたファイル(<code>.env</code>。各種サービスのトークンが入っている)が、<strong>GitHubにもB2にも無かった</strong>。2系統あったのに、どちらにも無いものが存在した。</p>
+<p><strong>3. Gitの履歴そのものを、ファイルとして退避する</strong></p>
+<p>履歴は普通のファイル同期では運べない。<code>git bundle</code>(リポジトリ全体を1ファイルに固める機能)を使った。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">git bundle create /tmp/history-20260928.bundle --all
+</span></span><span class="line"><span class="cl">git bundle verify /tmp/history-20260928.bundle
+</span></span><span class="line"><span class="cl">rclone copy /tmp/history-20260928.bundle &lt;暗号化remote&gt;:&lt;保存先&gt;/
+</span></span></code></pre></div><ul>
+<li>🔴 <strong><code>root</code>で<code>git</code>を叩くと<code>detected dubious ownership</code>で弾かれる</strong>。ディレクトリの所有者ユーザーで実行する</li>
+<li>出来上がりは831MB。<strong>往復まで確認した</strong>——取り出してmd5(内容の指紋)が一致し、<code>git clone &lt;bundleファイル&gt; &lt;ディレクトリ&gt;</code>で162コミットが復元でき、履歴の中にしか無いPDFを元のサイズどおり取り出せた</li>
+<li>🔴 <strong>一度きりのスナップショット</strong>。以後履歴が伸びても自動では更新されない</li>
+</ul>
+<p><strong>4. 止める前に「止める側にしか無いコミット」がゼロだと確認する</strong></p>
+<p><code>git rev-list --count &lt;リモート&gt;/main --not --all</code>が<code>0</code>であること。</p>
+<p><strong>5. 浮いた分を別の軸に回す</strong></p>
+<p><strong>テキスト類だけを対象にした軽い同期を1日4回</strong>動かすようにした(全体の同期は従来どおり夜1回)。これでRPO(障害時に失われる最大の時間幅)が<strong>最大24時間から最大6時間</strong>に縮んだ。重い写真ライブラリに触らないので約10秒で完走する。加えて30日を超える長期の記録として、<strong>テキスト類のみの日付付き<code>tar.gz</code>スナップショットを週1回</strong>置いた。実測16MBなので年0.8GB、費用はほぼゼロ。</p>
+<ul>
+<li>🔴 <strong>バックアップを取る道具自体がバックアップ対象外だった</strong>。同期スクリプトを置いたディレクトリは、どちらの系統にも入っていなかった。サーバーが全損したらデータは戻るが<strong>戻し方を書いた道具が無い</strong></li>
+<li>🔴 <strong>データベースのダンプを取る行に管理者パスワードが直書きされていた</strong>。<strong>権限600の<code>.env</code>に切り出して読み込む</strong>形にし、読めなければ<code>exit 1</code>、変数が空なら<code>: &quot;${VAR:?未設定}&quot;</code>で止める(黙って空のパスワードで走らせないため)。渡し方は<code>-p'…'</code>のような引数ではなく環境変数経由にする——引数は<code>ps</code>で他のユーザーから見える。なお<strong>平文の秘密はスクリプト本文を直しても消えない</strong>。過去の退避ファイルと稼働中のコンテナの環境変数に同じ値が残っており、本当に消すにはパスワードの変更が必要だった</li>
+</ul>
+<h2 id="何を金庫に入れるか">何を金庫に入れるか</h2>
+<p><strong>バックアップを復元するための鍵が、バックアップの中にしか無いと、永久に開かない。</strong> いわゆるブートストラップ問題(起動するために起動済みの何かが必要になる循環)。自分の場合、B2から取り出すための接続情報(<code>rclone</code>の設定ファイル)はサーバーの中だけにあった。毎日バックアップは成功していたが、<strong>サーバーが丸ごと壊れた瞬間に、無事なデータを開ける人が誰もいなくなる</strong>。</p>
+<blockquote>
+<p><strong>再発行できる鍵は金庫に入れない。再発行できない鍵だけ入れる。</strong></p>
+</blockquote>
+<ul>
+<li><strong>入れる(再発行不能)</strong>: 暗号化パスワード(失うとバックアップが永久に読めない石になる)、ストレージ事業者のアカウントの2段階認証バックアップコード、復元用の接続情報</li>
+<li><strong>入れない(再発行可能)</strong>: 各種APIトークン、ストレージのアプリケーションキー。上位のアカウントにログインできれば1分で作り直せる</li>
+<li><strong>置くべきは鍵そのものではなく、上位の認証</strong>(アカウントのログイン情報と2段階認証)。それがあれば下位の鍵は何度でも生やせる</li>
+<li>🔴 <strong>何でも放り込むと、金庫自体が肥大した単一障害点になる</strong></li>
+</ul>
+<p>置き場所はパスワードマネージャー(<a href="/guides/1password-to-vaultwarden/">1PasswordからVaultwardenに移した</a>もの)にした。スマートフォンのアプリは一度ログインすればオフラインのキャッシュが残るので、サーバーが全損してもそこから取り出せる。ただし金庫自身がサーバー上で動いているので、<strong>スマートフォンとサーバーを同時に失うと詰む</strong>。対処は「紙でもう1部持つ」しかない。</p>
+<h2 id="暗号化とやらなかったこと">暗号化と、やらなかったこと</h2>
+<p>実査したら<strong>事業者側の暗号化(SSE)すら無効</strong>になっていて、写真は生のJPEGのままディスクに置かれていた。「バケットは非公開だから最低限守られている」という感覚は間違いだった。2種類あることを区別しておく。</p>
+<ul>
+<li><strong>事業者側の暗号化</strong>: 倉庫が金庫に入れてくれるが<strong>鍵は倉庫が持つ</strong>。退役ディスクの流出には効くが事業者自身には無力で、手間はゼロ。🔴 <strong>有効にしても遡らない</strong></li>
+<li><strong>送る前に自分で暗号化</strong>: 自分で鍵をかけた箱を渡す。事業者にもアカウント乗っ取りにも強いが、<strong>鍵を失えば永久に読めない</strong>し、既存分は全量を再アップロードになる</li>
+</ul>
+<p>やったのは前者を有効化したうえで、<strong>テキスト類・秘密情報・データベースのダンプだけを後者にする</strong>こと。<code>rclone</code>には<code>crypt</code>という、送信前に暗号化して保存名も不可読にする仕組みがある。初回は6,710オブジェクト・69MBで5分43秒、以後は差分で数十秒だった。</p>
+<p><strong>やらなかったこと</strong>。</p>
+<ul>
+<li><strong>写真ライブラリ131GBは自分で暗号化していない</strong>。全量の再アップロードになるのと、暗号化する動機(「事業者に読まれたくない」のか「凍結で消えるのが嫌」なのか)を整理できていなかったため。後者ならもう達成済みで、前者ならまだ未達。<strong>整理できていないまま重い工事をしない</strong></li>
+<li>🔴 <strong>パスワードの保管庫も、意図的に暗号化していない</strong>。中身はそれ自体がゼロ知識暗号化(サービス側も読めない方式)済みで平文ではなく、何より<strong>暗号化パスワードの保管場所がその金庫なので、暗号化すると循環依存になる</strong></li>
+</ul>
+<h2 id="誰も戻したことのないバックアップはバックアップではない">誰も戻したことのないバックアップは、バックアップではない</h2>
+<p><strong>1. 生のファイルから実際に復元して突き合わせる。</strong> 124ファイルが完全一致した。暗号化remote経由でちゃんと復号できることも同時に確かめられる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rclone copy &lt;暗号化remote&gt;:&lt;対象パス&gt; /tmp/restore-test/
+</span></span><span class="line"><span class="cl">diff -rq /tmp/restore-test/ /home/&lt;user&gt;/&lt;元のディレクトリ&gt;
+</span></span></code></pre></div><p><strong>2. 週次スナップショットを取り出して<code>tar xzf</code>で展開する。</strong> 6,644ファイル・74MBが正常に展開でき、自動処理の定義ファイル16本まで含まれていた。</p>
+<p><strong>3. 全ファイルを照合する。</strong> 差分19件。中身を見たら<strong>すべて同期が走った時刻より後に生成されたファイル</strong>で、取りこぼしはゼロだった。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rclone check --one-way &lt;ローカル&gt; &lt;暗号化remote&gt;:&lt;対象パス&gt;
+</span></span></code></pre></div><p><code>--one-way</code>はリモートにしかない古い版を差分に数えないので、検証にはこちらを使う。</p>
+<p>併せて<strong>事業者からの通知メールの読み方</strong>を決めた。「マスターキーが生成されました」のような通知は、<strong>自分がコンソールを触っていた日なら本人操作、触っていない日なら本物の警戒シグナル</strong>。先に線引きしないと、通知を全部無視する習慣がつく。</p>
+<h2 id="残った1系統の弱いところ">残った1系統の弱いところ</h2>
+<ul>
+<li><strong>事業者1社への依存は未対策</strong>。アカウントの凍結や会社都合には何の備えもない。別会社のストレージへ追記専用でもう1本(月€4前後)が答えだが、見送った</li>
+<li><strong>削除の伝播と容量の兼ね合いが未整理</strong>。送信側の鍵から削除権限を外すと<code>rclone sync</code>が使えず<code>copy</code>しかできなくなり、ローカルで消したものが残り続けて容量が増える。守りと費用がここで正面衝突する</li>
+<li><strong>一番大きい穴は、サーバーを乗っ取られた場合</strong>。1系統しかないので、送信に使っている鍵を盗られたらバックアップ本体を消される。これは別テーマとして切り出し、鍵の権限削減・削除が伝播しない複製先・サーバーの外で動く見張りの3層で作り直した。そちらは<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>に書いた</li>
+</ul>
+<p>費用は全バックアップ合計125GBで<strong>月約$0.69</strong>。一本化で減ったのは費用ではなく、<strong>気にかけておく仕組みの数</strong>だった。</p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+]]></content:encoded></item><item><title>予定表と住所録を、全部入りのNextcloudから軽いRadicaleへ切り出す</title><link>https://offgrid.taikiito.com/guides/nextcloud-to-radicale/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/nextcloud-to-radicale/</guid><description>予定236件・連絡先575件をNextcloudからRadicaleへ移した記録。データは.ics/.vcfの素のファイルになり速くなったが、Web画面と共有機能は失う。選ぶ前に知るべき制約として「Radicaleは重いREPORT問い合わせを同時に受けられない(並列5本で全滅、直列なら1本4.7秒)」という実測も書いた。</description><content:encoded><![CDATA[<p><a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">前の記事</a>で、連絡先とカレンダーをiCloud・GoogleからNextcloudへ移した。それを今度はNextcloudから引き剥がして、Radicaleという「予定表と住所録しかできない」小さなサーバーへ移した記録。</p>
+<p>先に正直に書くと、<strong>Nextcloudで困っていたことは何も無かった</strong>。故障の修理ではなく、作りを良くするための工事だ。だから得たものと同じ分量で、失ったものを書く。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>常時起動しているLinux環境とDocker(ソフトを1つずつ箱に入れて動かす仕組み)が使えること。土台は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a></li>
+<li>すでにNextcloudの連絡先・カレンダーを使っている状態(<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">前の記事</a>)</li>
+<li>CalDAV(予定表をやりとりするための標準的な通信規約)・CardDAV(住所録用の同じもの)の名前だけ知っていれば十分</li>
+</ul>
+<h2 id="動かした理由は規模が不釣り合いの一点">動かした理由は「規模が不釣り合い」の一点</h2>
+<p>移す前に、Nextcloud側の中身を<code>?export</code>で実測した。住所録<strong>575件</strong>、予定表<strong>236件</strong>、そして<strong>空の予定表が2つ</strong>(片方はiPhoneのリマインダーが勝手に作ったもの)。</p>
+<p>🔴 前の記事に書いた「連絡先633件・予定232件」は誤りだった。<strong>移した件数は、移した日に書き留めただけでは当てにならない。</strong></p>
+<p>実データの合計は<strong>約230KB</strong>。テキストファイル1枚に収まる量だ。これに対してNextcloudはPHPで書かれた大きな母屋にデータベースまで抱えている。やっている仕事に対して仕掛けが大きすぎる、というのが唯一の動機だった。</p>
+<h2 id="radicaleは何で何ではないか">Radicaleは何で、何ではないか</h2>
+<p>Radicaleは<strong>CalDAV/CardDAVだけを話す小さなサーバー</strong>。データベースを持たず、予定1件が<code>.ics</code>ファイル1枚、連絡先1件が<code>.vcf</code>ファイル1枚として、普通のフォルダにただ並んでいるだけ。</p>
+<p>やっているのは「フォルダのテキストファイルを、CalDAVという会話の形に翻訳して端末に見せる」中継だけだ。Appleのカレンダーアプリには「このフォルダを見ろ」という設定が存在せず、CalDAVでしか話せないので、この翻訳役が必要になる。あとは各予定にetag(版番号)を付けて差分と衝突を管理するだけ。</p>
+<p><strong>何ではないか</strong>のほうが重要だと思う。</p>
+<ul>
+<li><strong>使えるWeb画面が無い</strong>。ブラウザで開いても予定を見る画面は出てこない。どうしても画面が欲しければ、CalDAVを外から繋げられるメールサービス(自分はFastmail)を窓口にする手はある。</li>
+<li><strong>共有リンクも共有のUIも無い</strong>。「この予定表をあの人に見せる」をボタンで作れない。</li>
+<li><strong>ファイル置き場ではない</strong>。PDFもWordも置けない。契約書の保管はNextcloudに残した。</li>
+<li><strong>何でも1箇所にある便利さを捨てる</strong>。サーバーが1つ増え、端末のアカウントも1つ増える。</li>
+</ul>
+<p>代わりに得たのは、速さ、攻撃される面の小ささ(PHPの大きな母屋とデータベースが無くなる)、そして<strong>バックアップがフォルダのコピーで済み、ソフトが壊れても中身はテキストで読める</strong>こと。この3つのために上の4つを捨てた。判断は人によって逆でいい。</p>
+<h2 id="立てて流し込む">立てて流し込む</h2>
+<p>構成は<code>docker compose</code>で1つ、<code>tomsquest/docker-radicale</code>(Radicale 3.8.1)。<code>127.0.0.1</code>にだけ口を開け、外から直接は触れないようにした。認証はhtpasswd(ユーザー名とパスワードの対応表ファイル)だけ。<strong>設定の書き方は版で変わるので公式ドキュメントのConfigurationの項を見てほしい。</strong></p>
+<p>移行前にNextcloudから控えを取る。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 住所録</span>
+</span></span><span class="line"><span class="cl">curl -u <span class="s2">&#34;&lt;ユーザー名&gt;:&lt;アプリパスワード&gt;&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.example.com/remote.php/dav/addressbooks/users/&lt;ユーザー名&gt;/contacts?export&#34;</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 予定表</span>
+</span></span><span class="line"><span class="cl">curl -u <span class="s2">&#34;&lt;ユーザー名&gt;:&lt;アプリパスワード&gt;&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.example.com/remote.php/dav/calendars/&lt;ユーザー名&gt;/&lt;予定表名&gt;?export&#34;</span>
+</span></span></code></pre></div><p>入れ物の一覧は同じURLに<code>-X PROPFIND -H &quot;Depth: 1&quot;</code>を付けて取る。流し込みはスクリプトを書いた。設計で効いた点が2つ。</p>
+<ul>
+<li><strong>ファイル名をデータの中のUID(1件ごとの識別子)にする</strong>。何度流し直しても同じファイルを上書きするだけで、件数が増えない。</li>
+<li><strong>繰り返す予定の「例外日」(毎週の予定のうち1回だけ時間をずらした分)は同じUIDを持つので、1ファイルにまとめる</strong>。別ファイルにすると予定が二重になる。</li>
+</ul>
+<p>結果は575件・236件でNextcloud側と<strong>完全一致、失敗0件</strong>。</p>
+<h3 id="-立てるときに踏んだ穴">🔴 立てるときに踏んだ穴</h3>
+<ul>
+<li><strong>コンテナの中のRadicaleは自分と違うユーザーで動く</strong>。自分の場合は数字のユーザーID 2999だった。パスワード表を<code>root</code>の持ち物にしたままだと<code>Permission denied</code>で起動しない。<strong>そのIDに所有者を変え、読み取りだけ許す</strong>のが正解。</li>
+<li>🔴 <strong>「正常な応答コード」を3回続けて読み違えた</strong>。トップページの<code>GET</code>は<strong>302</strong>(転送)が正常で401ではない。予定表フォルダの<code>GET</code>は認証が通っていても<strong>403</strong>が仕様どおりで、壊れていない。<strong>正しい確認は<code>PROPFIND</code>を投げて207が返ること</strong>で、件数もこれで数える。</li>
+</ul>
+<h2 id="端末の繋ぎ直しに移行は無い">端末の繋ぎ直しに「移行」は無い</h2>
+<p>ここが一番地味で、一番時間がかかる。<strong>サーバー間でデータを移しても、端末のアカウント設定は1台も自動で付いてこない。全部手で繋ぎ直す。</strong> Apple(Mac・iPhone)で詰まる点は1つだけで、はっきりしている。</p>
+<ul>
+<li>🔴 <strong>アカウント種別の「自動(Automatic)」では繋がらない</strong>。Appleは<code>.well-known/caldav</code>という決まった入口で「本当の場所はどこ?」と尋ねるが、Radicaleはここでトップページへ転送するだけで場所を教えない。</li>
+<li><strong>必ず「手動(Manual)」を選ぶ</strong>。サーバーアドレスはホスト名(<code>cal.example.com</code>)、駄目なら自分のフォルダまでのフルパス(<code>https://cal.example.com/&lt;ユーザー名&gt;/</code>)を直接入れる。前の記事と同じ系統で、<strong>自動検出は当てにしない</strong>。</li>
+</ul>
+<p>AndroidとThunderbirdは今回つないでいないので手順を書かない。確かなのは、<strong>Androidの標準カレンダーにはCalDAVアカウントを足す項目が無く、別途CalDAVクライアントのアプリを入れて端末のカレンダーに同期させる形になる</strong>こと、<strong>ThunderbirdはCalDAVに標準対応している</strong>ことだけだ。</p>
+<p>並行期間(両方に同じデータがある状態)の事故防止で効いたこと。</p>
+<ul>
+<li><strong>古い側の表示名を「OLD(使わない)」に変える</strong>。同じ名前が2つ並ぶと、どちらを編集しているか分からなくなる。</li>
+<li>端末側で<strong>新規作成先の既定のカレンダーを新しい方に変える</strong>(Macは Calendar &gt; Settings &gt; General、iPhoneは 設定 &gt; アプリ &gt; カレンダー)。ここを変えないと、自分で作った予定だけ古い方に入り続ける。</li>
+<li>古い側を消すのは、①手元に控えがある②新しい側の件数が一致している、の両方を実測してから。</li>
+<li>🔴 <strong>Nextcloudの予定表は<code>204</code>が返っても消えていない</strong>。ごみ箱行き(論理削除)になり、一覧に出続けて中身も読める。完全に消すには削除要求に<code>X-NC-CalDAV-No-Trashbin: 1</code>を付ける。住所録はごみ箱が無く一発で消えるので、挙動が揃っていない。</li>
+</ul>
+<h2 id="-radicaleは重いreport問い合わせを同時に受けられない">🔴 Radicaleは重いREPORT問い合わせを同時に受けられない</h2>
+<p><strong>Radicaleを選ぶ前に知っておくべき制約</strong>で、しかもほとんどどこにも書かれていない。自分は後から実測で踏んだ。</p>
+<p>REPORTは、カレンダーアプリが「この日からこの日までに何が入っているか教えて」と尋ねるCalDAVの問い合わせだ。Radicaleはこれを受けると<strong>フォルダの中の全ファイルを毎回走査する</strong>。繰り返す予定は1ファイルにルールが1行入っているだけなので、「表示を1年先までに絞る」といった対策は効かない。<strong>遅さを決めているのは問い合わせの範囲ではなく、フォルダ内のファイル総数</strong>だ。</p>
+<p>予定表が現在2,626件まで増えた結果、1回の範囲問い合わせに<strong>約4.7秒</strong>かかる。これ自体は待てる。問題は同時に投げたときだった。</p>
+<ul>
+<li>事前読み込みを<strong>直列3本から並列5本に変えたら、30秒で5本とも通信切れになり、取れた予定は0件</strong>になった。</li>
+<li><strong>直列に戻したら、5期間228件が23.3秒で全部成功</strong>した(1本あたり約4.7秒)。</li>
+</ul>
+<p>つまり<strong>Radicaleは重いREPORTを並べて投げられると、速くなるどころか全部落ちる</strong>。「カレンダーアプリを2つ同時に開く」「月を素早く切り替える」「複数の範囲を先読みする自作ツール」のどれでも起こり得る。付き合い方は、どれも「並列化しない」方向になる。</p>
+<ol>
+<li><strong>1本ずつ流す列を作る</strong>。手前のサーバーに順番待ちの列を1本入れ、範囲問い合わせは必ず直列で流す。</li>
+<li><strong>同じ範囲の同時要求は1本に相乗りさせる</strong>。2箇所から同じ月を聞かれたら投げるのは1回で、答えを2箇所に配る。画面の操作から来た要求だけ列の先頭に割り込ませると、裏の先読みが詰まっていても人は待たされない。</li>
+<li><strong>一度取ったら捨てない</strong>。1件保存・削除するたびに全期間のキャッシュを丸ごと捨てて再取得していたのが最悪の形だった。<strong>変わった1件だけを手元で差し替える</strong>ようにしたら、保存のたびの5秒が消えた。</li>
+<li><strong>範囲は広めに取って一度だけ聞く</strong>。細かく刻んで何度も聞くほうが遅い。</li>
+</ol>
+<p>⭐ 一般則。<strong>相手が1本ずつしか捌けない所へ、並べて投げてはいけない。速くする手は並列化ではなく、①同じものを二度聞かない ②要るものだけ聞く、の2つしかない。</strong></p>
+<h2 id="時間帯は最初に片付ける">時間帯は最初に片付ける</h2>
+<p>2人で共有するカレンダーを、互いに別の国にいる状態で使っている。<strong>時間帯(タイムゾーン)の扱いは後から足す機能ではなく、土台</strong>だった。救われたのは、保存の形が最初から正しかったことだ。<code>.ics</code>の中では開始時刻が<code>DTSTART;TZID=Asia/Singapore:...</code>のように**「どの地域の時計で何時か」の形で書かれている**ので、絶対の時刻として一意に決まる。Apple純正のカレンダーはこれを読む側の端末の時間帯で出し直してくれる。<strong>標準形式に素直に保存されていれば、時間帯は自動で解決する。</strong> 壊れたのは自作の画面のほうで、そこから学んだのは次の3つ。</p>
+<ul>
+<li><strong>変換は入口と出口の2箇所だけでやる</strong>。画面に出す直前と、入力を受け取った直後。途中の計算に混ぜると、どこが変換済みか分からなくなって必ず二重変換が起きる。</li>
+<li><strong>「いまどの時間帯で見ているか」を常に画面に出す</strong>。Google・Apple・Thunderbirdのどれもこうしている。あとから読まれる文章に時刻を書くときも、必ず時間帯を添える(保存された文は読む人の時間帯に書き直せない)。</li>
+<li><strong>時刻の変換は、画面で確かめる前に机上で全パターン流す</strong>。夏時間の切り替わりの前後、30分ずれる地域、日付をまたぐ西側の地域は、実機を1件ずつ見ても踏めない。</li>
+</ul>
+<h2 id="バックアップは単純になった">バックアップは単純になった</h2>
+<p>データが素のファイルになったので、バックアップは<strong>フォルダを同期するだけ</strong>になった。既存の日次スクリプトに2行足して終わりで、初回送信は1,035ファイル・379KiBで32秒。ただし<strong>消されても戻せる形にしておくことは、データが素のファイルになっても別途必要</strong>で、そこは変わらない(<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>)。</p>
+<h2 id="結果">結果</h2>
+<p>575件・236件の移行は失敗0で完了し、MacとiPhoneから繋がっている。サーバー上にあるのは1,000枚ほどのテキストファイルで、<code>cat</code>で開けば中身が読める。</p>
+<p>ファイル置き場のNextcloudは据え置いた。素のファイルを普通のフォルダ構造で保存しているという一点では、調べた移行先候補よりNextcloudのほうが上だったからだ。<strong>目的が「データを読める形に保つ」なのに、手段がそこを後退させるなら却下する。</strong></p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+]]></content:encoded></item><item><title>自分のドメインのメールをどこに置くか、一周して決め直した</title><link>https://offgrid.taikiito.com/guides/own-domain-mail-to-fastmail/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/own-domain-mail-to-fastmail/</guid><description>検索が効かなくなったのをきっかけに、自分のドメインのメールの置き場所を考え直した記録。Mailcow/Mailuでの自前ホスティングを本気で検討して却下した理由、「住所の層」と「倉庫の層」を分ける考え方、切替で送信が全滅しかけたDNSの罠、数週間かかった登録アドレスの付け替えまで書いた。</description><content:encoded><![CDATA[<p><a href="/guides/gmail-to-own-domain/">メールをGmailから自分のドメインに移す</a>の続き。あの時点の構成は「ドメインは自分の所有、メールボックスは大手の個人向けサービスのカスタムドメイン機能、読み書きはデスクトップのメールソフト」だった。これを一周考え直して、有料のメールサービス(Fastmail)に移した。途中で自前ホスティングを本気で検討して却下しているので、その理由を一番厚く書く。</p>
+<p>ドメイン名は<code>example.com</code>、自分のアドレスは<code>me@example.com</code>と書く。実際の値は自分のものに読み替えてほしい。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>自分名義のドメインを持ち、DNS(「<code>example.com</code>は実際にどのサーバーを指すか」をインターネット全体に教える住所録のような仕組み)を自分で編集できる状態</li>
+<li>そのドメインでメールを送受信できている状態(前記事の到達点)。なりすまし対策は<code>p=reject</code>まで締めてある</li>
+<li>移行対象のメールは約5万通、容量10GB</li>
+</ul>
+<h2 id="きっかけは検索が効かなくなったこと">きっかけは「検索が効かなくなった」こと</h2>
+<p>不満はひとつだけだった。<strong>メールソフトで検索しても出てこない</strong>。「豚汁」と打つ。その語を含むメールは確かにあるのに、ヒットしない。他のキーワードなら出る。壊れていたのは検索機能ではなく、<strong>索引(どの単語がどのメールに入っているかの目次)が一部だけ欠けている</strong>状態だった。</p>
+<p>使っていたのはThunderbirdで、ここは索引を手元のPCの中に自分で作る方式だ。数万通あると索引作りが追いつかず壊れやすい。IMAP(メールサーバー上のメールをそのまま読み書きするための通信規約)ではサーバー側の検索と手元の検索が混在して挙動が安定しない。</p>
+<p>索引を作り直す手はある(プロファイルフォルダの<code>global-messages-db.sqlite</code>を付随ファイルごと消して再起動すると自動で再構築が始まる)。自分はやらなかった。<strong>今回直せても、メールが増えれば同じことが起きる仕組みのままだから</strong>だ。検索はメールの価値の大半で、10年分の過去メールが「あるのに取り出せない」なら持っている意味が薄い。</p>
+<h2 id="メールだけは自前でホスティングしないと決めた">メールだけは自前でホスティングしないと決めた</h2>
+<p>写真・ファイル・パスワード・カレンダーは自分のサーバーに移している(<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>)。だからメールもできるはずだと考えて、<strong>Mailcow</strong>と<strong>Mailu</strong>を調べた。どちらもDocker(アプリを必要な部品ごと一つの箱に詰めて動かす仕組み)で動くメールサーバーのOSS一式で、Mailcowは送信・受信・迷惑メール判定・ウイルス検査・Webメールをまとめた<strong>18コンテナ構成・メモリ最低4GB推奨</strong>のオールインワン、Mailuはより疎結合で軽い個人向け。</p>
+<p>立ち上げまでは20分程度、<strong>初回の構築全体で3〜4時間</strong>という見積りに落ち着いた。残りはほぼ全部DNS側の作業(MXレコード、SPF/DKIM/DMARC、逆引き申請、到達テスト)だ。<strong>つまり「立てる」のは難しくない。やめた理由は別のところにある。</strong></p>
+<p><strong>1. 家の回線からは原理的にできない。</strong> 送信には25番ポート(メールサーバー同士がメールを受け渡しする通信の出入口)が必要だが、<strong>ほぼすべてのISP(インターネット接続業者)が家庭向け回線でこれを塞いでいる</strong>。解除を申請できる業者もあるが、自分の住まいはサービスアパートで回線の契約者は建物の管理会社なので<strong>申請の当事者にすらなれない</strong>。多くのクラウド事業者も既定で塞いでいるので、借りる前に開放の可否を確認する必要がある。</p>
+<p><strong>2. 届くかどうかの9割は自分の手の外にある。</strong> 到達率を決めるのは<strong>DNSの認証設定(SPF/DKIM/DMARC)と逆引き、そして送信元IPアドレスの素性</strong>だ。前者は自分で正しく書ける。問題は後者で、<strong>VPS(レンタルサーバー)のアドレス帯は、過去に誰がどんな送信をしたかの履歴を引きずっている</strong>。自分が真面目に運用していても、同じ帯の隣人が迷惑メールを送っていれば巻き添えになる。なお新しいIPを「育てる」作業(初日10通→2日目50通→3日目200通と2〜4週間)が要るのは大量送信の場合で、<strong>個人の少量送信なら特別な対応は不要</strong>。🔴 自分はここを一度誤解していた。<strong>IPの素性が影響するのは自分が送るメールだけ</strong>で、受信には関係ない。</p>
+<p><strong>3. 壊れたことが自分には見えない。</strong> これが決定打だった。自前の写真サーバーが止まったら自分がアクセスして気づくし、困るのも自分だけだ。<strong>メールサーバーが止まった時に起きるのは「何も起きない」</strong>。</p>
+<ul>
+<li>自分の受信箱は静かなままで、送った相手にもエラーが返らないことがある。相手のサーバーが黙って隔離・破棄するタイプだと<strong>バウンスメール(宛先不明で返ってくるお知らせ)すら出ない</strong>。自分はこの「エラーも通知もなく静かに届かない」状態を前記事の時点で経験している(原因は新規ドメインの送信履歴不足で、数日待つと解決した)</li>
+<li>受信側が止まっていれば、その間に届くはずだった<strong>ワンタイムコードや認証メールは期限切れになって消える</strong>。後から再送されない</li>
+<li>Mailuなどが既定で有効にしているグレイリスティング(初めての送信元のメールを一度わざと断り、再送してきたら受け取る対策)は<strong>初回を数分遅延させる</strong>。認証コードと相性が悪い(無効化可)</li>
+<li><strong>一番危ないのはドメインの失効</strong>だ。自動更新とカードの有効期限が切れていれば、サーバーが完璧でもアドレスごと死ぬ</li>
+</ul>
+<p><strong>4. 少数派であることの意味。</strong> セルフホスト界隈の2025年のアンケート(約4,080人回答、約8割がIT系の職業)では、<strong>メールを自前ホストしている人は約14%</strong>。同じ調査でファイル共有(Nextcloud)は約30%いる。<strong>自前ホストに前向きなIT職の集団の中でさえメールは少数派</strong>で、「他の人が普通にやっているから自分にもできるだろう」という見積りはここでは通用しない。</p>
+<p>「受信と保管は自前、送信だけ信頼のある業者から中継する」折衷案も検討した。到達率は買い取れるが構成が二重になり壊れる箇所が増える。検索の不満を解決するために構成を複雑にするのは逆方向だと判断して、検討を打ち切った。</p>
+<h2 id="考え方が変わった点-住所の層と倉庫の層を分ける">考え方が変わった点: 「住所の層」と「倉庫の層」を分ける</h2>
+<p>自前をやめた直後、別の疑問が出た。「有料サービスに預けるなら、Googleに預けていたのと何が違うのか」。整理するとこうなる。<strong>自分をロックインしているのはアドレスであって、メールの保管場所ではない。</strong></p>
+<ul>
+<li><code>@gmail.com</code>を使っている限り、Googleをやめることは<strong>アドレスを捨てること</strong>とイコールだ。何百のサービスに登録した連絡先が全部死ぬので実質やめられない。これが<strong>代わりのきかない1社への依存</strong></li>
+<li><code>me@example.com</code>なら、ドメインは自分の所有物だ。業者を替える作業は、<strong>DNSのMXレコード(このドメイン宛のメールをどのサーバーが受け取るかの指定)を書き換えて、過去メールをIMAPでコピーするだけ</strong>。数時間から数日で終わる。アドレスは1文字も変わらないので登録先への連絡も要らない。これは<strong>いつでも取り替えられる部品への依存</strong></li>
+</ul>
+<p><strong>データ主権の本質は「依存ゼロ」ではなく「依存を取り替え可能にすること」だ</strong>、という整理に行き着いた。この形なら、業者にお金を払うことは主権の放棄ではない。副産物として自分の依存の所在も見直せた。<strong>大手の個人向けサービスに本当に縛られていたのは写真とストレージの方で、メールではなかった</strong>。メールはドメインを持った時点ですでに自由だったのに、「乗り換えは大変だから」と思い込んでいた。</p>
+<p>同じ理屈で、<strong>エイリアス層(アドレスを発行する層)とメールボックス層(メールを保管する層)も分けられる</strong>。エイリアス専業のサービスを手前に噛ませて受信箱は現状維持、という案はかなり有力だった(addy.ioはOSSで自前ホストもでき年$12、2026年9月時点)。却下したのは<strong>実質ひとりで運営されているサービスだったから</strong>で、メールの経路に置く部品としてはそこだけ飲めなかった。</p>
+<h2 id="比較で見た軸">比較で見た軸</h2>
+<p>見た軸は<strong>①検索の質 ②標準規格(IMAP/JMAP/CalDAV/CardDAV)への対応 ③カスタムドメインとエイリアスの扱い ④出口の広さ ⑤料金</strong>。料金はすべて2026年9月時点に自分が調べた額で、改定されるので契約前に各社の料金ページを見てほしい。</p>
+<ul>
+<li><strong>Gmail / Google Workspace</strong>: 検索は最強。ただしデータ主権の観点では**「同じ課題を抱えた有料版」**で、変わるのは主権ではなく管理のしやすさだ。なおGoogleは2017年に個人向けGmailの広告目的の本文スキャンを公式に停止しているので、<strong>比較軸を「広告の有無」に置くのは的外れ</strong>だと途中で気づいた</li>
+<li><strong>大手の個人向けサービスのカスタムドメイン機能(移行前の構成)</strong>: 料金は圧倒的に安い。ただし<strong>1ドメインに作れるアドレス数に上限があり、キャッチオール(そのドメイン宛の存在しないアドレスも全部受け取る設定)に非対応</strong>。IMAPは使えるがメールソフトとの相性に癖がある</li>
+<li><strong>Fastmail</strong>(豪州): カスタムドメイン最大100個・アドレス数の実質上限なし、IMAPとJMAP(IMAPの後継としてFastmail自身が標準化を主導した軽量な通信規約)に対応。<strong>Individual年€60</strong>(60GB)、30日間の無料トライアルあり</li>
+<li><strong>その他</strong>: Migaduはドメイン数無制限だが最安プランは<strong>送信が1日20通まで</strong>。Proton MailとTutaは<strong>無料プランがIMAP非対応で普通のメールソフトから使えない</strong>。国内事業者は日本語サポートが魅力だが安いプランは<strong>送信用IPが他の契約者と共有</strong>で、②の「隣人の巻き添え」をそのまま引き受ける</li>
+</ul>
+<p>🔴 <strong>前提がひとつ間違っていた</strong>。Fastmailを「大手の傘下」だと記憶していたが、買収は2010年で<strong>2013年に従業員が買い戻して以降は独立系</strong>だった。親会社リスクの評価をやり直すことになった。<strong>業者の資本関係は記憶で判断しないこと。</strong></p>
+<h2 id="決めたこと-fastmail">決めたこと: Fastmail</h2>
+<p>年€60を払う価値があるとすれば、それは<strong>サーバー側の全文検索</strong>だった。手元のPCで索引を作らない方式なら冒頭の問題は原理的に起きない。裏付けもあった。FastmailはIMAPサーバーの主要な開発元のひとつで、検索には全文検索エンジン(Xapian)を使い、<strong>日本語・中国語・韓国語の分かち書きに対応するためにそのフォークを自前でメンテナンスしている</strong>。日本語は英語のように単語が空白で区切られていないので、ここが検索の成否を分ける。</p>
+<p>ただし<strong>説明文で判断せず実測で決めた</strong>。無料トライアルに申し込み、既存のメールを丸ごと流し込んだ。DNSは一切触らないので既存環境への影響はゼロ。インポートはサーバー側で自走するのでPCを閉じてよかった(前回の移行が自作スクリプト頼みで何度も中断したのとは対照的だった)。保存先のリージョンはEUを選んだ(既定は米国)。<strong>5万通強のインポート完了後、「豚汁」で検索した。即座に出た。</strong> 唯一の未検証点が消えたので課金を決めた。</p>
+<p>🔴 <strong>トライアルではカスタムドメインが使えない</strong>(有料プラン必須)。他に送信120通/日、サーバー側の振り分けルール作成不可といった制限もある。<strong>本番切替は「先に年額を払う」ところから始まる</strong>。トライアルでできるのは検索の実測までだと割り切るしかない。</p>
+<p>得たのは検索だ。失ったものも書いておく。</p>
+<ul>
+<li><strong>うろ覚えに強い検索ではない</strong>。速度はGmail級だが、Gmailの「表記ゆれや曖昧な記憶でも何となく当ててくる」ランキングは無く、書いた通りに素直に探す</li>
+<li><strong>迷惑メールフィルタはGmailと同格ではない</strong>。Gmailは世界最大の受信データで学習していて事実上最強だ。漏れを感じたら自分で学習させ、振り分けルールで詰める手間がかかる</li>
+<li><strong>カレンダーと連絡先は自己完結型</strong>だった。この2つの本体は自前のサーバーに置いているので「データは自分で持ったまま画面だけ借りる」ができるか調べた。カレンダーは外部のサーバーを登録して双方向に同期できる(ただし予定のコピーが業者側にも載る)。<strong>連絡先には同等の機能が無く</strong>、一度だけの取り込みしかできない。結果、この2つの移行は見送った。🔴 この件で自分は<strong>2回誤った断定をした</strong>。「外部カレンダーは読み取り専用しか無い」と書いたが、設定画面には「アカウントを追加」と「購読」という別々の欄があり、読み取り専用なのは後者だけだった。<strong>公式ヘルプの検索結果で機能の有無を断定せず、設定画面を開いて確かめること</strong></li>
+<li><strong>「航空券やレストランの予約確認メールが自動でカレンダーに入る」機能は失われる</strong>。大手の独自のメール解析エンジンに依存した機能なので、メールとカレンダーのどちらか片方を移しても再現されない。<strong>標準規格ではないものは移行で残らない</strong>という分かりやすい例だった。取り戻す道は、予約確認メールを検知して自分のカレンダーに書き込む仕掛けを自作することだけ。まだ作っていない</li>
+</ul>
+<h2 id="切替作業-順番を間違えると送信が全滅する">切替作業: 順番を間違えると送信が全滅する</h2>
+<p>🔴 <strong>業者の案内通りにやると事故る点が2つあった。</strong> ①**「SPFのTXTレコードを新規追加してください」と指示される<strong>が、既存のSPFがある状態でそれをやると</strong>ドメインにSPFが2つ存在して仕様違反(PermError)になる**。認証が落ち、<code>p=reject</code>なので送信が全滅する。正解は追加ではなく<strong>1つのレコードへのマージ</strong>(<code>include:</code>を並べる)。②<strong>案内された値の末尾が<code>?all</code>(該当しない送信元は判定しない)<strong>で、自分の既存設定は<code>-all</code>(完全に拒否)だった。言われた通りにすると</strong>防御を弱める</strong>ので採用しなかった。</p>
+<p>もう1つ自分で踏んだ罠。<strong>受け取り先のサーバー名はリージョンによって違う</strong>。自分はEUを選んだのに、ヘルプ画面に例示されていた画像は米国リージョンのサーバー名だった。画像の値を写すと動かない。<strong>設定画面が自分のアカウント向けに表示している値を正とすること。</strong></p>
+<p><strong>送信側の設定(SPF/DKIM)と受信側の設定(MX)は独立に変更できる</strong>。この性質を使って、受信を止めずに送信だけ先に検証する順序にした。①課金してカスタムドメインを登録(所有確認用のTXT) → ②<strong>SPFを1レコードにマージ</strong>(古い業者の<code>include:</code>は並行稼働の間は残す) → ③DKIM(メールが改ざんされていないことを証明する電子署名)用のCNAMEを追加 → ④差出人設定 → ⑤<strong>ここで送信テスト</strong>(受信は旧業者のまま無傷なので失敗しても何も壊れない) → ⑥合格を見てから<strong>MXを切替</strong>。</p>
+<p>送信テストは<code>mail-tester.com</code>のような診断サイトに送って点数を見るのが手軽だった(自分は10/10)。加えて<strong>厳しいフィルタを持つ組織宛に実際に1通送って届くか確認する</strong>こと。この手の相手は黙って捨てるので、「エラーが出なかった」は到達の証拠にならない。</p>
+<ul>
+<li>🔴 <strong>切替直後のテストメールは旧メールボックスに着弾した</strong>。送信側のDNSキャッシュが古いMXを掴んでいたためで、30分待って再テストしたら新しい受信箱に入った。<strong>旧メールボックスを残しておいたのでメールは消えなかった</strong>。切替後は最大1時間ほど旧MXに届くと見込んで、<strong>旧メールボックスはしばらく生かしておくこと</strong></li>
+<li><strong>復旧用メールアドレスに、移行するアドレス自身を指定してはいけない</strong>。MX切替後は復旧先が移行先の中に入り、そこに入れない事態では何もできない循環依存になる。2要素認証のバックアップコードも同じ受信箱に置かない</li>
+<li>旧メールボックスを空にする前に、<strong>Message-ID(メール1通ごとの一意な識別子)で全件照合した</strong>。総通数の一致は「両方向の差が打ち消し合っているだけ」のことがあるので、<strong>集合として包含されているか</strong>を見る必要がある(<a href="/guides/gmail-to-own-domain/">前記事</a>で4,293件を失った経験から来ている)。旧側にしか無かったのは25通だけだった</li>
+<li>移行後、<strong>5万通強が業者のサーバーにしか存在しない</strong>状態になっていた。写真やファイルは毎晩クラウドへ送っているのにメールだけ体制の外だったので、IMAPで自分のサーバーへ毎晩写し、既存のバックアップ(<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>)に載せた。🔑 <strong>肝は追記専用にすること</strong>。同期を一方通行にしてローカル側で消さない設定にすれば、<strong>サービス側で消してもローカルからは消えない</strong></li>
+</ul>
+<h2 id="一番時間がかかったのは登録アドレスの付け替え">一番時間がかかったのは「登録アドレスの付け替え」</h2>
+<p>誰も警告してくれないので強調しておく。<strong>技術的な切替は1日で終わる。各サービスに登録してあるメールアドレスを1件ずつ付け替える作業は数週間かかる。</strong></p>
+<p>実際に付け替えたのはこういうカテゴリだった。具体名は挙げない(自分がどのサービスを使っているかの一覧は、他人にとってはフィッシングの的だ)。ブラウザやOSのアカウント / クラウド・インフラ事業者とドメイン登録事業者 / 通販・デリバリー / 新聞や有料購読 / 健康・計測系のアプリ / 趣味の会員サービス / 銀行・カード・証券。</p>
+<p>やり方は3つ組み合わせた。</p>
+<ol>
+<li><strong>パスワードマネージャーの項目一覧をチェックリストにする</strong>。これが「自分がどこに登録しているか」の唯一の全体像だった。記憶では必ず漏れる</li>
+<li><strong>受信箱そのものを台帳として使う</strong>。アドレスを変えると「メールアドレスが変更されました」という通知が届くので、<strong>新しい受信箱に溜まったその通知が、完了したサービスの記録になる</strong></li>
+<li><strong>旧アドレスへの転送を残しておく</strong>。これが一番効いた。<strong>まだ切り替えていないサービスが、メールを送ってくることで自分から名乗り出てくる</strong></li>
+</ol>
+<p>🔴 <strong>順番の注意</strong>: 復旧経路になっているサービス(ドメイン登録事業者、DNS事業者、クラウドストレージ、パスワード管理、そしてメール業者自身)から先に手を付けると、作業中に自分を締め出す事故が起きうる。<strong>これらは最後、かつ新しい受信箱が確実に動いていることを確認してから</strong>にした。</p>
+<p>そして正直に書くと、<strong>この作業はまだ終わっていない</strong>。移行から1年近く経っても、旧アドレス宛にしか届かないメールが時々ある。転送を切るタイミングはまだ決めていない。</p>
+<h2 id="サービスごとに別アドレスを配る案は半分だけ採った">サービスごとに別アドレスを配る案は、半分だけ採った</h2>
+<p>ドメインを持っていると<strong>サービスごとに別のアドレスを配る</strong>ことができる。漏れたらどこから漏れたか分かるし、1本ずつ止められる。移行先にはこれを自動でやる機能があり、自前のパスワードマネージャー(Vaultwarden)から呼び出して<strong>ログイン情報を保存する操作と同時に新しいアドレスを発行できる</strong>。実際に動かした。</p>
+<ul>
+<li>🔑 <strong>発行するドメインを自分のドメインに切り替えてから使い始めること</strong>。既定では業者のドメインで発行される。それで何十本も発行すると、<strong>業者をやめた瞬間に全部死ぬ</strong>という、まさに避けたかったロックインを自分で作り直すことになる。自分のドメインなら、移行先でキャッチオールを有効にすれば受信を継続できる</li>
+<li>⚠️ <strong>発行したアドレスは最初「保留」状態で、一度も使われないまま24時間で自動削除される</strong>。発行だけして後で使うことはできない</li>
+</ul>
+<p>ここで立ち止まった。<strong>「迷惑メールはサーバー側のフィルタで止まるのだから、これに意味があるのか」</strong>。考え直して、よく挙げられる利点のほとんどは自分には効かないと認めた。迷惑メールの削減→フィルタで解決済み。使い回し攻撃の防止→すべてのパスワードが固有なので追加効果はほぼゼロ。流出元の特定→分かっても打てる手は無効化だけで、フィルタで捨てるのと同じ。フィッシングの判別→リンクを踏まない習慣があれば不要。</p>
+<p><strong>残る本物の利点は1つだけ。名寄せへの耐性だ。</strong> 単一のアドレスはデータブローカーにとって結合キーになり、A社の流出とB社の流出が機械的に突き合わされてプロファイルが組まれる。迷惑メールフィルタはこれに一切効かない。<strong>受信箱は静かなまま、外側で自分の像が育っていく。</strong> 困っていないが他人が自分のデータでできることを減らす、という動機で、自前ホスティング全般と同じ理由だ。<strong>日々の受信箱の快適さとは無関係なので、使っていて価値を体感できないのは当然</strong>だった。</p>
+<p>そこで<strong>既存サービスの一括移行はやらず、新規登録の時だけ使う</strong>ことにした。新規はボタン1回でコストがほぼゼロだが、既存の移行は実作業に加えて24時間ルール・ログインIDを変更できないサービス・連絡経路が切れるといった失敗モードを抱えるので、損益が非対称になる。</p>
+<ul>
+<li>🔴 <strong>そもそも移してはいけない層がある</strong>。メール業者自身、OSやプラットフォームのアカウント、ドメイン登録事業者、DNS事業者、パスワード管理、認証基盤、クラウドストレージ、銀行・証券・カード。<strong>復旧経路にとって「1本ずつ切れる」は「1本ずつ壊れる」に反転する</strong></li>
+<li>📌 <strong>増やしすぎると出口が狭くなる</strong>。業者をやめる時、移行先でキャッチオールが必須になる。数十本なら問題ないが、数百本に膨らませると取り替え可能性を自分で削ることになる。なおキャッチオール自体は<strong>無効(拒否)にした</strong>。有効にすると<code>info@</code>や<code>admin@</code>といった辞書総当たりの迷惑メールを全部受けてしまい、存在しないアドレスなので個別に止める手段がない</li>
+<li>⭐ <strong>一番しっくり来た用途は公共WiFiの登録画面だった</strong>。アドレスをマーケティングリストに流す前提のところが多く、<strong>24時間の自動削除がここでは利点になる</strong>。⚠️ ただし「メールの確認リンクを踏んでください」型だと、<strong>まだ繋がっていないのでそのメールが読めない</strong>。繋ぐ前にモバイル回線で発行しておくしかない</li>
+</ul>
+<h2 id="今の構成とやらなかったこと">今の構成と、やらなかったこと</h2>
+<p>正本=メールサービス側 / バックアップ=自分のサーバー上の追記専用コピー→クラウド(暗号化) / クライアント=公式アプリのみ。デスクトップのメールソフトは撤去した。移行先の安定性を実測で確認できて見張り役が不要になり、ローカルコピーはPC1台の中にしかなくバックアップの本数に数えられなかったからだ。なお<strong>公式アプリもオフライン用にメールをキャッシュするが、これはバックアップに数えない</strong>。サーバーに無いメールを溜め込める古いメールソフトと違い、単なるサーバーの写しだ。</p>
+<p>やらなかったこと。<strong>メールの自前ホスティング</strong> — この記事の半分を使って却下した。副産物として、サーバーを選ぶ時の「25番ポートが開放できること」「メール専用のIPを分けられること」という制約が消え、他の用途だけで選べるようになった。<strong>既存サービスのアドレスをサービス別エイリアスに移すこと</strong> — 上記の通り撤回した。<strong>カレンダーと連絡先の移行</strong> — 「データは自分で持ったまま、一番手前の画面だけ借りる」組み合わせが存在しなかったので見送った。不満が出たら<strong>画面だけ替えればいい</strong>(倉庫が自分のものなら、アプリは捨てられる=取り返しがつく)。</p>
+<p>残っている単一障害点は<strong>ドメインの更新忘れ</strong>だ。メールボックスの業者は取り替えられるが、ドメインを失うとアドレスごと失う。自動更新と登録してあるカードの有効期限は、年に一度は目で見ておくことにした。</p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+]]></content:encoded></item><item><title>AIにアプリを書かせて6週間、効いた習慣と効かなかったやり方</title><link>https://offgrid.taikiito.com/guides/building-with-an-ai-agent/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/building-with-an-ai-agent/</guid><description>プログラムを書けない自分が、AIのコーディングエージェントに指示するだけで毎日使うチャット＋カレンダーのアプリを作り、6週間運用した記録。同じ不具合を9回踏んだ話、直したものが端末に届いていなかった話、スクショを実測しないと色も丸みも合わない話。効いた習慣を5つに絞って書いた。</description><content:encoded><![CDATA[<p>自分はプログラムを書けない。それでも、スマートフォンのブラウザで動くチャット＋カレンダーのアプリを作って、6週間ほど毎日使っている。コードは全部AIのコーディングエージェント(指示を出すと実際にファイルを書き換えて動かすAI)に書かせた。</p>
+<p>利用者は自分と、自分以外にもう1人、実際に毎日使っている利用者の2人だけ。この1人が実機で不具合を見つけて報告してくるので、6週間のあいだ「作る」より「直す」のほうがはるかに多かった。そこで身についた習慣を5つだけ書く。どれも、外した回数の記録があるものに限った。</p>
+<h2 id="前提">前提</h2>
+<p>スマートフォンのホーム画面に置いて全画面で使う形式(PWA)のアプリで、iPhoneとAndroidの両方から使っている。置き場所は自分の借りているサーバーで、土台は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>に書いた構成とほぼ同じ。自分がやるのは、不具合の報告を受け取り、エージェントに状況を伝え、出てきた直しを実機で確かめること。コードは読めるが書けない。</p>
+<h2 id="1-推測で直すのをやめ端末が実際に報告していることを出す捨て用のページを作る">1. 推測で直すのをやめ、端末が実際に報告していることを出す「捨て用のページ」を作る</h2>
+<p>一番高くついたのは、日本語入力の変換候補の帯が消える不具合だった。ひらがなを打ってもキーボードの上に出るはずの候補バーが出ない、または打っている途中で消える。<strong>同じ症状を、数日かけて9回踏んだ。原因は毎回違っていた。</strong> 正確に言うと、同じ作りで動かしている自作アプリが2つあり、9回はその両方にまたがっている。同じ型の作りには同じ型の地雷が埋まる、ということでもある。</p>
+<ol>
+<li>画面のスクロール位置を0に引き戻す1行。変換を始めるとiOSがページを少しスクロールさせる。それを律儀に戻していたので、組み立て中のiOSが変換を打ち切っていた。</li>
+<li>入力のたびに入力欄の高さを測り直す処理。<strong>iOSのIME(日本語入力の仕組み)は、組み立て中に入力欄の寸法を書き換えられると組み立てを打ち切る</strong>。</li>
+<li>自分宛ての通知バナー。相手の発言が届いたときに通知を出していたが、<strong>自分がアプリを開いて返信を打っている最中にも出ていた</strong>。</li>
+<li>自分が保険として足した自動リロード。「新しい版を配ったら画面を読み込み直す」仕掛けが、打っている最中でも容赦なく走っていた。つまり<strong>直しを配るたびに、自分で同じ症状を起こしていた</strong>。</li>
+<li>「いま変換中か」の旗を時間切れで降ろす保険。「人が3秒も1文字も触らずに組み立て続けることはない」という前提だったが、<strong>人は言い回しを考えて平気で3秒以上止まる</strong>。止まった瞬間に旗が降り、高さが書き換えられて候補が消えた。1〜4回目を防ぐために足した保険が、1〜4回目と同じ事故を起こしていた。</li>
+<li>入力欄に付けていた「自動スペル修正を切る」属性。iOSではこれが<strong>キーボード上の予測候補バーそのものを消す</strong>。日本語の変換候補はそのバーに出るので、英語の下線を消すついでに道連れにしていた。</li>
+</ol>
+<p>🔴 <strong>9回のうち7回は「ありそうな犯人」を潰していただけだった。</strong> 毎回それらしい原因が見つかり、毎回直って、毎回また同じ報告が来た。</p>
+<p>決着したのは、直すのをやめて<strong>実況を出す仕掛け</strong>を入れてからだった。画面の左上に最後の十数行を出して、「組み立てが始まった」「入力が来た」「高さ調整を見送った」「表示領域の高さが変わった」を1行ずつ流す。これのスクショを1枚もらっただけで、<strong>自分のコードは変換中に画面を一切書き換えていない</strong>ことが確定し、残っていた仮説が全部消えた。</p>
+<p>さらに<strong>捨て用のページ</strong>を別に作った。入力欄が1つあるだけで、JavaScriptを一切かけず、属性の組み合わせを6通り切り替えられるページ。実機で6通り全部試して全部で候補が出た。これで「入力欄の属性」「固定の箱」「OSの予測変換の設定」「ホーム画面アプリであること自体」が全部シロだと分かり、残りは本番のコードだけに絞れた。</p>
+<p>この手で学んだこと。</p>
+<ul>
+<li><strong>調べる口は、症状が出る環境の中から開けられるようにする。</strong> 最初の実況はURLの末尾に印を付けて開く方式だったが、症状が出るのはホーム画面アプリで、そこにURL欄はない。報告をもらって初めて「一生使えない仕掛け」だと気づき、設定画面に切り替えを置き直した。</li>
+<li>🔴 <strong>捨て用ページで測った数字を、本番の数字より優先してはいけない。</strong> 入力欄の下に空ける余白をその実測値に合わせたら、本番では逆に60pxの空白が出た。同じ端末・同じホーム画面アプリでも、ページによって数字が違った。捨て用のページが有効なのは「条件の切り分け」までで、寸法の絶対値は本番でしか測れない。</li>
+<li><strong>断続的な不具合は「再現を待つ」のではなく「再現したときに証拠が残っている」状態を先に作る。</strong> 流れる実況だけでは、引き金が症状の数分前にあると永久に捕まらない。重要な行だけを別枠に最大6件、端末側に保存して読み込み直しても消えないようにした。</li>
+</ul>
+<h2 id="2-同じ報告が3回続いたら最初の2回は症状に当てていたということ">2. 同じ報告が3回続いたら、最初の2回は症状に当てていたということ</h2>
+<p>同じ症状は、同じ不具合の証拠ではない。これを9回ぶん支払って覚えた。前回の直しに似せて今回も直す、というのが一番高くつく癖だった。他にも同じ型で踏んでいる。</p>
+<ul>
+<li><strong>本文が文の途中から始まる</strong>: 同じ訴えを4回受けた。4回とも同じ箇所を直したが、3回は「中身の継ぎ方」を見ていて、4回目にようやく「その処理が誰のために走っているのか」が原因だと分かった。</li>
+<li><strong>吹き出しの「しっぽ」の形</strong>: 市販アプリに寄せるのに3回作り直した。1回目は目分量、2回目は寸法を比で揃える、3回目でようやく「寸法ではなく形そのものが違う」と分かった。寸法の話をしているあいだは、何度直しても近づかない。</li>
+</ul>
+<p><strong>同じ報告が3回来たら、3回目の直しを書く前に「1回目と2回目はなぜ外れたのか」を先に書く。</strong> 書けないなら、まだ症状に当てている。</p>
+<h2 id="3-直したものが端末に届いていないは直っていないと見分けがつかない">3. 「直したものが端末に届いていない」は「直っていない」と見分けがつかない</h2>
+<p>原因の種類が違うのに、画面上はまったく同じに見える。3往復むだにして気づいた。</p>
+<p>🔴 <strong>iOSのホーム画面アプリは、閉じて開き直すだけではページを読み込み直さない。</strong> 何時間も前の状態を握ったままなので、サーバー側のファイルを直し、サーバーが正しく新しいものを配っていても、相手の画面は一切変わらない。「なおらないよ?」が3回続いたときに配信物を直接取って確かめたら、配っているものは正しかった。</p>
+<p>やったこと。サーバーに「いまの版」を返すだけの口を足し、画面側は起動時にそれを控えて、他のアプリから戻ってきたときに照合し、違っていたら読み込み直す。そして<strong>画面に版の文字列を出し、次に報告をもらったら何よりも先にその文字列を読む</strong>。あわせて端末側から「起動した(版はこれ、ホーム画面アプリかタブか、通知の許可はどうか)」を1行だけサーバーへ送るようにした(会話の本文は送らない)。</p>
+<p><strong>見分け方として一番効いたのは、もらったスクショが前回とピクセル単位で同じかどうか。</strong> 同じならまず「届いていない」を疑う。コードを3通り書き直す前にこれを確かめる。</p>
+<p>さらに厄介な形も踏んだ。画面は最新なのに、裏で動いている配信役(Service Worker)だけが取り残されて<strong>6版も古いまま</strong>だったことがある。古い配信役は新しい形の通知を受け取れないので、通知が消えないという別の症状に化けていた。<strong>「効いている」だけでは足りず、「何版が効いているか」を答えさせないと気づけない。</strong></p>
+<h2 id="4-日付つきで試したことと外れた理由を残す">4. 日付つきで、試したことと外れた理由を残す</h2>
+<p>6週間経つと、これが同じ輪を歩き直さない唯一の歯止めになる。やったこと・やめたこと・なぜ外れたかを、日付つきで1ファイルに積み上げている。具体的に効いた場面を2つ。</p>
+<p><strong>タブの切り替えアニメーションを機能ごと撤去した。</strong> 画面下にタブを足して、切り替えに横滑りの動きを付けた。その直後に「画面上のなんのボタンも反応しなくなった」と報告が来た。動かない原因を追うのではなく、動いていた時点のファイルに戻し、安全な2件だけを入れ直して、アニメーションは仕掛けごと削除した。<strong>直すより消すほうが安い機能がある</strong>という判断を記録に残しておくと、後でまた同じ思いつきが出たときに止められる。</p>
+<p><strong>下タブの導入をまるごと巻き戻した。</strong> 別の日、下タブを入れた版でアプリが完全に操作不能になった。部分的な修正を試さず、導入前のファイルへ丸ごと戻した。失ったのは下タブ・独立した設定画面・カレンダーの月週日の切り替え・起動時の表示先の4つで、全部もう一度作り直した。<strong>巻き戻しで何を失ったかを書いておく</strong>と、作り直しの順番がそのまま手順表になる。次は「タブバーだけ入れて実機で確認」「設定画面」「カレンダー」の3段に分け、1段ごとに実機で確かめた。</p>
+<p>記録が無ければ成立しない言い方がある。<strong>「それはもう試した。こういう理由で外れた」</strong>。</p>
+<ul>
+<li>「変換中は触らない」というガードを、<strong>呼び出し側だけに書いて2回再発させた</strong>。記録を読み返して「2回とも呼び出し側だけ直している」と分かり、以後は<strong>触る処理そのものに1つ残らず書く</strong>ことにした。呼び口は後から増えるので、入口で止めても漏れる。</li>
+<li>入力欄の下に空ける余白を、2日のあいだに4回も定数で反転させていた。記録を並べたら「実機のスクショ2枚が食い違っているのは、どちらかが嘘なのではなく、場合分けの軸がまだ見つかっていない」と気づけた。</li>
+<li>🔴 <strong>過去の自分の結論が間違っていることがある。</strong> 「この寸法は常に引かれる」と書いた結論が、別の環境では成立していなかった。日付を必ず付けているのは、どの結論が新しいかを後から判定するため。</li>
+</ul>
+<h2 id="5-エージェントは画面を見られない詰まるのは説明の側">5. エージェントは画面を見られない。詰まるのは説明の側</h2>
+<p>エージェントはコードを読めるが、自分のスマートフォンに何が映っているかは見えない。だから自分の説明が唯一の入力になる。そしてこちらは非エンジニアなので、言葉で正確に言えない。<strong>この落差が、6週間でいちばん多く時間を食った。</strong></p>
+<p>スクショを添えて初めて診断できた不具合がいくつもある。</p>
+<ul>
+<li><strong>タイルが潰れる件</strong>: 「縞に見える」という言葉のままでは2手外れたが、スクショで「正方形が帯になっている」と分かって真因が決まった。</li>
+<li><strong>送信済みのチェックマークが消えた件</strong>: 吹き出しに「しっぽ」を足したら、重ねて貼った小片が<strong>チェックマークをまるごと塗り潰していた</strong>。時刻も右端が覆われていたが、色が同じなので画面を見ても気づけなかった。原因は「位置を指定した要素は、同じ親の文字より上に描かれる」というだけの話。スクショを拡大して初めて確定した。</li>
+<li><strong>カレンダーの縦線と幅が合わない件</strong>: 3回かかった。1回目と2回目はCSSを読んで「理屈の上では揃うはず」と判断し、揃わない前提そのものを疑わなかった。3回目にスクショの画素を1行ぶん走査し、帯の幅が列のちょうど76%だと測って、その数字で該当箇所に一発で当たった。</li>
+</ul>
+<p>そしてもう1つ。<strong>市販アプリの見た目に寄せるなら、スクショは「参考にする」のではなく、画像編集ソフトで「測る」。</strong></p>
+<ul>
+<li>吹き出しの色をスクショの画素から直接読んだら、公称されている色と<strong>実際の画素が微妙に違っていた</strong>。目で選んだ色では一致しない。</li>
+<li>角の丸みは目分量で<strong>3回外した</strong>。「全然だめだ」と言われてようやくスクショを測り、<code>角丸 ÷ 文字の大きさ = 1.63</code>、<code>角丸 ÷ 2行の吹き出しの高さ = 0.436</code>という比を出した。自分のアプリの文字サイズと行間からその比を満たす値を計算したら一発で合った。</li>
+<li>青も<strong>3回外した</strong>。濃すぎる・薄すぎるを行き来したあとスクショから採った値に替えたが、その副作用で<strong>未読と既読のチェックマークが見分けられなくなった</strong>(地を薄くしたので白78%と白の差が消えた)。色で状態を表しているなら、地の色を変えたら差も作り直す必要がある。</li>
+<li>しっぽの形は、最終的に<strong>スクショの輪郭を1画素ずつ読み取ってそのまま図形として写し取った</strong>。向こうの形は角丸と小片の組み合わせではなく、右辺が内へ寄りながら下へ垂れる一続きの曲線だった。</li>
+</ul>
+<p>エージェントに渡す材料の優先順位はこうなった。<strong>実機のスクショ &gt; 実機の実況ログ &gt; 実データ(保存されている記録そのもの) &gt; 自分の言葉。</strong> 自分の言葉が一番弱い。</p>
+<h2 id="これで解決しないこと">これで解決しないこと</h2>
+<ul>
+<li><strong>答えが正しいかどうかを自分で判定できる必要は、まったく減らない。</strong> エージェントは「直りました」と報告してくる。6週間で何十回も、机上では直っていて実機では直っていなかった。最後に実機で確かめるのも「これは直った/これはまだだ」を判断するのも自分。受け取る側に判定能力がないと、同じ輪をもっと速く回るだけになる。</li>
+<li><strong>分かっていないものが溜まっていく。</strong> 自分のアプリには、自分が原理を説明できない処理が入っている。説明を求めれば返ってくるが、6週間ぶんを全部覚えているわけではない。壊れたときに「ここは触るな」と言えない箇所がある、という事実は消えていない。</li>
+<li><strong>説明できない症状は、直せない症状のままになる。</strong> 「なんとなく動きが変」は、スクショも実況も実データも出せないので結局手が付かない。9回目の変換候補の件も、まだ真因には届いていない。<strong>残っているのは「本番のコードのどこか」という範囲だけで、名前は付いていない。</strong></li>
+</ul>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+]]></content:encoded></item></channel></rss>

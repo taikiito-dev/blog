@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Immich on Off-Grid</title><link>https://offgrid.taikiito.com/tags/immich/</link><description>Recent content in Immich on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Mon, 05 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/immich/index.xml" rel="self" type="application/rss+xml"/><item><title>写真をGoogle PhotosからImmichに移す</title><link>https://offgrid.taikiito.com/guides/google-photos-to-immich/</link><pubDate>Mon, 24 Aug 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/google-photos-to-immich/</guid><description>Googleフォトの全データを自前サーバー(Immich)に移行した時の記録。docker-composeでのImmich構築、immich-goの実際のコマンド、Takeoutの分割zipで踏んだ罠、本番実行の結果まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>Google Photosの全データ(3万件超、約119GB)を自前サーバー上のImmichというソフトに移した記録。前回の版は「何をしたか」の日記だったが、今回は実際に打ったコマンドやファイルの中身まで含めて書き直した。<strong>この記事だけで、自分がやったのと同じ環境を一から再現できることを目指している。</strong></p>
+<h2 id="前提-このガイドで想定している環境">前提: このガイドで想定している環境</h2>
+<p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
+<ul>
+<li>常時起動しているLinux環境(自分の場合はWindows機の中でWSL2〈Windows Subsystem for Linux 2、WindowsのなかでLinuxをそのまま動かす仕組み〉のUbuntu)</li>
+<li>Docker Engine(コンテナ、つまりソフトを隔離された箱に入れて動かす仕組み)と、そのおまけ機能である<code>docker compose</code>(複数のコンテナ設定をまとめて起動・停止するコマンド)が使える状態</li>
+<li>ターミナル(文字でコマンドを打ち込む黒い画面)の基本操作に抵抗がないこと</li>
+</ul>
+<p>GPU(グラフィック処理用の高性能な部品)は必須ではない。無くても写真の保管・閲覧は問題なくでき、違うのは顔認識やスマート検索(自然言語でのあいまい検索)の処理速度だけ。自分はたまたま手元にゲーミングPC(GeForce RTX 3070搭載)があったのでGPUを使う構成にした。GPUを使わない場合は、後述の「GPUを使う場合の追加設定」を丸ごと飛ばして進めて構わない。</p>
+<h2 id="step-1-immichをdocker-composeで動かす">Step 1: Immichをdocker-composeで動かす</h2>
+<p>まず作業用フォルダを作り、Immich公式が配布している設定ファイル一式をダウンロードする。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/immich <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/immich
+</span></span><span class="line"><span class="cl">curl -fL -o docker-compose.yml https://github.com/immich-app/immich/releases/latest/download/docker-compose.yml
+</span></span><span class="line"><span class="cl">curl -fL -o .env https://github.com/immich-app/immich/releases/latest/download/example.env
+</span></span><span class="line"><span class="cl">curl -fL -o hwaccel.ml.yml https://github.com/immich-app/immich/releases/latest/download/hwaccel.ml.yml
+</span></span></code></pre></div><p><strong>ここで一度ハマった</strong>: <code>curl</code>に<code>-L</code>(リダイレクト追従、GitHubのようにURLが転送される先でファイルを配っているサイトでは必須)を付け忘れて、中身が0バイトのファイルができてしまったことがあった。<code>-fL</code>(<code>-f</code>はエラー時に空ファイルを作らず失敗させる、<code>-L</code>はリダイレクト追従)の組み合わせで取り直して解決した。</p>
+<p>次に<code>.env</code>ファイルを編集する。最低限、以下の2点は必ず変更する。</p>
+<ul>
+<li><code>DB_PASSWORD</code> — デフォルトのままだと誰でも推測できるパスワードなので、自分だけの値に変更する</li>
+<li><code>UPLOAD_LOCATION</code> — 写真の実ファイルをどこに保存するかの場所。デフォルトの<code>./library</code>(このフォルダの中の<code>library</code>サブフォルダ)のままで問題ない</li>
+</ul>
+<p>セットアップ中に出てくる「Storage Template」という機能(保存されるファイルの命名・フォルダ構造を人間が読みやすい形に変える機能)は、オフのままにすることを勧める。写真の閲覧はどのみちImmichの画面経由が前提になるので、生ファイルの構造を人が読みやすくする必要性が薄いことと、後から有効化すると全件の再整理ジョブが走って重くなることが理由。</p>
+<p>準備ができたら起動する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker compose up -d
+</span></span><span class="line"><span class="cl">docker compose ps
+</span></span></code></pre></div><p><code>immich_server</code> / <code>immich_machine_learning</code> / <code>database</code>(PostgreSQL) / <code>redis</code>の4つのコンテナが<code>healthy</code>(正常稼働)と表示されれば成功。ブラウザで<code>http://localhost:2283</code>(自宅サーバーの場合はサーバーのIPアドレスに読み替える)を開き、管理者アカウントを作成する。</p>
+<h3 id="gpuを使う場合の追加設定任意">GPUを使う場合の追加設定(任意)</h3>
+<p>顔認識・スマート検索をGPUで高速に処理したい場合は、上記の<code>docker compose up -d</code>の前に以下を行う。</p>
+<ol>
+<li>WSL2からGPUが見えることを確認する: <code>nvidia-smi</code>(GPUの状態を表示するNVIDIA公式コマンド)を実行し、GPU名やドライバのバージョンが表示されればOK</li>
+<li>NVIDIA Container Toolkit(DockerコンテナからGPUを使えるようにする橋渡しソフト)を導入し、<code>nvidia-ctk runtime configure --runtime=docker</code>で設定を反映</li>
+<li><code>docker run --rm --gpus all ubuntu nvidia-smi</code>を実行し、コンテナの中からもGPUが見えることを確認する</li>
+<li><code>docker-compose.yml</code>の<code>immich-machine-learning</code>サービスを編集: イメージタグの末尾に<code>-cuda</code>を追加し、コメントアウトされている<code>extends: file: hwaccel.ml.yml / service: cuda</code>の行を有効化(元は<code>service: cpu</code>になっている行をコメントアウトし、<code>cuda</code>側を使う)</li>
+</ol>
+<p>この状態で<code>docker compose up -d</code>すれば、ログにCUDA関連のエラーが出ていないことを確認して完了。GPUを使わない場合はこの節をまるごと無視してよく、Immichは自動的にCPUで処理する。</p>
+<h2 id="step-2-取り込みツールimmich-goを導入する">Step 2: 取り込みツール<code>immich-go</code>を導入する</h2>
+<p>Immich公式のCLI(コマンドライン操作用ツール)である<code>immich upload</code>は<strong>使わない</strong>。理由は、Google Takeout(Googleのデータ一括エクスポート機能)でダウンロードした写真には、撮影日時やアルバム情報が入った<code>.json</code>という付属ファイル(サイドカーファイルと呼ばれる)が一緒に入っているが、公式CLIはこの<code>.json</code>を読まないため、<strong>アルバムの中身や正確な撮影日時が失われてしまう</strong>ため。</p>
+<p>代わりに使うのが、有志が開発した**<code>immich-go</code>**(自分が使ったのはv0.32.0、開発者はsimulot氏)というツール。Takeoutの<code>.json</code>サイドカーをちゃんと読んでアルバム・撮影日時・GPS情報を復元し、しかもzipファイルを展開せずそのまま読み込める(119GB分を解凍する広い置き場所を用意しなくていい)、重複した写真も自動で名寄せしてくれる。</p>
+<p>GitHubのリリースページから、自分のOS(今回はLinux/amd64)に合ったバイナリをダウンロードして展開し、実行権限を付ける。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -fL -o immich-go.tar.gz https://github.com/simulot/immich-go/releases/download/v0.32.0/immich-go_Linux_x86_64.tar.gz
+</span></span><span class="line"><span class="cl">tar -xzf immich-go.tar.gz
+</span></span><span class="line"><span class="cl">chmod +x immich-go
+</span></span></code></pre></div><p>(バージョンによって配布ファイル名やコマンドのオプション名が変わることがあるので、実行前に<code>./immich-go --help</code>で最新の使い方を確認するのを勧める。)</p>
+<p>Immich側の管理画面(Account Settings → API Keys)でAPIキーを1つ発行しておく。このキーを使ってimmich-goがImmichサーバーに写真をアップロードする。</p>
+<h2 id="step-3-google-takeoutで写真データをエクスポートする">Step 3: Google Takeoutで写真データをエクスポートする</h2>
+<p><a href="https://takeout.google.com">takeout.google.com</a>にアクセスし、「Google フォト」だけを選択してエクスポートを作成する。ファイル形式はzip、分割サイズは自分で選べる(容量が大きいとGoogleが複数のzipファイルに自動分割してくれる)。準備ができるとメールで通知が来て、ダウンロードページから一つずつ落としていく。</p>
+<p><strong>ここでも一度ハマった</strong>: 自分の場合は全部で12個に分割された(<code>takeout-...-001.zip</code>〜<code>-012.zip</code>)。ダウンロードし終わったつもりで作業を始めたら、<strong>途中の2つ(<code>-002</code>と<code>-003</code>)が抜けていた</strong>ことに後から気づいた。ダウンロードページに戻って抜けていた分だけ再取得し、連番が最後まで揃っていることを確認してから次に進んだ。件数が多いときは、連番が全部揃っているかを作業開始前に必ず確認するべき、という教訓。</p>
+<h2 id="step-4-長時間処理に備えてtmuxの中で作業する">Step 4: 長時間処理に備えて<code>tmux</code>の中で作業する</h2>
+<p>数万件・100GB超のアップロードは何時間もかかる処理になる。ターミナルの画面(WindowsならPowerShellやWSLの窓)を誤って閉じてしまうと処理も一緒に止まってしまうので、<strong><code>tmux</code></strong>(ターミナルの中に「もう一つの独立したターミナル」を作れるツール)のセッションの中で実行する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">tmux new -s immich-import
+</span></span></code></pre></div><p>これで新しいセッションに入る。ここから先の作業はこのセッションの中で行い、たとえ元のウィンドウを閉じても処理は裏側で動き続ける(再接続するには<code>tmux attach -t immich-import</code>)。</p>
+<h2 id="step-5-まず--dry-runで確認する">Step 5: まず<code>--dry-run</code>で確認する</h2>
+<p>いきなり本番実行するのは怖いので、実際には何もアップロードせず結果だけ教えてくれる<code>--dry-run</code>オプションを付けて試す。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">./immich-go upload from-google-photos <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --server<span class="o">=</span>http://localhost:2283 <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --api-key<span class="o">=</span>&lt;Step2で発行したAPIキー&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --dry-run <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/Downloads/takeout-*.zip
+</span></span></code></pre></div><p>自分の場合の出力はこうだった。</p>
+<pre tabindex="0"><code>Total Assets: 32218
+Associated metadata: 32211
+Missing metadata: 7
+Errors: 0
+</code></pre><p>3万2千件のうち、日付やアルバム情報(メタデータ)が紐づかなかったのはわずか7件、エラーはゼロ。この結果を見て「時系列が全部壊れる」ような大事故にはならなさそうだと判断し、<code>--include-unmatched</code>(メタデータが無い写真も強引に取り込むオプション)は付けずに本番実行することにした。</p>
+<h2 id="step-6-本番実行">Step 6: 本番実行</h2>
+<p><code>--dry-run</code>を外すだけで、実際のアップロードが始まる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">./immich-go upload from-google-photos <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --server<span class="o">=</span>http://localhost:2283 <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --api-key<span class="o">=</span>&lt;APIキー&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/Downloads/takeout-*.zip
+</span></span></code></pre></div><p>結果はこうだった。</p>
+<pre tabindex="0"><code>Uploaded successfully: 29408
+Metadata updated: 30794
+Discarded local duplicate: 1048
+Errors: 2
+Missing metadata: 7
+</code></pre><p>3万件近くが無事アップロードされ、1,048件は重複と判定されてスキップされた(むしろ取り込み過ぎを防いでくれるので助かる動き)。エラーは2件だけ。ログファイル(<code>~/immich-import.log</code>)を見ると、写真本体が消えたわけではなく、「アルバムを作れなかった(<code>failed to create album</code>)」「タグを付けられなかった(<code>failed to add assets to tag</code>)」といった付随的な失敗だけだった。</p>
+<h2 id="step-7-取り込み直後に焦った話バックグラウンドジョブの確認">Step 7: 取り込み直後に焦った話(バックグラウンドジョブの確認)</h2>
+<p>取り込み後、Immichの管理画面で最近の写真に「Error」のようなマークが出ていて、一瞬「本体が壊れたか」と焦った。よく見ると、管理画面(Administration → Jobs)にサムネイル生成(Generate Thumbnails)・顔認識(Facial Recognition)・文字認識(OCR)といった**後処理(バックグラウンドジョブ)**がまだ大量に残っている状態だった。つまり、アップロード自体は終わっていても、Immich側の後片付け処理がまだ終わっていなかっただけ。数時間待って、これらのジョブがすべて完了したのを確認してから見直したら、表示は正常に戻っていた。<strong>取り込み直後に何かエラーっぽい表示が出ても、すぐパニックにならず、まずバックグラウンドジョブが終わっているか確認する</strong>、というのが得た教訓。</p>
+<h2 id="step-8-バックアップに追加する">Step 8: バックアップに追加する</h2>
+<p>写真ファイルだけをバックアップしても、アルバム構成・撮影日時の補正結果・顔認識結果はすべてPostgreSQL(Immichが使っているデータベース)の中に入っているため、<strong>データベースのバックアップも一緒に取らないと意味がない</strong>。自分は既存のバックアップスクリプト(<code>~/backup-scripts/backup-to-b2.sh</code>、Backblaze B2というオンラインストレージへ<code>rclone</code>で同期するもの)に以下の2つを追記した。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># データベースのダンプ</span>
+</span></span><span class="line"><span class="cl">docker compose -f ~/immich/docker-compose.yml <span class="nb">exec</span> -T database <span class="se">\
+</span></span></span><span class="line"><span class="cl">  pg_dumpall --clean --if-exists --username<span class="o">=</span>postgres <span class="p">|</span> gzip &gt; /tmp/immich-db.sql.gz
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 写真本体の同期(サムネイルと変換済み動画はImmichが再生成できるので除外する)</span>
+</span></span><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
+</span></span></span><span class="line"><span class="cl">  ~/immich/library <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/immich/library&#34;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --exclude <span class="s2">&#34;thumbs/**&#34;</span> --exclude <span class="s2">&#34;encoded-video/**&#34;</span>
+</span></span></code></pre></div><p><strong>注意点が2つ</strong>。1つ目は、<code>thumbs/</code>と<code>encoded-video/</code>(Immichが自動生成する派生ファイル)を除外しないと、バックアップ容量が無駄に膨らむこと。2つ目は、119GBのような大容量を初回にいきなり日次の自動実行(cron)に任せると、家庭のインターネット回線の上り速度によっては半日〜丸1日かかってしまい、日中の回線を占有してしまうこと。初回だけは<code>--bwlimit</code>(転送速度の上限を指定するオプション)を付けて手動で実行し、完了を確認してから自動実行に組み込むことを勧める。</p>
+<h2 id="結果と現状の進捗">結果と現状の進捗</h2>
+<p>ブラウザでImmichを開いて確認したところ、昔の写真もちゃんと時系列順に並んでいた。「日付が全部壊れた」ような状態にはならず、実用上問題のない移行ができたと判断している。</p>
+<p>2026-09-12時点の進捗として追記すると、Google Photosからの移行は完了しているが、実はiPhone側の「iCloud写真」はまだオンのままで、GoogleとImmich・iCloudの3箇所に同時保存されている状態が続いている。写真の管理元を完全にImmich一本にするには、(1)しばらくImmichと並行運用して安定を確認、(2)iPhoneの「iCloud写真」をオフにして以降はImmichアプリの自動バックアップだけに切り替え、(3)必要ならiCloudのストレージプランを見直す、という手順が残っている。Apple純正の「写真」アプリ自体をやめるつもりはなく、OS標準のビューア・共有機能としては使い続け、バックアップ・データの主管をImmichに置く役割分担にする方針。この手順は急がず進める予定で、実施したらここに追記する。</p>
+<p>次は、同じ考え方でGoogle Driveのファイルを移した話。→ <a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a></p>
+<p><strong>更新履歴</strong> — 2026-08-24: 初版 / 2026-09-12: 「現状の進捗」を追記(iCloud写真トグルOFF化の計画) / 2026-09-13: docker-composeでのImmich構築・immich-goの実コマンド・バックアップスクリプトの追記まで、再現可能なレベルに全面書き直し</p>
+]]></content:encoded></item><item><title>写真サーバーの容量が足りない問題に、遠回りして決着をつけた</title><link>https://offgrid.taikiito.com/guides/photo-storage-capacity/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/photo-storage-capacity/</guid><description>自前の写真サーバーは写真が増えるほど容量が足りなくなる。古い写真を安いクラウドストレージへ追い出す仕掛けを一晩かけて作り、10枚で実証まで通したあとに、VPS業者が月数ドルでSSDを増設できることに気づいて全部捨てた記録。測った数字と踏んだ罠を書いた。</description><content:encoded><![CDATA[<p>写真を自分のサーバーに置くようにしてから、ずっと気になっていたことがある。<strong>写真は毎年増えるのに、サーバーのディスクは契約した大きさのまま</strong>だということ。</p>
+<p>結論を先に書くと、自分は<strong>古い写真を安いオブジェクトストレージへ追い出す仕掛け</strong>を一晩かけて作り、動くところまで確認してから、<strong>全部捨てた</strong>。業者が月$3.60でディスクを足せると分かったからだ。その遠回りの中身を書く。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>写真は<a href="/guides/google-photos-to-immich/">Google PhotosからImmichに移した</a>状態（Immich = 自前サーバーで動かす写真管理ソフト）</li>
+<li>サーバーは<a href="/guides/home-server-to-vps/">自宅PCからVPSへ移した</a>直後（VPS = 仮想専用サーバー。業者のデータセンターにある自分専用のLinuxマシンを借りる形）。Contaboの6vCPU / 12GB RAM / <strong>SSD 200GB</strong> のプランで月$9.00（2026年9月時点）</li>
+<li>バックアップ先はBackblaze B2（安価なオブジェクトストレージ。2026年9月時点で1TBあたり月$6.95）。構成は<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a></li>
+<li>土台の考え方は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a></li>
+</ul>
+<h2 id="まず現実を測った">まず現実を測った</h2>
+<p>移行直後のディスクはこうだった。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">df -h /
+</span></span><span class="line"><span class="cl"><span class="c1"># 使用 164GB / 193GB、空き 29GB</span>
+</span></span></code></pre></div><p>しかもこの時点でサムネイル（一覧表示用の縮小画像）がまだ生成されていなかった。以前のサーバーでは9.6GBあったので、それが戻ると<strong>空きは約19GB</strong>。200GBのプランを選んだ数日後にもう先が見えた。</p>
+<p>次に増える速さを測った。Immichのデータベースに撮影年が入っているので、年ごとに集計できる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="k">extract</span><span class="p">(</span><span class="k">year</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="s2">&#34;fileCreatedAt&#34;</span><span class="p">),</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="n">pg_size_pretty</span><span class="p">(</span><span class="k">sum</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="s2">&#34;fileSizeInByte&#34;</span><span class="p">))</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="k">from</span><span class="w"> </span><span class="n">asset</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">asset_exif</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="s2">&#34;assetId&#34;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">id</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="s2">&#34;deletedAt&#34;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></div><p>実測（写真の実体は合計115GB）。</p>
+<ul>
+<li><strong>直近3年分の合計で約22GB</strong>。年あたり3〜10GBのペース</li>
+<li><strong>それより古い分が約19,000件・約93GB</strong></li>
+</ul>
+<p>つまり<strong>今の撮り方で年10GB弱</strong>。29GBの空きは3年もたない。いずれRAW（カメラが記録した無加工のデータ。1枚25〜50MB）で撮り始めたら桁が変わる。「毎年ちょっとずつ月額が増えていく」のが一番嫌だったので、<strong>容量と月額を切り離す</strong>方法を探し始めた。</p>
+<h2 id="最初の案-古い写真を安いストレージへ追い出す">最初の案: 古い写真を安いストレージへ追い出す</h2>
+<p><strong>サーバーのSSDには直近1〜2年の「よく見る」写真だけ置き、古い写真はB2に預けて見たいときだけ取り出す。</strong> SSDの使用量が年によらず一定になるので月額が増えない。B2には毎晩のバックアップで全写真の実体がすでにあるから、<strong>アップロードすらいらない</strong>のが魅力だった。</p>
+<h3 id="方式をいくつか捨てた">方式をいくつか捨てた</h3>
+<ul>
+<li>🔴 <strong>Immichの「External Library」（外部ライブラリ）機能は使えない</strong>。サーバーの外のフォルダを読み込む機能だが、<strong>すでにImmichの中にある写真を引き取れず、新規の写真として再登録される</strong>。アルバム・顔認識の結果・お気に入りが失われる恐れがある。</li>
+<li>🔴 <strong>「年ごとのフォルダを切り出す」はそもそも不可能</strong>。ディスク上の写真は<code>library/upload/&lt;ユーザーID&gt;/&lt;16進2桁&gt;/&lt;16進2桁&gt;/&lt;ランダムな名前&gt;.拡張子</code>という形で、<strong>ランダムな名前のハッシュで256×256のフォルダに均等にばらまかれている</strong>。年ごとのフォルダは存在しない。</li>
+</ul>
+<p>残ったのは、<strong>写真ファイル1個ずつをシンボリックリンク（ファイルの位置を指すだけのショートカット）に置き換え、リンク先をB2をフォルダとして見せた場所に向ける</strong>方式。データベースに一切触らないので、Immichから見れば何も変わらない。B2をフォルダとして見せる部分は<code>rclone</code>（いろいろなクラウドストレージへファイルを同期するコマンド）のマウント機能で、読み取り専用で常駐させた。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># /etc/systemd/system/rclone-immich-cold.service の要点</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ExecStart</span><span class="o">=</span>/usr/local/bin/rclone mount &lt;リモート名&gt;:&lt;バケット&gt;/immich-cold <span class="se">\
+</span></span></span><span class="line"><span class="cl">  /home/&lt;user&gt;/immich/library/cold <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --read-only --allow-other --uid <span class="m">1001</span> --gid <span class="m">1001</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --vfs-cache-mode full --vfs-cache-max-size 3G --dir-cache-time 24h
+</span></span></code></pre></div><p>ここで踏んだもの。</p>
+<ul>
+<li><strong><code>rclone</code>の場所は<code>/usr/local/bin/rclone</code>で、<code>/usr/bin/rclone</code>ではなかった</strong>。systemd（Linuxの常駐サービス管理）はそれだけの理由で<code>203/EXEC</code>と言って起動に失敗する。<code>which rclone</code>で確かめる。<code>--allow-other</code>には<code>/etc/fuse.conf</code>への<code>user_allow_other</code>の追記も必要。</li>
+<li><strong><code>--dir-cache-time</code>は必ず延ばす</strong>。既定の5分だと期限切れごとにフォルダ一覧の問い合わせが全件走る。24時間にした。</li>
+<li>🔴 <strong>Immichのコンテナ設定で写真フォルダのマウント指定に<code>:rslave</code>を付けないと見えない</strong>。<code>docker-compose.yml</code>の<code>${UPLOAD_LOCATION}:/data</code>を<code>${UPLOAD_LOCATION}:/data:rslave</code>にする。コンテナ（ソフトを隔離した箱に入れて動かす仕組み）へのフォルダ受け渡しは既定で「あとから生えたマウントを伝えない」ので、<strong>ホスト側で後から作ったマウントはコンテナの中からは空に見える</strong>。ここで30分溶かした。なお<code>docker compose up -d immich_server</code>は<code>no such service</code>になる——<strong>設定上のサービス名はハイフンの<code>immich-server</code>、コンテナ名がアンダースコアの<code>immich_server</code></strong>。</li>
+</ul>
+<h3 id="一番危なかったのはバックアップスクリプトだった">一番危なかったのはバックアップスクリプトだった</h3>
+<p>実験で確証を取った、本当の地雷。毎晩のバックアップは<code>rclone sync</code>（送り元に無いものは送り先からも消す片方向ミラー）で動いている。<strong>ローカルの写真をシンボリックリンクに置き換えると、<code>rclone</code>は<code>Can't follow symlink without -L/--copy-links</code>と言ってそれをスキップし、「送り元に無い」と判断してB2側の実体を削除する。</strong></p>
+<ul>
+<li>🔴 <strong>行き先が存在しない壊れたリンクでも同じ挙動で、しかも終了コードは0</strong>（＝成功として記録される）。失敗として検知できない。つまり<strong>最も危険な順序は「B2へコピーする前にシンボリックリンクを作ってしまう」こと</strong>で、やると、その夜のバックアップがB2にある唯一の実体を無言で消す。</li>
+<li><code>--copy-links</code>を付ける解決策は不可。B2に二重保存になって容量が倍になる。</li>
+</ul>
+<p>正解は<code>--exclude &quot;cold/**&quot;</code>で追い出し先を同期対象から外し、<strong>かつ順序を守ること</strong>。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 1. B2の中で複製（同一バケット内のサーバーサイドコピー＝転送ゼロ・一瞬）</span>
+</span></span><span class="line"><span class="cl">rclone copyto REMOTE/immich/library/&lt;rel&gt; REMOTE/immich-cold/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 2. 宛先のサイズを照合</span>
+</span></span><span class="line"><span class="cl">rclone lsl REMOTE/immich-cold/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 3. ローカルの実体は「削除」ではなく退避（ロールバックできるように）</span>
+</span></span><span class="line"><span class="cl">mv library/upload/&lt;rel&gt; /root/poc-staging/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 4. 相対パスのリンクを張る（library まで ちょうど4階層）</span>
+</span></span><span class="line"><span class="cl">ln -s <span class="s2">&#34;../../../../cold/&lt;rel&gt;&#34;</span> library/upload/&lt;rel&gt;
+</span></span><span class="line"><span class="cl">chown -h &lt;user&gt;:&lt;user&gt; library/upload/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 5. リンク越しに md5 を照合。違ったら即ロールバック</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 6. 全件の検証が終わってから、はじめて旧パスを削除</span>
+</span></span><span class="line"><span class="cl">rclone deletefile REMOTE/immich/library/&lt;rel&gt;
+</span></span></code></pre></div><ul>
+<li><strong>存在確認に<code>rclone lsjson</code>を使ってはいけない</strong>。存在しないファイルを渡すとフォルダとして扱われ、空の一覧と<strong>終了コード0</strong>を返す。これで一度「B2にある」と誤判断した。<strong><code>rclone lsl</code>の出力が空でないことを見る。</strong></li>
+</ul>
+<h3 id="10枚で通して確認したこと">10枚で通して、確認したこと</h3>
+<p>PoC（Proof of Concept = 動くことを示すための小さな実装）として写真10枚・46MBで最後まで通した。ホストからもコンテナの中からも同じmd5で読め、ImmichのAPI経由でオリジナル画像が10/10でHTTP 200かつmd5一致、サムネイルは10/10がローカルから配信（<strong>一覧の表示速度は一切変わらない</strong>）、エラーログなし。B2からの初回読み込みは<strong>0.39秒</strong>（636KB）、キャッシュ後は<strong>0.017秒</strong>。</p>
+<p>そして<strong>最も確認したかったこと: マウントが切れたらどうなるか</strong>。<code>systemctl stop</code>で接続を落として測った。</p>
+<ul>
+<li>オリジナル画像は<strong>404</strong>、サムネイルは<strong>200のまま</strong></li>
+<li>写真のレコード件数は<strong>前・中・後で29,716件のまま不変</strong>、該当写真の削除日時もnullのまま</li>
+<li>マウントを戻すと即座に200に復帰</li>
+</ul>
+<p>つまり<strong>Immichは、ファイルが読めなくなっても勝手にレコードを消したりゴミ箱に落としたりしない</strong>。これが成立しなければ全部やめるつもりだった。</p>
+<p>安全網が既にあったことも実測した。<strong>B2のバケットは「隠してから30日で削除」の設定にしてあり、<code>rclone deletefile</code>は既定でハード削除ではなく論理削除</strong>。だから消したファイルは30日間復元できる。15分前に消した2.1MBのHEICを<code>rclone lsf --b2-versions</code>で版名（<code>&lt;名前&gt;-v&lt;日時&gt;.&lt;拡張子&gt;</code>）を調べて取り出し、md5一致まで確認した（<strong><code>--b2-versions</code>を付けても元のファイル名を渡すと失敗する</strong>ので、必ず版名で指定する）。これで「スクリプトのミスで写真が消える」は<strong>永久喪失ではなく30日以内なら戻せるミス</strong>に格下げされた。残る課題は復元手段ではなく<strong>30日以内に気づくこと</strong>になる。</p>
+<h2 id="途中で前提そのものを疑った">途中で前提そのものを疑った</h2>
+<p>10枚が通った時点でB2からの読み出し速度を測り直して、気が変わった。197MBのデータベースダンプが6.58秒＝<strong>約30MB/s</strong>、17MBの写真が単一ストリームで0.52秒＝<strong>約33MB/s（265Mbps）</strong>。一方で手元の動画は535本・平均11.6MB、ビットレートは平均7.3Mbps・上位5%で17.9Mbps・最大67.5Mbps。<strong>最も重い動画でも4倍近い余裕がある。</strong></p>
+<p>それなら「古い写真を追い出す」のではなく、<strong>写真の置き場そのものをB2にすればいい</strong>のではないか。SSDの天井が消える。コストも、写真をB2に置けば月$10前後、1TBまで増えても月$16で、大きいディスクのプランへ引っ越す月$19より安い。<strong>安いほうが天井も無い</strong>という綺麗な結論になりかけた。</p>
+<p>そこで手を止めて2つ調べた。</p>
+<h3 id="自分以外に誰がやっているのか">自分以外に誰がやっているのか</h3>
+<ul>
+<li><strong>主流は「オリジナルはローカル、クラウドはバックアップ専用」</strong>。<a href="https://docs.immich.app/administration/backup-and-restore/">Immich公式のバックアップ手順</a>もローカル本番を前提に書かれている。クラウドを本番の置き場にしている例は少数派・実験的で、数少ない実践者は「わずかなレイテンシのゆらぎでマウントが壊れる」「ローカルキャッシュがすぐ溢れる」と報告している。</li>
+<li><strong>「クラウドが唯一のコピー」でやっている人は、調べた範囲で1人も見つからなかった。</strong> 定番は3コピー（本番＋ローカルの2本目＋クラウド）。</li>
+<li>🔴 <strong>Immichに未解決の不具合がある</strong>: <a href="https://github.com/immich-app/immich/issues/10480">issue #10480</a> — サムネイル生成が同じファイルを2回読むため、リモートストレージでは<strong>ダウンロード量が実データの8〜10倍</strong>に膨らむ。16,000ファイル・110GBで900GBという報告がある。B2の無料ダウンロード枠は保存量の3倍/月なので、<strong>サムネイルの全件再生成を一度回すと枠を超えて課金が出る</strong>。</li>
+<li><strong>Immich本体のS3対応（オブジェクトストレージへの公式対応）は期待できない</strong>。2026年時点で未実装、ロードマップにも無い。**「待つ」は非現実的で、マウント方式が唯一の道（公式サポート外）**という整理になった。</li>
+<li>追い風もあった。<strong>B2のAPI呼び出し課金が2026-05-01に全廃された</strong>（代わりに保存料が$6→$6.95/TB/月に値上げ）ので、「マウントが大量の一覧取得を発行して請求が爆発する」という有名な事故モード（過去に約$598の実例がある）は構造的に消えていた。</li>
+</ul>
+<h3 id="暗号化のコストを測った">暗号化のコストを測った</h3>
+<p>クラウドに本番を置くなら預け先に中身を読まれない形にしたい。界隈の多数派も「上げる前に自分で暗号化する」だった。そして改めて気づいたのだが、<strong>自分の既存のバックアップは暗号化されていなかった</strong>。毎晩のバックアップを始めた時点で、預け先は写真59,000枚を読める状態だった。</p>
+<p>17MBの写真で測った結果は、<strong>暗号化あり0.63〜0.95秒 / 平文0.46〜0.53秒</strong>。差は0.2〜0.4秒でボトルネックは回線のまま。<strong>暗号化は速度面の障害にはならない。</strong></p>
+<ul>
+<li>⚠️ <strong>最初の計測では「暗号化7.01秒 vs 平文0.46秒＝15倍」と誤った結論を出した</strong>。原因は、比較した2つのマウントで<code>--vfs-read-chunk-size</code>などの設定が揃っていなかったこと。<strong>ベンチマークは条件を揃える。</strong> 危うく「暗号化は無理」と誤った判断を下すところだった。</li>
+<li>代償は速度ではなく別の2つ。①預け先のファイル名が不可読な文字列になり管理画面から中身を確認できない ②<strong>既存の115GBを暗号化し直すには全部アップロードし直す必要があり、「移行作業ゼロ」という最大の利点が消える</strong>。</li>
+</ul>
+<h2 id="本命の答えはボタンひとつだった">本命の答えは、ボタンひとつだった</h2>
+<p>ここまで自分は「B2へ追い出す」「オブジェクトストレージを本番にする」「大きいプランへ引っ越す」の3つを丁寧に比較していた。そして<strong>契約しているVPSの管理画面を開いて、「ディスクだけ足す」という選択肢を一度も検討していなかったことに気づいた。</strong></p>
+<p>Contaboの管理画面には**「Extend SSD Storage」ボタン**がある。<a href="https://help.contabo.com/en/support/solutions/articles/103000404620-can-i-add-more-ssd-storage-to-my-vps-or-vds-dedicated-server-">公式ヘルプ</a>にも、既存のVPSにSSDを足せる・再インストール不要・移行不要と書いてある。200GBを400GBにした。</p>
+<p>月額の増分で並べるとこうなる（2026年9月時点）。</p>
+<table>
+	<thead>
+			<tr>
+					<th>選択肢</th>
+					<th>月額の増分</th>
+					<th>必要な作業</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td><strong>SSDを200GB増設</strong></td>
+					<td><strong>+$3.60</strong></td>
+					<td><strong>なし</strong></td>
+			</tr>
+			<tr>
+					<td>B2へ追い出す（200GB相当）</td>
+					<td>+$0.87</td>
+					<td>マウント常駐＋リンク張り＋見張り＋孤児掃除</td>
+			</tr>
+			<tr>
+					<td>同社のオブジェクトストレージ（最小250GB）</td>
+					<td>+$2.99</td>
+					<td>同じくマウントが必要</td>
+			</tr>
+			<tr>
+					<td>大きいプランへ引っ越す</td>
+					<td>+$8〜10</td>
+					<td>データ移行、数分の停止</td>
+			</tr>
+	</tbody>
+</table>
+<p><strong>差額が月$2〜3しかないなら、その$2で複雑さを全部買い取れる。</strong> 一晩かけて作った仕掛けは、この表の2行目のためのものだった。</p>
+<h3 id="増設の実作業">増設の実作業</h3>
+<p>公式ヘルプの「activated right away（即座に有効、再起動不要）」は実態と違った。⚠️ <strong>増設は業者側の強制リセットを伴った</strong>——正常なシャットダウンの記録がなく、前のログが突然途切れている。<strong>増設するときはダウンタイムを見込むこと。</strong> 結果的に、<strong>予期しない電源断からの自動復旧が完全に機能することが実証できた</strong>（コンテナ14個・常駐サービス7件・公開している9サービスすべて復帰、写真のデータ欠損ゼロ）。棚からぼた餅の検証になった。</p>
+<p><strong>増えた分は既存ディスクの拡大として現れた</strong>（別のディスクとしてではない）。ただし<strong>パーティションとファイルシステムは自動では広がらない</strong>ので、ここだけ手作業。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 作業前に、必ず手動でバックアップを一度完走させる</span>
+</span></span><span class="line"><span class="cl">/root/backup-scripts/backup-to-b2.sh
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">growpart --dry-run /dev/sda <span class="m">1</span>   <span class="c1"># まず空振りで確認</span>
+</span></span><span class="line"><span class="cl">growpart /dev/sda <span class="m">1</span>             <span class="c1"># パーティションを広げる</span>
+</span></span><span class="line"><span class="cl">resize2fs /dev/sda1             <span class="c1"># ファイルシステムを広げる</span>
+</span></span></code></pre></div><ul>
+<li>ルートのパーティションテーブルを書き換える操作なので、<strong>直前のバックアップは作法として必須</strong>。</li>
+<li>対象が最後のパーティションで、直後に連続した空き領域がある理想的なケースだった。ext4に<code>resize_inode</code>があるので<strong>マウントしたまま、無停止でオンライン拡張できた</strong>。</li>
+<li>結果: パーティション199GB→399GB、ファイルシステム193GB→387GB、<strong>使用率93%→46%、空き16GB→209GB</strong>。RAWを30MB換算で約7,000枚の余裕。</li>
+<li><strong>料金の実績は月$9.00 → $12.60。100GBあたり月$1.80（＝$18/TB/月）。</strong></li>
+</ul>
+<h2 id="仕掛けは完全に撤去した">仕掛けは完全に撤去した</h2>
+<p>増設で解決したので、一晩かけて作ったものは全部元に戻した。<strong>「使っていないだけ」で残すのが一番たちが悪い</strong>——あとでバックアップスクリプトを触ったときに、忘れた除外設定が事故になる。退避していた10枚の実体を元の場所に戻してB2へ再アップロードし、追い出し先のプレフィックスを削除。常駐マウントのサービスを停止・無効化・削除し、マウント用フォルダと<code>/etc/fuse.conf</code>の追記も撤去。バックアップスクリプトの<code>--exclude &quot;cold/**&quot;</code>とコンテナ設定の<code>:rslave</code>は、<strong>事前に取った<code>.bak</code>との差分で元と一致することを確認してから<code>.bak</code>も消した</strong>。撤去後の検証は10枚のmd5一致・シンボリックリンク0件・API 10/10・B2側も10/10復元・レコード件数29,716件で不変。</p>
+<p>残したのは<strong>メモだけ</strong>。実際に効いた相対パスとmd5の一覧を<code>/root/notes/</code>に置いてある。将来TB級になってオブジェクトストレージが本当に必要になったとき、この一晩をゼロからやり直さずに済むように。</p>
+<h2 id="単価で見るといつか判断が逆転する">単価で見ると、いつか判断が逆転する</h2>
+<p>増設が常に正解ではない。1TBあたりの単価では<strong>増設が一番高い</strong>（VPSのSSD増設 <strong>$18/TB</strong> ＞ 同社オブジェクトストレージ $11.96/TB ＞ B2 <strong>$6.95/TB</strong>）。200GBでは差額が月$2程度にしかならないから複雑さを避けるのが正解だった、という話にすぎない。分岐点は2つ決めてある。<strong>追い出したい古い写真が1TBを超えたらB2方式を再検討する</strong>（差額が年$132になり、ようやくマウント方式の複雑さを引き受ける価値が出る）。<strong>1TB規模ならプランごと乗り換えたほうが安い</strong>（現プラン＋800GB増設の月$23.40に対し、1TBのSSDが付いたプランは月$15前後。ただし数分の停止を伴うし、<strong>SSDからNVMeへの変更は再インストール必須</strong>なので絶対に選ばない）。</p>
+<p>残っている課題も書いておく。<strong>写真の2本目のコピーは引き続きバックアップ先の1本だけ</strong>で、以前使っていた自宅のPCに全量が残っているうちは3コピーだが、あれを片付けるときに決め直す必要がある。<strong>バックアップの暗号化も未着手</strong>——速度は問題にならないと測れたが、115GBを全部アップロードし直すコストが残っている。</p>
+<h2 id="この遠回りから取ったもの">この遠回りから取ったもの</h2>
+<p>一晩かけて作って、10枚で実証して、全部捨てた。<strong>月$3.60のボタンを先に押していれば丸ごと要らなかった作業</strong>だ。素直に書くと、「どう作るか」を考えるのが面白くて、「買えば済むか」を確かめる手順を飛ばしていた。</p>
+<p><strong>構成を変える検討を始めるときは、まず今契約しているサービスの管理画面に、その問題をそのまま解決するボタンが無いかを確認する。</strong> 自分は3つの案を丁寧に比較表にしておいて、「ディスクだけ足す」をその表に入れていなかった。<strong>選択肢の作り方を間違えると、どれだけ丁寧に比べても正解には当たらない。</strong></p>
+<p>捨てた作業から残ったものもある。マウントが切れてもImmichのレコードは壊れないこと、削除が30日間は取り返せること、<code>rclone sync</code>がリンクを見て送り先を消すこと、暗号化が速度の障害にならないこと、サムネイルの全件再生成が課金を踏むこと。これは<strong>どの方式を選んでも効く知識</strong>で、1TBを超えた日に取り出せる形でメモに残した。遠回りの元は取れていないが、ゼロでもない。</p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+]]></content:encoded></item></channel></rss>
