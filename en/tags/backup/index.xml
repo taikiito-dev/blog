@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Backup on Off-Grid</title><link>https://offgrid.taikiito.com/en/tags/backup/</link><description>Recent content in Backup on Off-Grid</description><generator>Hugo</generator><language>en-US</language><lastBuildDate>Wed, 07 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/en/tags/backup/index.xml" rel="self" type="application/rss+xml"/><item><title>Running My Own Server: Fourteen Months of Decisions</title><link>https://offgrid.taikiito.com/en/guides/self-hosted-server-decisions/</link><pubDate>Wed, 07 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/en/guides/self-hosted-server-decisions/</guid><description>A non-engineer&amp;#39;s record of running a self-hosted server for fourteen months: what is on it, five dated decisions, the options turned down, and which calls look right in hindsight.</description><content:encoded><![CDATA[<p>I am not a software engineer. I negotiate crude oil contracts for a living and I have never held a job that involved writing code.</p>
+<p>In 2025 I started moving what I had been keeping on large cloud services onto a single server I pay a monthly fee for. Photos, files, passwords, calendars, and eventually mail.</p>
+<p>The reason was simple: <strong>I did not like that the terms of custody could change at the custodian&rsquo;s convenience.</strong> Price rises, feature removals, policy changes, account suspensions. None of them are things I can stop. At some point it stopped sitting well with me that everything of the irreplaceable kind — photographs going back to childhood, years of correspondence — was stacked on top of things I could not stop.</p>
+<p>Fourteen months later, that server is still running. Two users. It has not been out of my hands for a day.</p>
+<p>This page is a record of <strong>what I decided</strong> over those fourteen months: what I was torn between, which option I took, which ones I turned down, and whether the call looks right or wrong from here. With dates. It is not a runbook — if that is what you came for, read &ldquo;What is on it&rdquo; below and then go to the <a href="https://github.com/taikiito-dev">repository</a> instead.</p>
+<h2 id="what-is-on-it">What is on it</h2>
+<p>One rented virtual private server, under ten dollars a month. Nothing is exposed by opening ports inward; it is reached through a tunnel the server itself dials outward.</p>
+<p>On it: photos, files, passwords, calendars and contacts, a single sign-on front door, a git repository, uptime monitoring, and a chat-and-calendar app I had built for myself. Backups go offsite every night, encrypted.</p>
+<p>Mail came last and matters most. Roughly 53,000 messages now live on a domain I own. <strong>That is the part that actually changed things.</strong> Because the address is mine, I can change providers without telling anyone that my address changed — which is the first time the custodian became a replaceable part rather than the foundation.</p>
+<p>Two users. One is me; the other is simply a user, and not an engineer either. So &ldquo;it only breaks for me&rdquo; was never an available excuse.</p>
+<h2 id="the-division-of-labour--i-am-not-the-one-typing">The division of labour — I am not the one typing</h2>
+<p>Now the part worth being explicit about. Of everything listed above, <strong>I have typed almost none of the commands.</strong> I did not write the configuration files either. Claude — Anthropic&rsquo;s AI assistant — did that. I decided.</p>
+<p>This was not a workaround for lack of time. It is the split that produces the most, because not holding the implementation means <strong>I can spend all of my attention on the decisions.</strong> And after fourteen months, what in those decisions was actually doing the work narrowed to exactly one thing.</p>
+<p><strong>Doubting the all-clear.</strong> That is it.</p>
+<p>There is a structural reason for it. <strong>Claude wants the task to be finished. I am fine if it isn&rsquo;t.</strong> That asymmetry is the source of everything below. The implementing side has a motive to say &ldquo;done&rdquo;; I have none. So the doubt has to come from my side — not because I know more, but because I am standing somewhere else.</p>
+<p>The five records below are the occasions where that asymmetry actually paid.</p>
+<hr>
+<h2 id="decision-1--i-was-out-of-disk-three-options-were-compared-and-i-picked-a-fourth">Decision 1 — I was out of disk. Three options were compared, and I picked a fourth</h2>
+<p><strong>Date.</strong> September 2026</p>
+<p><strong>What I was torn between.</strong> A 200 GB disk was filling up, and photos only ever grow.</p>
+<p><strong>The options I was given.</strong> Three. One, move old data to cheaper network-attached storage. Two, switch to a different storage product. Three, migrate to a bigger server. I was handed a genuine comparison — cost per terabyte, egress charges, failure modes, migration runbooks. I stayed in that comparison for weeks.</p>
+<p><strong>What I chose.</strong> <strong>None of them. I made the disk bigger.</strong> My provider&rsquo;s control panel has a button labelled <strong>Extend SSD Storage</strong>. No reinstall, no migration. 200 GB to 400 GB, done that afternoon.</p>
+<p><strong>What I turned down.</strong> All three. The first was the one most strongly recommended.</p>
+<p><strong>Why.</strong> Reading the comparison table, I noticed every row had the same property: <strong>the setup gets more complicated than it is today.</strong> Data in two places, one more vendor, a longer restore procedure. I am not an engineer, and I am the one who has to fix this when it breaks. <strong>Saving a few dollars a month and being able to fix it myself are not tradeable against each other.</strong> So I asked the dumbest question available: can I just make this disk bigger? I could.</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Right — but not cleanly right.</strong> At the capacity I actually needed, extending the disk is the <em>most</em> expensive option per terabyte. On price alone I lost. It was still correct, because price was never the axis that mattered.</p>
+<p><strong>What stuck.</strong> When a comparison table appears, <strong>go looking for one option that is not on it.</strong> Boring options — &ldquo;just make it bigger&rdquo;, &ldquo;just turn it off&rdquo;, &ldquo;just delete it&rdquo; — rarely make the table, because there is nothing to compare. For weeks I had been solving a harder problem than the one I owned.</p>
+<hr>
+<h2 id="decision-2--i-wanted-to-run-my-own-mail-i-decided-not-to">Decision 2 — I wanted to run my own mail. I decided not to</h2>
+<p><strong>Date.</strong> 27 September 2026</p>
+<p><strong>What I was torn between.</strong> Moving mail onto my own domain was already done. The question was whether to run delivery itself on my own server. The research was finished and the method was clear.</p>
+<p><strong>What I chose.</strong> <strong>Not to.</strong> Delivery stays with a provider (Fastmail). What I own is the domain.</p>
+<p><strong>What I turned down.</strong> Running my own mail server. <strong>This was the option I wanted.</strong></p>
+<p><strong>Why.</strong> Because breaking means something different here than anywhere else in the stack. If photo sync stops for three days, the only person inconvenienced is me. <strong>If mail stops for three days, the other person never learns I am unreachable, and their business stops instead of mine.</strong> Worse, delivery failures are quiet — there is no guarantee I would notice.</p>
+<p>I also had precedent against myself: I once left the server down for five and a half days while travelling. The reason that cost nothing is that what went down was photos and a calendar.</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Right — but it is the kind of call you can never confirm.</strong> The correctness of something you did not do can only be measured in accidents that did not happen.</p>
+<p><strong>What stuck.</strong> Decide what to self-host by asking <strong>who is inconvenienced when it breaks.</strong> If only I am, self-host it. If someone else&rsquo;s business stops, use a provider. &ldquo;Can it technically be done&rdquo; is not an input. Doing it because it is possible has the order backwards.</p>
+<p>So far nothing else has crossed that line.</p>
+<hr>
+<h2 id="decision-3--i-stopped-believing-backups-are-running">Decision 3 — I stopped believing &ldquo;backups are running&rdquo;</h2>
+<p><strong>Date.</strong> August–September 2026, several times</p>
+<p><strong>What I was torn between.</strong> The nightly backup had been reporting success for months. No alerts. Was that good enough?</p>
+<p><strong>What I chose.</strong> <strong>Count it myself.</strong> During a server migration I compared photo counts between the old and new machines by hand.</p>
+<p><strong>What came out.</strong> <strong>Forty-six files existed only on the machine I was about to decommission.</strong> The backup script had been stopping at one step partway through, and everything after that step had not run for months. Silently. &ldquo;Success&rdquo; had only ever meant &ldquo;it did not break in a way I would notice.&rdquo;</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Right — and I only just made it.</strong> If I had not counted, those forty-six were gone. My reason for counting was not even principled: I was mid-migration and both machines happened to be in front of me.</p>
+<p><strong>Three more wins of the same shape</strong></p>
+<ul>
+<li><strong>A mail client migration.</strong> Reported complete. It was not complete.</li>
+<li><strong>A mail tooling integration.</strong> Reported solved three times. Not solved, three times.</li>
+<li><strong>A 53,000-message mail migration.</strong> Source and destination counts were &ldquo;roughly equal&rdquo;, and I nearly called it done. <strong>Six weeks of mail had not transferred at all.</strong> The gap happened to sit just inside my personal tolerance for &ldquo;roughly&rdquo;. I recovered 7,536 messages only because an export I had made months earlier for an unrelated reason was still sitting in a trash folder. <strong>That is not a restore procedure. That is luck.</strong></li>
+</ul>
+<p><strong>What stuck.</strong> Three things.</p>
+<p><strong>Treat &ldquo;success&rdquo; as a claim, not a result.</strong> Exit code 0, 200 OK, &ldquo;no alerts&rdquo;, &ldquo;done&rdquo; — every one of them answers a narrower question than the one I am asking.</p>
+<p><strong>Verify by a different route than the one that did the work.</strong> Verifying along the same route just runs the same assumption twice.</p>
+<p><strong>Match the granularity of the check to the granularity of what you would miss.</strong> Aggregate comparisons hide compensating errors. If 500 items fail to copy and 480 duplicate, your totals agree and your data is wrong.</p>
+<hr>
+<h2 id="decision-4--i-called-the-restore-direction-myself">Decision 4 — I called the restore direction myself</h2>
+<p><strong>Date.</strong> September 2026</p>
+<p><strong>What I was torn between.</strong> Backups were going offsite encrypted. How they come <em>back</em> had not been decided.</p>
+<p><strong>What I chose.</strong> <strong>The server pulls from the backup store.</strong> This one was my call.</p>
+<p><strong>Why.</strong> Not for a technical reason. I thought: <strong>if something has to push the data in, then restoring requires that pushing machine to still be alive.</strong> Needing a second working machine in order to recover from the first one dying felt wrong.</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Right — and the situation actually arrived.</strong> At one point the configuration file needed to perform a restore existed only <em>inside</em> the backup. Keys locked in the safe, safe locked with the keys. Pull was the only direction that works out of that.</p>
+<p><strong>What stuck.</strong> <strong>A backup you have never restored is not a backup.</strong> And being a non-engineer is not a handicap on this kind of call. &ldquo;What is still in my hands when this breaks&rdquo; is a question about sequence, not about technology — and sequence is what I do for a living.</p>
+<hr>
+<h2 id="decision-5--i-stopped-accepting-build-succeeded-as-evidence-today">Decision 5 — I stopped accepting &ldquo;build succeeded&rdquo; as evidence (today)</h2>
+<p><strong>Date.</strong> 7 October 2026</p>
+<p><strong>What I was torn between.</strong> I added two articles to this site. Publishing succeeded. <strong>The articles did not appear.</strong></p>
+<p><strong>What was actually happening.</strong> Two unrelated causes stacked. First, a configuration key in the site generator had been renamed in a newer version — and the old key is simply <em>ignored</em>, so the build keeps succeeding and quietly emits nothing. Second, I had dated an article in the future, and the tool does not publish future-dated pages by default. Also silent.</p>
+<p>Neither counts as a failure, so the success report was true. <strong>It just answered something other than the question I was asking, which was: can the article be read?</strong></p>
+<p><strong>What I chose.</strong> Stamp the published output with <strong>the commit it was built from</strong> (<code>build-id.txt</code>).</p>
+<p><strong>What I turned down.</strong> &ldquo;Be more careful next time.&rdquo; I have tried that repeatedly and it has never once worked.</p>
+<p><strong>Why that shape.</strong> What actually hurts me is not knowing which of two things is wrong: is publishing lagging, or did the article get dropped? Those two have opposite responses, and guessing wrong costs hours of waiting. So all I need is to know which commit production came from. <strong>I do not need the cause. Once the problem is halved, finding the cause is Claude&rsquo;s job.</strong></p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Unknown.</strong> I added it today, and it pays off the next time this happens. I will come back and fill this in.</p>
+<p><strong>What stuck.</strong> My job is not to find the cause. <strong>It is to cut the search space in half.</strong> That does not require knowing the implementation.</p>
+<hr>
+<h2 id="the-habits-i-actually-use-now">The habits I actually use now</h2>
+<p>Only the ones that survived the five records above.</p>
+<p><strong>1. When I hear &ldquo;done&rdquo;, I look at the outcome by a route other than the work.</strong> I only have to look at the result. I do not have to understand the route.</p>
+<p><strong>2. I am most suspicious right after something is fixed.</strong> A problem I have crossed off is no longer being watched, which makes a half-fix more dangerous than no fix.</p>
+<p><strong>3. When a comparison table appears, I hunt for the boring option missing from it.</strong> Just make it bigger. Just stop doing it. Just delete the component. Interesting solutions crowd out boring ones, and at this size the boring one is usually right.</p>
+<p><strong>4. I decide what to self-host by who is inconvenienced when it breaks.</strong> Technical feasibility is not an input.</p>
+<p><strong>5. When the same symptom stops me three times, I build a tool that narrows it down rather than hunting the cause.</strong> The cause was different every time — one error code, three occurrences, three genuinely different root causes. The reason a fourth evening did not go the same way is that the first three were written down.</p>
+<hr>
+<h2 id="the-question-i-still-cannot-answer">The question I still cannot answer</h2>
+<p>One thing is genuinely open.</p>
+<p><strong>Did I win those five because I doubted, or because I happened to be looking?</strong> The forty-six photos surfaced because both machines were in front of me mid-migration. The six weeks of mail survived because of an export sitting in a trash folder. Neither is comfortably a credit to me.</p>
+<p>The checks I have put in since are an attempt to convert that luck into procedure. Whether it worked is not yet known. The next time something slips through, it goes here.</p>
+<hr>
+<p><em>Commands, configuration, and the technical root causes live in the <a href="https://github.com/taikiito-dev">repository</a>, not on this site. This page is a record of decisions, not a runbook.</em></p>
+<p><em>Fourteen months, one server, two users. I have not typed it. I have decided it.</em></p>
+]]></content:encoded></item></channel></rss>

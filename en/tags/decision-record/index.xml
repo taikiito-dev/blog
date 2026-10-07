@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Decision Record on Off-Grid</title><link>https://offgrid.taikiito.com/en/tags/decision-record/</link><description>Recent content in Decision Record on Off-Grid</description><generator>Hugo</generator><language>en-US</language><lastBuildDate>Wed, 07 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/en/tags/decision-record/index.xml" rel="self" type="application/rss+xml"/><item><title>Running My Own Server: Fourteen Months of Decisions</title><link>https://offgrid.taikiito.com/en/guides/self-hosted-server-decisions/</link><pubDate>Wed, 07 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/en/guides/self-hosted-server-decisions/</guid><description>A non-engineer&amp;#39;s record of running a self-hosted server for fourteen months: what is on it, five dated decisions, the options turned down, and which calls look right in hindsight.</description><content:encoded><![CDATA[<p>I am not a software engineer. I negotiate crude oil contracts for a living and I have never held a job that involved writing code.</p>
+<p>In 2025 I started moving what I had been keeping on large cloud services onto a single server I pay a monthly fee for. Photos, files, passwords, calendars, and eventually mail.</p>
+<p>The reason was simple: <strong>I did not like that the terms of custody could change at the custodian&rsquo;s convenience.</strong> Price rises, feature removals, policy changes, account suspensions. None of them are things I can stop. At some point it stopped sitting well with me that everything of the irreplaceable kind — photographs going back to childhood, years of correspondence — was stacked on top of things I could not stop.</p>
+<p>Fourteen months later, that server is still running. Two users. It has not been out of my hands for a day.</p>
+<p>This page is a record of <strong>what I decided</strong> over those fourteen months: what I was torn between, which option I took, which ones I turned down, and whether the call looks right or wrong from here. With dates. It is not a runbook — if that is what you came for, read &ldquo;What is on it&rdquo; below and then go to the <a href="https://github.com/taikiito-dev">repository</a> instead.</p>
+<h2 id="what-is-on-it">What is on it</h2>
+<p>One rented virtual private server, under ten dollars a month. Nothing is exposed by opening ports inward; it is reached through a tunnel the server itself dials outward.</p>
+<p>On it: photos, files, passwords, calendars and contacts, a single sign-on front door, a git repository, uptime monitoring, and a chat-and-calendar app I had built for myself. Backups go offsite every night, encrypted.</p>
+<p>Mail came last and matters most. Roughly 53,000 messages now live on a domain I own. <strong>That is the part that actually changed things.</strong> Because the address is mine, I can change providers without telling anyone that my address changed — which is the first time the custodian became a replaceable part rather than the foundation.</p>
+<p>Two users. One is me; the other is simply a user, and not an engineer either. So &ldquo;it only breaks for me&rdquo; was never an available excuse.</p>
+<h2 id="the-division-of-labour--i-am-not-the-one-typing">The division of labour — I am not the one typing</h2>
+<p>Now the part worth being explicit about. Of everything listed above, <strong>I have typed almost none of the commands.</strong> I did not write the configuration files either. Claude — Anthropic&rsquo;s AI assistant — did that. I decided.</p>
+<p>This was not a workaround for lack of time. It is the split that produces the most, because not holding the implementation means <strong>I can spend all of my attention on the decisions.</strong> And after fourteen months, what in those decisions was actually doing the work narrowed to exactly one thing.</p>
+<p><strong>Doubting the all-clear.</strong> That is it.</p>
+<p>There is a structural reason for it. <strong>Claude wants the task to be finished. I am fine if it isn&rsquo;t.</strong> That asymmetry is the source of everything below. The implementing side has a motive to say &ldquo;done&rdquo;; I have none. So the doubt has to come from my side — not because I know more, but because I am standing somewhere else.</p>
+<p>The five records below are the occasions where that asymmetry actually paid.</p>
+<hr>
+<h2 id="decision-1--i-was-out-of-disk-three-options-were-compared-and-i-picked-a-fourth">Decision 1 — I was out of disk. Three options were compared, and I picked a fourth</h2>
+<p><strong>Date.</strong> September 2026</p>
+<p><strong>What I was torn between.</strong> A 200 GB disk was filling up, and photos only ever grow.</p>
+<p><strong>The options I was given.</strong> Three. One, move old data to cheaper network-attached storage. Two, switch to a different storage product. Three, migrate to a bigger server. I was handed a genuine comparison — cost per terabyte, egress charges, failure modes, migration runbooks. I stayed in that comparison for weeks.</p>
+<p><strong>What I chose.</strong> <strong>None of them. I made the disk bigger.</strong> My provider&rsquo;s control panel has a button labelled <strong>Extend SSD Storage</strong>. No reinstall, no migration. 200 GB to 400 GB, done that afternoon.</p>
+<p><strong>What I turned down.</strong> All three. The first was the one most strongly recommended.</p>
+<p><strong>Why.</strong> Reading the comparison table, I noticed every row had the same property: <strong>the setup gets more complicated than it is today.</strong> Data in two places, one more vendor, a longer restore procedure. I am not an engineer, and I am the one who has to fix this when it breaks. <strong>Saving a few dollars a month and being able to fix it myself are not tradeable against each other.</strong> So I asked the dumbest question available: can I just make this disk bigger? I could.</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Right — but not cleanly right.</strong> At the capacity I actually needed, extending the disk is the <em>most</em> expensive option per terabyte. On price alone I lost. It was still correct, because price was never the axis that mattered.</p>
+<p><strong>What stuck.</strong> When a comparison table appears, <strong>go looking for one option that is not on it.</strong> Boring options — &ldquo;just make it bigger&rdquo;, &ldquo;just turn it off&rdquo;, &ldquo;just delete it&rdquo; — rarely make the table, because there is nothing to compare. For weeks I had been solving a harder problem than the one I owned.</p>
+<hr>
+<h2 id="decision-2--i-wanted-to-run-my-own-mail-i-decided-not-to">Decision 2 — I wanted to run my own mail. I decided not to</h2>
+<p><strong>Date.</strong> 27 September 2026</p>
+<p><strong>What I was torn between.</strong> Moving mail onto my own domain was already done. The question was whether to run delivery itself on my own server. The research was finished and the method was clear.</p>
+<p><strong>What I chose.</strong> <strong>Not to.</strong> Delivery stays with a provider (Fastmail). What I own is the domain.</p>
+<p><strong>What I turned down.</strong> Running my own mail server. <strong>This was the option I wanted.</strong></p>
+<p><strong>Why.</strong> Because breaking means something different here than anywhere else in the stack. If photo sync stops for three days, the only person inconvenienced is me. <strong>If mail stops for three days, the other person never learns I am unreachable, and their business stops instead of mine.</strong> Worse, delivery failures are quiet — there is no guarantee I would notice.</p>
+<p>I also had precedent against myself: I once left the server down for five and a half days while travelling. The reason that cost nothing is that what went down was photos and a calendar.</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Right — but it is the kind of call you can never confirm.</strong> The correctness of something you did not do can only be measured in accidents that did not happen.</p>
+<p><strong>What stuck.</strong> Decide what to self-host by asking <strong>who is inconvenienced when it breaks.</strong> If only I am, self-host it. If someone else&rsquo;s business stops, use a provider. &ldquo;Can it technically be done&rdquo; is not an input. Doing it because it is possible has the order backwards.</p>
+<p>So far nothing else has crossed that line.</p>
+<hr>
+<h2 id="decision-3--i-stopped-believing-backups-are-running">Decision 3 — I stopped believing &ldquo;backups are running&rdquo;</h2>
+<p><strong>Date.</strong> August–September 2026, several times</p>
+<p><strong>What I was torn between.</strong> The nightly backup had been reporting success for months. No alerts. Was that good enough?</p>
+<p><strong>What I chose.</strong> <strong>Count it myself.</strong> During a server migration I compared photo counts between the old and new machines by hand.</p>
+<p><strong>What came out.</strong> <strong>Forty-six files existed only on the machine I was about to decommission.</strong> The backup script had been stopping at one step partway through, and everything after that step had not run for months. Silently. &ldquo;Success&rdquo; had only ever meant &ldquo;it did not break in a way I would notice.&rdquo;</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Right — and I only just made it.</strong> If I had not counted, those forty-six were gone. My reason for counting was not even principled: I was mid-migration and both machines happened to be in front of me.</p>
+<p><strong>Three more wins of the same shape</strong></p>
+<ul>
+<li><strong>A mail client migration.</strong> Reported complete. It was not complete.</li>
+<li><strong>A mail tooling integration.</strong> Reported solved three times. Not solved, three times.</li>
+<li><strong>A 53,000-message mail migration.</strong> Source and destination counts were &ldquo;roughly equal&rdquo;, and I nearly called it done. <strong>Six weeks of mail had not transferred at all.</strong> The gap happened to sit just inside my personal tolerance for &ldquo;roughly&rdquo;. I recovered 7,536 messages only because an export I had made months earlier for an unrelated reason was still sitting in a trash folder. <strong>That is not a restore procedure. That is luck.</strong></li>
+</ul>
+<p><strong>What stuck.</strong> Three things.</p>
+<p><strong>Treat &ldquo;success&rdquo; as a claim, not a result.</strong> Exit code 0, 200 OK, &ldquo;no alerts&rdquo;, &ldquo;done&rdquo; — every one of them answers a narrower question than the one I am asking.</p>
+<p><strong>Verify by a different route than the one that did the work.</strong> Verifying along the same route just runs the same assumption twice.</p>
+<p><strong>Match the granularity of the check to the granularity of what you would miss.</strong> Aggregate comparisons hide compensating errors. If 500 items fail to copy and 480 duplicate, your totals agree and your data is wrong.</p>
+<hr>
+<h2 id="decision-4--i-called-the-restore-direction-myself">Decision 4 — I called the restore direction myself</h2>
+<p><strong>Date.</strong> September 2026</p>
+<p><strong>What I was torn between.</strong> Backups were going offsite encrypted. How they come <em>back</em> had not been decided.</p>
+<p><strong>What I chose.</strong> <strong>The server pulls from the backup store.</strong> This one was my call.</p>
+<p><strong>Why.</strong> Not for a technical reason. I thought: <strong>if something has to push the data in, then restoring requires that pushing machine to still be alive.</strong> Needing a second working machine in order to recover from the first one dying felt wrong.</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Right — and the situation actually arrived.</strong> At one point the configuration file needed to perform a restore existed only <em>inside</em> the backup. Keys locked in the safe, safe locked with the keys. Pull was the only direction that works out of that.</p>
+<p><strong>What stuck.</strong> <strong>A backup you have never restored is not a backup.</strong> And being a non-engineer is not a handicap on this kind of call. &ldquo;What is still in my hands when this breaks&rdquo; is a question about sequence, not about technology — and sequence is what I do for a living.</p>
+<hr>
+<h2 id="decision-5--i-stopped-accepting-build-succeeded-as-evidence-today">Decision 5 — I stopped accepting &ldquo;build succeeded&rdquo; as evidence (today)</h2>
+<p><strong>Date.</strong> 7 October 2026</p>
+<p><strong>What I was torn between.</strong> I added two articles to this site. Publishing succeeded. <strong>The articles did not appear.</strong></p>
+<p><strong>What was actually happening.</strong> Two unrelated causes stacked. First, a configuration key in the site generator had been renamed in a newer version — and the old key is simply <em>ignored</em>, so the build keeps succeeding and quietly emits nothing. Second, I had dated an article in the future, and the tool does not publish future-dated pages by default. Also silent.</p>
+<p>Neither counts as a failure, so the success report was true. <strong>It just answered something other than the question I was asking, which was: can the article be read?</strong></p>
+<p><strong>What I chose.</strong> Stamp the published output with <strong>the commit it was built from</strong> (<code>build-id.txt</code>).</p>
+<p><strong>What I turned down.</strong> &ldquo;Be more careful next time.&rdquo; I have tried that repeatedly and it has never once worked.</p>
+<p><strong>Why that shape.</strong> What actually hurts me is not knowing which of two things is wrong: is publishing lagging, or did the article get dropped? Those two have opposite responses, and guessing wrong costs hours of waiting. So all I need is to know which commit production came from. <strong>I do not need the cause. Once the problem is halved, finding the cause is Claude&rsquo;s job.</strong></p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Unknown.</strong> I added it today, and it pays off the next time this happens. I will come back and fill this in.</p>
+<p><strong>What stuck.</strong> My job is not to find the cause. <strong>It is to cut the search space in half.</strong> That does not require knowing the implementation.</p>
+<hr>
+<h2 id="the-habits-i-actually-use-now">The habits I actually use now</h2>
+<p>Only the ones that survived the five records above.</p>
+<p><strong>1. When I hear &ldquo;done&rdquo;, I look at the outcome by a route other than the work.</strong> I only have to look at the result. I do not have to understand the route.</p>
+<p><strong>2. I am most suspicious right after something is fixed.</strong> A problem I have crossed off is no longer being watched, which makes a half-fix more dangerous than no fix.</p>
+<p><strong>3. When a comparison table appears, I hunt for the boring option missing from it.</strong> Just make it bigger. Just stop doing it. Just delete the component. Interesting solutions crowd out boring ones, and at this size the boring one is usually right.</p>
+<p><strong>4. I decide what to self-host by who is inconvenienced when it breaks.</strong> Technical feasibility is not an input.</p>
+<p><strong>5. When the same symptom stops me three times, I build a tool that narrows it down rather than hunting the cause.</strong> The cause was different every time — one error code, three occurrences, three genuinely different root causes. The reason a fourth evening did not go the same way is that the first three were written down.</p>
+<hr>
+<h2 id="the-question-i-still-cannot-answer">The question I still cannot answer</h2>
+<p>One thing is genuinely open.</p>
+<p><strong>Did I win those five because I doubted, or because I happened to be looking?</strong> The forty-six photos surfaced because both machines were in front of me mid-migration. The six weeks of mail survived because of an export sitting in a trash folder. Neither is comfortably a credit to me.</p>
+<p>The checks I have put in since are an attempt to convert that luck into procedure. Whether it worked is not yet known. The next time something slips through, it goes here.</p>
+<hr>
+<p><em>Commands, configuration, and the technical root causes live in the <a href="https://github.com/taikiito-dev">repository</a>, not on this site. This page is a record of decisions, not a runbook.</em></p>
+<p><em>Fourteen months, one server, two users. I have not typed it. I have decided it.</em></p>
+]]></content:encoded></item><item><title>Taste Is Not a Reason</title><link>https://offgrid.taikiito.com/en/guides/ui-decisions-by-measurement/</link><pubDate>Wed, 07 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/en/guides/ui-decisions-by-measurement/</guid><description>A non-engineer&amp;#39;s record of deciding a chat app&amp;#39;s interface by measurement rather than preference: why every read receipt was retired, what was cut for speed, and the one decision that broke the app outright.</description><content:encoded><![CDATA[<p>I have spent several weeks adjusting a chat-and-calendar progressive web app that two people use — myself and one other. Well over a hundred changes, almost all of them about how it looks.</p>
+<p>The division of labour first. <strong>I did not write the CSS or the JavaScript.</strong> Claude — Anthropic&rsquo;s AI assistant — wrote it. What I did was use the thing on a real phone, say where it felt wrong, and choose from the options that came back.</p>
+<p>That split fits visual work unusually well. <strong>This app has two users, so the only person who can say &ldquo;this is hard to read while using it&rdquo; is someone using it.</strong> Getting the discomfort into words was my half; turning the words into numbers was Claude&rsquo;s. Every one of the five records below starts with me pointing at something.</p>
+<p>What follows is the decisions. Measurements and implementation are collected in the lower half of this page.</p>
+<hr>
+<h2 id="decision-1--i-retired-every-read-receipt">Decision 1 — I retired every read receipt</h2>
+<p><strong>Date.</strong> 7 October 2026</p>
+<p><strong>What I was torn between.</strong> Each message carried a small tick inside its bubble — dark once the other person had read it, faint until then. A familiar design. It was hard to read in use, and it took me a while to say why. My first attempt was only &ldquo;the read tick overlaps the sticker and I can&rsquo;t see it.&rdquo;</p>
+<p>After that was fixed I looked again, and finally got it out: <strong>&ldquo;the dark-text/faint-text inversion is reversed, and it&rsquo;s confusing.&rdquo;</strong></p>
+<p><strong>What came out.</strong> Measured, it looked like this.</p>
+<table>
+	<thead>
+			<tr>
+					<th>Where the tick sits</th>
+					<th>Unread</th>
+					<th>Read</th>
+					<th>Direction read moves</th>
+			</tr>
+	</thead>
+	<tbody>
+			<tr>
+					<td>Inside the bubble (blue ground)</td>
+					<td>1.56</td>
+					<td>2.62</td>
+					<td><strong>lighter</strong> than its ground</td>
+			</tr>
+			<tr>
+					<td>Beside a sticker (white ground)</td>
+					<td>1.56</td>
+					<td>3.64</td>
+					<td><strong>darker</strong> than its ground</td>
+			</tr>
+	</tbody>
+</table>
+<p>The unread faintness matches exactly. But <strong>the direction &ldquo;read&rdquo; travels is reversed.</strong> On the blue bubble, being read makes the tick rise. On the white background, being read makes it sink. The same event goes lighter in one place and darker in the other.</p>
+<p><strong>What I chose.</strong> <strong>Scrap the per-message tick entirely.</strong> In its place, a small <code>read</code> under the last message I sent — nothing else. I picked this from three options. The wording is lowercase <code>read</code>, also my call.</p>
+<p><strong>What I turned down.</strong> Two things. One, tune the contrast values until they agree. Two, use a different colour just for stickers.</p>
+<p><strong>Why.</strong> Because <strong>as long as meaning is carried by contrast, having two different grounds makes the reversal unavoidable.</strong> There is no single colour for which &ldquo;read is darker&rdquo; holds on both a white and a blue ground. Tuning the numbers is work that never finishes.</p>
+<p>Reduce the tick to one instance and there is only one ground. The reversal disappears as a matter of structure. I chose to delete the structure that produces the problem rather than the problem.</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Right — and corroborated afterwards.</strong> The only read state this app stores is a single marker of how far the other person has read; there is no per-message state at all. <strong>Showing a tick on every message was displaying information the app does not have.</strong> I suspect that is exactly why the iPhone shows &ldquo;Read&rdquo; under only the last message.</p>
+<p><strong>What stuck.</strong> <strong>If meaning is carried by contrast, keep the ground to one kind. If you cannot, stop carrying meaning by contrast.</strong> And match the number of indicators to the granularity of the data behind them. One piece of data and ten indicators means something is lying somewhere.</p>
+<hr>
+<h2 id="decision-2--same-meaning-same-side">Decision 2 — Same meaning, same side</h2>
+<p><strong>Date.</strong> 7 October 2026, mid-way through Decision 1</p>
+<p><strong>What I was torn between.</strong> The first fix above moved the sticker&rsquo;s tick outside the image — and it came out at the bottom <em>left</em>, because that was where the space was.</p>
+<p><strong>What I chose.</strong> <strong>I said: put it bottom right, consistently.</strong></p>
+<p><strong>Why.</strong> The tick inside a bubble is on the right. Put it on the left elsewhere and the eye has to hunt. Bottom right for photos and bottom left for stickers means the reader searches every time.</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Right</strong> — and small, but this is the kind of note that only surfaces from real use. Looking at one screen in isolation, I would probably not have caught it.</p>
+<p><strong>What stuck.</strong> Decide an indicator&rsquo;s position by <strong>where the same meaning already lives</strong>, not by where there happens to be room. Use space as the reason and the meaning moves every time the space does.</p>
+<hr>
+<h2 id="decision-3--given-looks-versus-speed-i-cut-the-looks">Decision 3 — Given looks versus speed, I cut the looks</h2>
+<p><strong>Date.</strong> October 2026</p>
+<p><strong>What I was torn between.</strong> Putting a background blur behind a translucent surface makes it look expensive for free. Header, input field, menus, the timestamp chip over each photo — it had grown to around twenty places. And scrolling was heavy.</p>
+<p><strong>What I chose.</strong> <strong>Cut the blur to two places: the header buttons and the input field.</strong> Everywhere else keeps the translucent fill, compensated by making the ground slightly more opaque.</p>
+<p><strong>What I turned down.</strong> Keep the blur and find speed elsewhere.</p>
+<p><strong>Why.</strong> The behaviour of blur is unambiguous: <strong>if anything behind it moves by one pixel, the blur is recomputed.</strong> In a chat app, the background is always moving. So this was a cost that no optimisation elsewhere could offset.</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Right</strong> — the visual difference is invisible unless compared side by side, and scrolling got measurably lighter. It also showed my own guess to be wrong. <strong>I went in suspecting the header; the real culprit was the timestamp chip sitting on every single photo.</strong> I had not thought about the one thing that multiplies by count.</p>
+<p><strong>What stuck.</strong> <strong>Speed comes from measuring what you added and subtracting it.</strong> Which part is responsible is not available to intuition. And <strong>when you remove an effect, re-examine every value you set while assuming it.</strong> Opacity chosen on the assumption of a blurred background let the text behind show through once the blur was gone.</p>
+<hr>
+<h2 id="decision-4--dont-let-a-static-ornament-prepare-to-move">Decision 4 — Don&rsquo;t let a static ornament prepare to move</h2>
+<p><strong>Date.</strong> October 2026</p>
+<p><strong>What I was torn between.</strong> After the blur was cut, a symptom appeared in the calendar: <strong>&ldquo;there&rsquo;s a crushed character to the right of November.&rdquo;</strong> One unreadable glyph, left behind.</p>
+<p><strong>What was actually happening.</strong> The culprit was a small <code>⌄</code> next to the month heading. That ornament carried properties that tell the browser &ldquo;this may be about to move.&rdquo; Told that, the browser keeps it as its own layer — and <strong>while an animation ran nearby, the old contents of that layer persisted as a ghost.</strong></p>
+<p><strong>What I chose.</strong> Strip those properties from the ornament. Express its faintness through colour instead.</p>
+<p><strong>What I turned down.</strong> Adjusting the animation&rsquo;s duration or easing curve.</p>
+<p><strong>Why.</strong> The symptom was not on the thing animating; it was on <strong>the static ornament next to it.</strong> Fixing the moving part cannot remove a ghost left by a part that does not move. Separating where the symptom shows from where the cause lives came first.</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>Right</strong> — and the same day the same <code>⌄</code> caused a second thing. A glyph like that does not wrap when its parent is too narrow the way text does; it simply distorts, and a distorted glyph reads as a broken character. <strong>One small ornament was behind two unrelated symptoms.</strong></p>
+<p><strong>What stuck.</strong> <strong>Do not make a small static ornament a candidate for its own layer.</strong> And when a report is something the person making it cannot name — &ldquo;there&rsquo;s a crushed character&rdquo; — <strong>doubt the name of the thing being seen.</strong> It was not a character.</p>
+<hr>
+<h2 id="decision-5--i-made-the-navigation-permanent-and-got-it-badly-wrong-once">Decision 5 — I made the navigation permanent. And got it badly wrong once</h2>
+<p><strong>Date.</strong> October 2026</p>
+<p><strong>What I was torn between.</strong> Where to put the entry points — chat, calendar, photos, settings. My first instinct was the header.</p>
+<p><strong>What I chose.</strong> <strong>Four tabs along the bottom.</strong> On desktop, above 1000px wide, the tabs hide and a narrow vertical rail appears at the left edge instead.</p>
+<p><strong>What I turned down.</strong> Putting the entry points in the header.</p>
+<p><strong>Why.</strong> The header always has something in it: the room name, a back arrow, search, a menu. Push navigation in there and <strong>the thing it competes with changes from screen to screen.</strong> In the calendar it fights the month stepper, in photos the clear-selection control, in chat the search. Fix one and another overflows. It becomes whack-a-mole.</p>
+<p><strong>Hence the rule: permanent navigation goes on a surface it shares with nothing.</strong> The bottom edge and the left edge are those surfaces.</p>
+<p><strong>Right or wrong in hindsight.</strong> <strong>This one I got wrong.</strong> The placement was right. <strong>The way I introduced it caused an incident.</strong> Immediately after the bottom tabs went in, every tap in the app stopped responding. The other user could not use it. I spent four exchanges hunting the cause.</p>
+<p><strong>All four of those exchanges were the mistake. I should have reverted on the first one.</strong> When a change made for looks breaks the ability to operate the app, you remove it — you do not keep it alive while repairing it. I deferred that because I wanted to know the cause. The whole time, the other person&rsquo;s app did not work.</p>
+<p>The second attempt worked. <strong>One revertible step at a time:</strong> tabs only, confirm on a real device; then the settings screen; then the calendar.</p>
+<p><strong>What stuck.</strong> Two things.</p>
+<p><strong>Decide what to make permanent by what it competes with, not by where it goes.</strong></p>
+<p>And: <strong>while something is broken, recovery comes before diagnosis.</strong> I had learned to doubt an all-clear. I was much slower to notice that someone else was stopped, waiting on a decision of mine. That is not a technical point and there is no excuse available for it.</p>
+<hr>
+<h2 id="the-habits-i-actually-use-now">The habits I actually use now</h2>
+<p>Only the ones that survived the five records above.</p>
+<p><strong>1. Hold a vague discomfort until it can be restated as something measurable.</strong> &ldquo;Hard to read&rdquo; became &ldquo;the direction of the contrast ratio reverses depending on the ground.&rdquo; The moment it was restated, the fix was forced. <strong>The restating is Claude&rsquo;s job. Saying the first sentence is the job of the person using it.</strong></p>
+<p><strong>2. Delete the structure that produces the problem, not the problem.</strong> The read tick was fixed by reducing it to one, not by correcting its values.</p>
+<p><strong>3. Same meaning, same side. Available space is not a reason.</strong></p>
+<p><strong>4. Remove one effect and re-examine every value chosen while assuming it.</strong></p>
+<p><strong>5. If it cannot be operated, revert before investigating.</strong> And introduce large structural changes one revertible step at a time.</p>
+<hr>
+<h2 id="the-question-i-still-cannot-answer">The question I still cannot answer</h2>
+<p><strong>Of the discomforts I reported, how many were actually just preference?</strong> All five above held up under measurement. But that can also be read as: only the ones that held up are in the record. I have never counted how many of my notes evaporated once someone measured them.</p>
+<p>Next time I say something, I intend to write it down at the moment I say it.</p>
+<hr>
+<h1 id="implementation">Implementation</h1>
+<p>Everything below was written by Claude and confirmed by running it on my own devices. It is kept here for two reasons. One, it shows the shape and the length of the work before you start. Two, <strong>it is material someone wanting to do the same thing can hand straight to their own AI.</strong></p>
+<h2 id="how-dimensions-get-chosen">How dimensions get chosen</h2>
+<p>Dimensions come from measuring first-party apps, not from preference. There is no correct number for a bubble&rsquo;s corner radius, but there is a defensible <strong>ratio</strong>. Measured locally: radius ÷ font size = 1.63, radius ÷ the height of two lines = 0.436. Change the font size and the radius follows the ratio. Hold ratios rather than numbers and nothing breaks later.</p>
+<p>Do not fight dimensions the OS has already set: 44pt header, 49pt bottom tab bar. Frequently tapped targets at least 40px (Apple&rsquo;s guidance is 44pt square). One caveat: <strong>the amount of space reserved for content must not exceed the real height.</strong> Any excess is taken directly out of the content.</p>
+<h2 id="how-colours-get-sampled">How colours get sampled</h2>
+<p>Screenshots from iPhone and Mac are stored in <strong>Display P3</strong> (a wider colour space than sRGB). Write the raw values from one into CSS and the result is slightly duller than the device. Always convert to sRGB and <strong>round-trip a colour you already know as a check</strong> before adopting anything. Eyeballing colour is also out: when a screenshot arrives, sample the pixels mechanically.</p>
+<h2 id="the-read-marker-decision-1s-implementation">The read marker (Decision 1&rsquo;s implementation)</h2>
+<p>If the appearance is uniquely determined by state, let CSS decide it. Inserting the marker from JavaScript creates five or more repaint routes — first render, scrolling back through history, new messages, switching rooms, optimistic send — and one of them will always forget to call it.</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-css" data-lang="css"><span class="line"><span class="cl"><span class="p">.</span><span class="nc">row</span><span class="p">.</span><span class="nc">me</span><span class="p">.</span><span class="nc">read</span><span class="p">:</span><span class="nd">not</span><span class="o">(</span><span class="p">:</span><span class="nd">has</span><span class="o">(~</span> <span class="p">.</span><span class="nc">row</span><span class="p">.</span><span class="nc">me</span><span class="p">.</span><span class="nc">read</span><span class="o">))</span> <span class="p">{</span> <span class="c">/* place the marker here */</span> <span class="p">}</span>
+</span></span></code></pre></div><p>&ldquo;My own read row that has no later read row of mine after it&rdquo; can only ever match a single row, because read state is applied from the oldest row forward. JavaScript&rsquo;s only job is to mark which rows are read; it knows nothing about where the marker goes. On a browser that does not support this selector the whole rule is ignored and <strong>the marker simply does not appear</strong> — nothing breaks.</p>
+<p>For dimensions: leave 22px of margin below the row and position the marker absolutely inside it. Letting it overhang without reserving the space makes it collide with the next row (<strong>adjacent vertical margins collapse into one</strong>, so nobody reserves room for the overhang). The 45px from the right is the avatar&rsquo;s 34 plus its 5 of margin plus the row&rsquo;s 6 gap, which lines the marker up with <strong>the right edge of the bubble</strong>.</p>
+<p>Beside a sticker, the available space is the 11px gap between the image and the avatar (6px row gap + 5px avatar margin). The marker is 13px, so <code>right:-13px</code> fits exactly.</p>
+<h2 id="rules-kept-for-motion">Rules kept for motion</h2>
+<ul>
+<li>Animate only <code>transform</code> and opacity. Never width, height, or position itself (a <code>height</code> or <code>padding-bottom</code> transition relayouts the whole screen every frame, so stretching the duration does not stop the stutter)</li>
+<li>Blur only where the background does not move. It can be dropped entirely while something is animating. Never interpolate its radius</li>
+<li>No shadows on moving elements (a one-pixel line at the edge substitutes)</li>
+<li>No <code>transition</code> or <code>opacity</code> on a static ornament. Express faintness through colour</li>
+<li>Give side-by-side glyphs a no-shrink declaration (<code>flex: 0 0 auto</code>)</li>
+<li>Give the animating side a repaint-containment declaration (<code>contain: layout paint</code>)</li>
+<li>Compute drag response once per frame. <strong>Never let width follow the finger</strong> — change it once, at the moment a threshold is crossed</li>
+<li>On release, decide open-or-closed from <strong>velocity</strong> (px/ms), not position</li>
+<li>Change a duration and every timeout tied to that duration changes with it</li>
+<li>Finish the contents of a thing before you animate it (most &ldquo;stuttering&rdquo; is not the curve or the duration; it is other rendering happening in the same window)</li>
+<li>Only one surface may move during a screen transition (three at once reads as elevator doors)</li>
+<li>All of the above is disabled when the OS &ldquo;reduce motion&rdquo; setting is on</li>
+</ul>
+<h2 id="no-meaning-in-spacing">No meaning in spacing</h2>
+<p>A convention of widening the gap when the sender changes nearly went in. Measured against an existing app used as reference, the gap does not change when the sender changes — it is fixed at 17pt. Spacing is too convenient as a way of expressing grouping: start using it in one place and you will want it everywhere, and eventually nobody can say which gap means what. Deciding not to use it at all is cheaper.</p>
+<h2 id="entrances-and-exits-decision-5s-implementation">Entrances and exits (Decision 5&rsquo;s implementation)</h2>
+<p>Four bottom tabs, swapped for a 56px left rail on desktop. Stacking order sits above the full-screen panels and below the image viewer. <strong>Funnel every exit through one function</strong> — any transition to a different context must pass through it. Before that existed, the login screen ended up hidden under an opaque panel and looked like a freeze. Each new screen gets registered in three places: the close handler, the swipe-away gesture, and the Escape ordering. Anything that covers the screen gets one sweeper that retracts it if it is showing when it should not be.</p>
+<h2 id="updating-the-screen-during-text-entry-an-ios-trap">Updating the screen during text entry (an iOS trap)</h2>
+<p><strong>If the set of form controls on screen changes while text is being entered, iOS rebuilds the bar above the keyboard — and takes the Japanese conversion candidates down with it.</strong> Worse, <strong>rewriting an attribute with the same value still counts as a change.</strong></p>
+<p>Two fixes. Write only when the value actually changes. And <strong>skip the update entirely while an input has focus, then redo it when focus leaves.</strong> Alongside that, frequently rebuilt regions stopped using <code>&lt;button&gt;</code> (same appearance and same hit area, with the role declared on a <code>div</code> instead). In an app like chat, where the screen updates while you are typing, this has to be settled as a convention.</p>
+<h2 id="how-waiting-is-shown">How waiting is shown</h2>
+<p>Float a &ldquo;loading…&rdquo; card in the middle of the screen and it will cover something. There is a surface that covers nothing: the 2px bottom edge of the header. Run a bar across it left to right and you have said &ldquo;waiting&rdquo; without hiding a single piece of information — and without words, so there is nothing to translate.</p>
+<h2 id="anything-the-ui-promises-gets-implemented">Anything the UI promises gets implemented</h2>
+<p>If the desktop layout prints &ldquo;⌘/Ctrl + Enter to send&rdquo; under the input, that shortcut works. Printed and broken is worse than never printed.</p>
+]]></content:encoded></item></channel></rss>
