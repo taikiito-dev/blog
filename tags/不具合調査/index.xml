@@ -1,7 +1,25 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>不具合調査 on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E4%B8%8D%E5%85%B7%E5%90%88%E8%AA%BF%E6%9F%BB/</link><description>Recent content in 不具合調査 on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Mon, 05 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E4%B8%8D%E5%85%B7%E5%90%88%E8%AA%BF%E6%9F%BB/index.xml" rel="self" type="application/rss+xml"/><item><title>AIにアプリを書かせて6週間、効いた習慣と効かなかったやり方</title><link>https://offgrid.taikiito.com/guides/building-with-an-ai-agent/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/building-with-an-ai-agent/</guid><description>プログラムを書けない自分が、AIのコーディングエージェントに指示するだけで毎日使うチャット＋カレンダーのアプリを作り、6週間運用した記録。同じ不具合を9回踏んだ話、直したものが端末に届いていなかった話、スクショを実測しないと色も丸みも合わない話。効いた習慣を5つに絞って書いた。</description><content:encoded><![CDATA[<p>自分はプログラムを書けない。それでも、スマートフォンのブラウザで動くチャット＋カレンダーのアプリを作って、6週間ほど毎日使っている。コードは全部AIのコーディングエージェント(指示を出すと実際にファイルを書き換えて動かすAI)に書かせた。</p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>不具合調査 on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E4%B8%8D%E5%85%B7%E5%90%88%E8%AA%BF%E6%9F%BB/</link><description>Recent content in 不具合調査 on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Wed, 07 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E4%B8%8D%E5%85%B7%E5%90%88%E8%AA%BF%E6%9F%BB/index.xml" rel="self" type="application/rss+xml"/><item><title>AIにアプリを書かせて6週間、効いた習慣と効かなかったやり方</title><link>https://offgrid.taikiito.com/guides/building-with-an-ai-agent/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/building-with-an-ai-agent/</guid><description>プログラムを書けない自分が、Claude（AnthropicのAIアシスタント）のコーディングエージェントに指示するだけで毎日使うチャット＋カレンダーのアプリを作り、6週間運用した記録。同じ不具合を9回踏んだ話、直したものが端末に届いていなかった話、スクショを実測しないと色も丸みも合わない話。効いた習慣を5つに絞って書いた。</description><content:encoded><![CDATA[<p>自分はプログラムを書けない。それでも、スマートフォンのブラウザで動くチャット＋カレンダーのアプリを作って、6週間ほど毎日使っている。コードは全部、Claude(AnthropicのAIアシスタント)のコーディングエージェント(指示を出すと実際にファイルを書き換えて動かす仕組み。自分が使っているのはClaude Code)に書かせた。</p>
+<p>分担を先に書いておく。<strong>コードを書く側はClaude、決める側と確かめる側は自分。</strong> コードを書かなくていいぶん、症状を伝えることと、出てきた直しを実機で判定することに全部の時間を使えた。そして6週間で分かったのは、詰まるのはたいてい書く側ではなく、こちらの説明の側だということだった(5つ目の習慣に書いた)。このサイトの他の記事に出てくるコマンドも、同じ分担で書かれている。</p>
 <p>利用者は自分と、自分以外にもう1人、実際に毎日使っている利用者の2人だけ。この1人が実機で不具合を見つけて報告してくるので、6週間のあいだ「作る」より「直す」のほうがはるかに多かった。そこで身についた習慣を5つだけ書く。どれも、外した回数の記録があるものに限った。</p>
 <h2 id="前提">前提</h2>
 <p>スマートフォンのホーム画面に置いて全画面で使う形式(PWA)のアプリで、iPhoneとAndroidの両方から使っている。置き場所は自分の借りているサーバーで、土台は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>に書いた構成とほぼ同じ。自分がやるのは、不具合の報告を受け取り、エージェントに状況を伝え、出てきた直しを実機で確かめること。コードは読めるが書けない。</p>
+<hr>
+<h2 id="決定1--推測で直すのをやめ証拠を出す側に回った">決定1 — 推測で直すのをやめ、証拠を出す側に回った</h2>
+<p><strong>日付</strong> 2026年10月5日(初版時点。9回の再発は数日がかり)</p>
+<p><strong>迷ったこと</strong> 9回再発した日本語入力の変換候補の不具合を、10回目も「ありそうな犯人」を潰す形で直すか。</p>
+<p><strong>採った案</strong> <strong>直すのをやめて、端末が実際に報告していることを出す仕掛けを入れた。</strong> 画面に実況ログを流し、JavaScriptを一切かけない捨て用のページで条件を切り分けてから、残った範囲だけを相手にする。</p>
+<p><strong>却下した案</strong> 推測で直し続けること。9回のうち7回はこれだった。毎回それらしい原因が見つかり、毎回直って、毎回また同じ報告が来た。</p>
+<p><strong>後から見た当たり外れ</strong> 当たり。実況のスクショ1枚で「自分のコードは変換中に画面を一切書き換えていない」ことが確定し、残っていた仮説が全部消えた。ただし真因そのものにはまだ届いていない(「これで解決しないこと」参照)。</p>
+<p><strong>残った教訓</strong> <strong>断続的な不具合は「再現を待つ」のではなく「再現したときに証拠が残っている」状態を先に作る。</strong> 詳細は下の1に書いた。</p>
+<hr>
+<h2 id="決定2--動かなくなった版は直さずにまるごと巻き戻した">決定2 — 動かなくなった版は、直さずにまるごと巻き戻した</h2>
+<p><strong>日付</strong> 2026年10月5日(初版時点)</p>
+<p><strong>迷ったこと</strong> 下タブを入れた版でアプリが完全に操作不能になったとき、動かない原因を追って部分的に直すか。</p>
+<p><strong>採った案</strong> <strong>部分的な修正を試さず、導入前のファイルへ丸ごと戻した。</strong> 失ったもの(下タブ・独立した設定画面・カレンダーの月週日の切り替え・起動時の表示先)を記録し、3段に分けて1段ごとに実機で確かめながら作り直した。</p>
+<p><strong>却下した案</strong> 動かない原因を追いながら部分的に修正する。</p>
+<p><strong>なぜ却下したか</strong> <strong>直すより消すほうが安い機能がある。</strong> タブの切り替えアニメーションを機能ごと撤去したときも同じ判断をした(下の4参照)。</p>
+<p><strong>残った教訓</strong> <strong>巻き戻しで何を失ったかを書いておく</strong>と、作り直しの順番がそのまま手順表になる。</p>
+<hr>
 <h2 id="1-推測で直すのをやめ端末が実際に報告していることを出す捨て用のページを作る">1. 推測で直すのをやめ、端末が実際に報告していることを出す「捨て用のページ」を作る</h2>
 <p>一番高くついたのは、日本語入力の変換候補の帯が消える不具合だった。ひらがなを打ってもキーボードの上に出るはずの候補バーが出ない、または打っている途中で消える。<strong>同じ症状を、数日かけて9回踏んだ。原因は毎回違っていた。</strong> 正確に言うと、同じ作りで動かしている自作アプリが2つあり、9回はその両方にまたがっている。同じ型の作りには同じ型の地雷が埋まる、ということでもある。</p>
 <ol>
@@ -66,5 +84,5 @@
 <li><strong>分かっていないものが溜まっていく。</strong> 自分のアプリには、自分が原理を説明できない処理が入っている。説明を求めれば返ってくるが、6週間ぶんを全部覚えているわけではない。壊れたときに「ここは触るな」と言えない箇所がある、という事実は消えていない。</li>
 <li><strong>説明できない症状は、直せない症状のままになる。</strong> 「なんとなく動きが変」は、スクショも実況も実データも出せないので結局手が付かない。9回目の変換候補の件も、まだ真因には届いていない。<strong>残っているのは「本番のコードのどこか」という範囲だけで、名前は付いていない。</strong></li>
 </ul>
-<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版 / 2026-10-07: 冒頭にClaudeとの分担(書く側/決める側)を明記し、判断の記録を「決定」ブロックとして引き上げ</p>
 ]]></content:encoded></item></channel></rss>

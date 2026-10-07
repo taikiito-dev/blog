@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>ガイド on Off-Grid</title><link>https://offgrid.taikiito.com/guides/</link><description>Recent content in ガイド on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Wed, 07 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/guides/index.xml" rel="self" type="application/rss+xml"/><item><title>自分の「サーバー」を持つとはどういうことか</title><link>https://offgrid.taikiito.com/guides/self-hosting-basics/</link><pubDate>Sun, 13 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/self-hosting-basics/</guid><description>他のガイドは実は『自分のサーバーが既にある』前提で書かれている。ターミナルもDockerも触ったことがない人向けに、サーバーとは何か、レンタルと自前どちらを選ぶべきか、実際に自分が何をしたかを説明する、このサイトの本当の出発点。</description><content:encoded><![CDATA[<p>正直に告白すると、<a href="/guides/google-photos-to-immich/">写真の移行</a>や<a href="/guides/google-drive-to-nextcloud/">ファイルの移行</a>など、他のガイドはすべて「ImmichやNextcloudが動くサーバーが、自分の手元に既にある」という前提で書かれている。ターミナル(文字を打ち込んで操作する黒い画面)を開いたこともない人がいきなりあの記事を読んでも、何をどこから始めればいいのか分からないはずだ。指摘を受けて、そこが一番の土台なのに書いていなかったことに気づいた。この記事は、その土台の話をする。</p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>ガイド on Off-Grid</title><link>https://offgrid.taikiito.com/guides/</link><description>Recent content in ガイド on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Wed, 07 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/guides/index.xml" rel="self" type="application/rss+xml"/><item><title>自分の「サーバー」を持つとはどういうことか</title><link>https://offgrid.taikiito.com/guides/self-hosting-basics/</link><pubDate>Sun, 13 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/self-hosting-basics/</guid><description>他のガイドは実は『自分のサーバーが既にある』前提で書かれている。ターミナルもDockerも触ったことがない人向けに、サーバーとは何か、レンタルと自前どちらを選ぶべきか、実際に自分が何を決めたかを説明する、このサイトの本当の出発点。手順の部分はClaude（AnthropicのAIアシスタント）が書き、自分の環境で実行して確かめたもの。</description><content:encoded><![CDATA[<p>正直に告白すると、<a href="/guides/google-photos-to-immich/">写真の移行</a>や<a href="/guides/google-drive-to-nextcloud/">ファイルの移行</a>など、他のガイドはすべて「ImmichやNextcloudが動くサーバーが、自分の手元に既にある」という前提で書かれている。ターミナル(文字を打ち込んで操作する黒い画面)を開いたこともない人がいきなりあの記事を読んでも、何をどこから始めればいいのか分からないはずだ。指摘を受けて、そこが一番の土台なのに書いていなかったことに気づいた。この記事は、その土台の話をする。</p>
+<p>もうひとつ先に書いておく。<strong>このサイトのコマンドを書いたのはClaude(AnthropicのAIアシスタント)で、私は決める側をやった。</strong> 私はエンジニアではないが、この分担にしたことで「どこにサーバーを置くか」「どう公開するか」といった判断だけに集中できた。その分担の中身は、この記事の「自分がどうやってこの作業を進めているか」で説明する。</p>
 <h2 id="そもそもサーバーとは何か">そもそも「サーバー」とは何か</h2>
 <p>普段使っているパソコンやスマホは、使う時だけ電源を入れて、使い終わったら閉じたり寝かせたりする。<strong>サーバーとは、それと逆で、24時間365日ずっと電源が入っていて、インターネットの向こう側からいつでもアクセスできる状態のコンピュータ</strong>のことだ。</p>
 <p>Google Photosも、Gmailも、実態は「Googleが管理する巨大なサーバー群」に自分のデータを預けて、そこに常時アクセスしている状態にすぎない。「データ主権を取り戻す」とは、この「常時アクセスできる置き場所」を、Google任せではなく自分の管理下に置き換える、ということだ。そのためには、自分の管理下にある「常時起動しているコンピュータ」、つまり自分のサーバーが要る。</p>
@@ -6,12 +7,11 @@
 <p>サーバーを持つには、大きく2つの選び方がある。</p>
 <p><strong>① レンタルサーバー(VPS)を借りる</strong> — 月額数百円〜数千円で、どこかのデータセンターにあるコンピュータの一部を間借りする方式。AWS Lightsail、さくらのVPS、カゴヤ CLOUD VPSなどが有名どころ。自分で機械を持たなくていい代わりに、月額費用がずっとかかり続ける。</p>
 <p><strong>② 自分の手元にあるPCを使う(自宅サーバー)</strong> — 使っていない古いPCや、ゲーミングPCのような性能の高いPCを、24時間つけっぱなしにして使う方式。初期投資(電気代はかかる)以外の追加費用がかからない代わりに、電源やネット回線が落ちたらサービスも止まる、という自己責任になる。</p>
-<p>自分は最初、AWS LightsailというVPSを使っていたが、途中で②の自宅サーバー(使っていたゲーミングPC)に切り替えた。理由は、写真管理ソフト(Immich)の顔認識機能がGPU(画像処理用の高性能な部品)を使うと速く動くのに、一般的なVPSにはGPUオプションが無いか、あっても高額だったため。自宅のゲーミングPCには既にGPUが載っていたので、それをそのまま活用できるほうが合理的だった。加えて、VPSの月額費用も浮いた。</p>
-<p><strong>とはいえ、どちらが正解ということはない。</strong> GPUを使う予定が無く、自宅に眠っているPCも無いなら、まずは安価なVPSを1つ借りるところから始めるほうが手軽だと思う。自分の場合はたまたま条件が噛み合って②を選んだ、という話として読んでほしい。</p>
+<p>自分は最初①のVPS(AWS Lightsail)を使い、途中で②の自宅サーバーに切り替えた。この経緯は下の「決定1」に書いた。</p>
 <h2 id="自分がどうやってこの作業を進めているか">自分がどうやってこの作業を進めているか</h2>
-<p>このサイトのガイドは、自分がターミナルに一つ一つコマンドを手打ちして進めたわけではない。実際には<strong>Claude(AIアシスタント)に「こうしたい」と会話しながら指示を出し、実際のコマンド実行やファイル編集はClaude側にやってもらう</strong>、という進め方をしている。使っているのはMulmoClaude(自分がGitHub上で公開している、Claudeを使ったAIアシスタントの土台)というソフトで、これ自体の成り立ちは<a href="/posts/">開発日誌</a>に書いている。</p>
-<p>このMulmoClaude自体も、ここまでの話と同じ「自分のサーバー」の上で動いている。<strong>最初はAWS Lightsail(レンタルサーバー)の上で動かしていたが、Immichの顔認識をGPUで速く処理したいという理由で自宅のゲーミングPC(GALLERIA)に切り替えた時、Nextcloud・VaultwardenといったほかのサービスもろともMulmoClaude自体も一緒にGALLERIA側へ引っ越した。</strong> つまり今は、この文章を書いているAI自身も含めて、全部が同じ自宅の1台のPCの上で動いている状態になっている。</p>
-<p>なので、このサイトの文章の「自分がやった」は、実際には「Claudeに頼んで、Claudeが実行した」を指していることがほとんどだと理解しておいてもらえればと思う。とはいえ、何をどうするかの判断・決断は全部自分がしているので、「作業の手を動かす部分をAIに任せている」くらいの温度感で読んでほしい。</p>
+<p>このサイトのガイドは、自分がターミナルに一つ一つコマンドを手打ちして進めたわけではない。実際には<strong>Claudeに「こうしたい」と会話しながら指示を出し、実際のコマンド実行やファイル編集はClaude側にやってもらう</strong>、という進め方をしている。つまり<strong>コマンドを書く側がClaude、決める側が自分</strong>という分担だ。使っているのはMulmoClaude(自分がGitHub上で公開している、Claudeを使ったAIアシスタントの土台)というソフトで、これ自体の成り立ちは<a href="/posts/">開発日誌</a>に書いている。</p>
+<p>このMulmoClaude自体も、ここまでの話と同じ「自分のサーバー」の上で動いている。<strong>最初はAWS Lightsail(レンタルサーバー)の上で動かしていたが、Immichの顔認識をGPUで速く処理したいという理由で自宅のゲーミングPC(GALLERIA)に切り替えた時、Nextcloud・VaultwardenといったほかのサービスもろともMulmoClaude自体も一緒にGALLERIA側へ引っ越した。</strong> つまり今は、この文章を書いているClaude自身も含めて、全部が同じ自宅の1台のPCの上で動いている状態になっている。</p>
+<p>なので、このサイトの文章の「自分がやった」は、実際には「Claudeに頼んで、Claudeが実行した」を指していることがほとんどだと理解しておいてもらえればと思う。何をどうするかの判断・決断は全部自分がしている。手を動かす側を任せたぶん、決める側の仕事にじっくり時間を使える分担になっている。</p>
 <h2 id="出てくる専門用語を一通り">出てくる専門用語を一通り</h2>
 <p>ここから先のガイドで繰り返し出てくる言葉を、先にまとめて説明しておく。</p>
 <ul>
@@ -19,24 +19,42 @@
 <li><strong>Docker(ドッカー)</strong> / <strong>docker-compose(ドッカーコンポーズ)</strong> — サーバー上でソフトを動かすための仕組み。1つ1つのソフトを「コンテナ」という隔離された箱に入れて動かすので、複数のソフトを同じサーバーに入れてもお互いが干渉しにくい。<code>docker-compose</code>は、その箱をいくつか組み合わせて一括で起動・停止するための設定ファイルの書き方。</li>
 <li><strong>ドメイン</strong> — <code>taikiito.com</code>のような、自分のサーバーにつける覚えやすい名前。年間数百円〜数千円で自分の名義で取得できる(自分はCloudflare Registrarで取得した)。</li>
 <li><strong>DNS</strong> — 「<code>taikiito.com</code>というドメインは、実際にはどのサーバーを指すか」をインターネット全体に教えるための、住所録のような仕組み。ドメインを取得したら、DNSの設定でどのサーバーに繋げるかを指定する。</li>
-<li><strong>Cloudflare Tunnel(クラウドフレア・トンネル)</strong> — 自宅のサーバーを、自宅のルーターの設定(ポート開放という、外から直接アクセスできる穴を開ける作業)をいじらずに、安全にインターネットへ公開するための仕組み。自分もこれを使っていて、ルーター側の設定は一切変更していない。ポート開放は誤って設定すると自宅のネットワーク全体が外部から丸見えになるリスクがあるため、この方式のほうが安心して扱える。</li>
+<li><strong>Cloudflare Tunnel(クラウドフレア・トンネル)</strong> — 自宅のサーバーを、自宅のルーターの設定(ポート開放という、外から直接アクセスできる穴を開ける作業)をいじらずに、安全にインターネットへ公開するための仕組み。自分もこれを使っている(下の「決定2」参照)。</li>
 </ul>
 <p>これらのソフト自体は、すべて無料(OSS、オープンソースソフトウェア = 誰でも無料で使える公開されたソフト)で使える。かかる費用は基本的に「サーバー代(自宅の場合は電気代のみ)」と「ドメイン代(年数百円〜)」だけだ。</p>
-<h2 id="実際に手を動かす-最小構成でサーバーを1台立てる">実際に手を動かす: 最小構成でサーバーを1台立てる</h2>
-<p>ここから先は、自分が最初にやった手順そのままに、VPS(レンタルサーバー)でサーバーを1台立てるところまでを書く。<strong>自宅サーバー(Windows + WSL2)は環境依存が強すぎて万人向けに書き起こせないと判断し、まずは誰でも同じように再現できるVPSの手順に絞った。</strong> 自宅サーバーへの切り替えは、この記事の後半「自宅サーバーに切り替える場合」で触れる。</p>
-<h3 id="step-1-ドメインを取得する">Step 1: ドメインを取得する</h3>
+<h2 id="決定1--レンタルサーバーvpsから自宅のゲーミングpcに切り替えた">決定1 — レンタルサーバー(VPS)から、自宅のゲーミングPCに切り替えた</h2>
+<p><strong>日付</strong> 2026年9月13日(記事執筆時点。切り替えは記事より前)</p>
+<p><strong>迷ったこと</strong> サーバーをどこに置くか。最初はAWS LightsailというVPSを使っていた。</p>
+<p><strong>採った案</strong> <strong>自宅のゲーミングPC(GALLERIA)を24時間つけっぱなしの自宅サーバーにし、Nextcloud・Vaultwarden、そしてMulmoClaude自体も一緒に引っ越した。</strong></p>
+<p><strong>却下した案</strong> AWS Lightsail(VPS)を使い続ける。</p>
+<p><strong>なぜ却下したか</strong> 写真管理ソフト(Immich)の顔認識機能がGPU(画像処理用の高性能な部品)を使うと速く動くのに、一般的なVPSにはGPUオプションが無いか、あっても高額だったため。自宅のゲーミングPCには既にGPUが載っていたので、それをそのまま活用できるほうが合理的だった。加えて、VPSの月額費用も浮いた。</p>
+<p><strong>後から見た当たり外れ</strong> 切り替え自体は目的を果たしたが、タダではなかった。WindowsとLinux(WSL2)の両方の知識が必要になったり、再起動のたびにサービスが自動で立ち上がらない不具合に何度も遭遇したりと、一筋縄ではいかない場面が何度もあった(「正直な難易度感」参照)。</p>
+<p><strong>残った教訓</strong> <strong>どちらが正解ということはない。</strong> GPUを使う予定が無く、自宅に眠っているPCも無いなら、まずは安価なVPSを1つ借りるところから始めるほうが手軽だと思う。自分の場合はたまたま条件が噛み合って自宅サーバーを選んだ、という話として読んでほしい。</p>
+<hr>
+<h2 id="決定2--ルーターのポート開放ではなくcloudflare-tunnelで公開した">決定2 — ルーターのポート開放ではなく、Cloudflare Tunnelで公開した</h2>
+<p><strong>日付</strong> 2026年9月13日(記事執筆時点)</p>
+<p><strong>迷ったこと</strong> 自宅のサーバーを、どうやってインターネットへ公開するか。</p>
+<p><strong>採った案</strong> <strong>Cloudflare Tunnel。ルーター側の設定は一切変更していない。</strong></p>
+<p><strong>却下した案</strong> ルーターのポート開放(外から直接アクセスできる穴を開ける設定)。</p>
+<p><strong>なぜ却下したか</strong> ポート開放は誤って設定すると自宅のネットワーク全体が外部から丸見えになるリスクがあるため、Tunnel方式のほうが安心して扱える。</p>
+<p><strong>残った教訓</strong> 公開のやり方は「できるか」ではなく「事故ったとき何が起きるか」で選ぶ。この方式なら、ルーターを触らないまま<code>https://</code>の自分のドメインでサービスを公開できる。</p>
+<hr>
+<h1 id="手順">手順</h1>
+<p>ここから下は、VPS(レンタルサーバー)でサーバーを1台立てるところまでの手順で、<strong>Claudeが書き、自分の環境で実行して結果を確かめたもの</strong>だ。自分が最初にやった手順そのままになっている。<strong>自宅サーバー(Windows + WSL2)は環境依存が強すぎて万人向けに書き起こせないと判断し、まずは誰でも同じように再現できるVPSの手順に絞った。</strong> 自宅サーバーへの切り替えは、この記事の後半「自宅サーバーに切り替える場合」で触れる。</p>
+<p>手順をここに置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが先に分かる</strong>こと。見てのとおり5段階で、初めてターミナルを触る場合でも1〜2時間の話だ。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。ゼロから説明するより、動いた実例を見せたほうが早いし、あなたの環境と契約したVPSに合わせた形に直してくれる。</p>
+<h2 id="step-1-ドメインを取得する">Step 1: ドメインを取得する</h2>
 <p>まず自分のサーバーの「名前」になるドメインを取得する。自分は<a href="https://www.cloudflare.com/products/registrar/">Cloudflare</a>のRegistrar(ドメイン登録サービス)を使った。理由は、相場より安い実費に近い価格で提供されていて、WHOIS(ドメイン所有者情報)を公開しないプライバシー保護もデフォルトで付いてくるため。ダッシュボードの「Register a Domain」から、空いているドメイン名を選んで購入するだけで完了する。年間数百円〜数千円ほど。</p>
-<h3 id="step-2-vpsレンタルサーバーを契約する">Step 2: VPS(レンタルサーバー)を契約する</h3>
+<h2 id="step-2-vpsレンタルサーバーを契約する">Step 2: VPS(レンタルサーバー)を契約する</h2>
 <p>自分が最初に使ったのは<strong>AWS Lightsail</strong>、リージョンはシンガポール、OSはUbuntu(Linuxの一種)、**プランは月$7(メモリ1GB・2vCPU・SSD 40GB)**を選んだ。動画生成のような重い処理をする予定がなければ、この最小プランで十分動く。契約すると、そのサーバーの持ち主だけが入れる「IPアドレス」(サーバーの住所のようなもの)が発行される。</p>
 <p>VPSは他にもさくらのVPS・カゴヤ CLOUD VPS・DigitalOcean・Vultrなど選択肢は多い。自分がAWSを選んだ決め手は、シンガポール在住で近いリージョンが使えたのと、後々AWSの他サービス(バックアップ等)との連携がしやすそうだったため——ただしこの用途では正直どれを選んでも大差ない。</p>
-<h3 id="step-3-ターミナルからサーバーに接続しdockerを入れる">Step 3: ターミナルからサーバーに接続し、Dockerを入れる</h3>
+<h2 id="step-3-ターミナルからサーバーに接続しdockerを入れる">Step 3: ターミナルからサーバーに接続し、Dockerを入れる</h2>
 <p>契約すると、サーバーに接続するための「SSH鍵」(パスワードの代わりに使う、より安全な鍵ファイル)が発行される。ターミナル(黒い画面でコマンドを打ち込む操作)から、次のように接続する。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">ssh -i 発行された鍵ファイル ubuntu@サーバーのIPアドレス
 </span></span></code></pre></div><p>接続できたら、Docker公式が配布しているインストールスクリプトを実行する。これ1行で、Dockerと<code>docker compose</code>がまとめて入る。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -fsSL https://get.docker.com <span class="p">|</span> sh
 </span></span><span class="line"><span class="cl">sudo usermod -aG docker <span class="nv">$USER</span>
 </span></span></code></pre></div><p>(2行目は、<code>sudo</code>〈管理者権限で実行〉を毎回付けなくてもDockerコマンドが使えるようにするおまじない。一度ログアウトしてから入り直すと反映される。)</p>
-<h3 id="step-4-cloudflare-tunnelでサーバーを安全に公開する">Step 4: Cloudflare Tunnelでサーバーを安全に公開する</h3>
+<h2 id="step-4-cloudflare-tunnelでサーバーを安全に公開する">Step 4: Cloudflare Tunnelでサーバーを安全に公開する</h2>
 <p>サーバーは立ったが、まだ<code>taikiito.com</code>のようなドメインからはアクセスできない。ここで前述の<strong>Cloudflare Tunnel</strong>を使う。取得したドメインをCloudflareのネームサーバーに切り替えた上で(Cloudflareのダッシュボードの指示通りに進めれば数クリックで終わる)、サーバー側で次を実行する。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># cloudflaredをインストール</span>
 </span></span><span class="line"><span class="cl">curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
@@ -61,16 +79,16 @@
 </span></span></span></code></pre></div><p>再起動しても自動で動き続けるよう、サービス化しておく。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo cloudflared service install
 </span></span></code></pre></div><p>ここまでできれば、あとはサーバー内の<code>localhost:8080</code>(上の設定例のポート番号)で何かソフトを動かせば、<code>https://example.taikiito.com</code>からアクセスできるようになる。ルーターのポート開放(外から直接アクセスできる穴を開ける、事故ると危険な設定)を一切いじらずに済むのがこの方式の利点。</p>
-<h3 id="step-5-動作確認">Step 5: 動作確認</h3>
+<h2 id="step-5-動作確認">Step 5: 動作確認</h2>
 <p>具体的に何かソフトを動かして確認したい場合は、このサイトの次のガイド(<a href="/guides/google-photos-to-immich/">写真をGoogle PhotosからImmichに移す</a>)がそのままStep 6以降の実例になる——<code>docker-compose.yml</code>を書いてImmichを起動し、上のingress設定のポート番号をImmichのポートに合わせれば、そのまま公開まで到達できる。</p>
 <h2 id="自宅サーバーに切り替える場合">自宅サーバーに切り替える場合</h2>
-<p>自分は後になって、AWS Lightsail(VPS)から自宅のゲーミングPC(自宅サーバー)に切り替えた。理由は前述の通りGPU(画像処理用の高性能な部品)を使いたかったのと、月額費用を浮かせたかったため。ただしこの切り替えは、Windows PCの中でLinuxを動かす「WSL2」という仕組みや、再起動時の自動起動設定など、環境固有のハマりどころが多く、万人向けの手順としてはまだ書き起こせていない。GPUを使う予定がなければ、上記のVPS構成のままで十分運用できる。自宅サーバーへの興味がある場合は、今後別記事として書く予定。</p>
+<p>自分は後になって、AWS Lightsail(VPS)から自宅のゲーミングPC(自宅サーバー)に切り替えた。理由は決定1に書いたとおり、GPUを使いたかったのと月額費用を浮かせたかったため。ただしこの切り替えは、Windows PCの中でLinuxを動かす「WSL2」という仕組みや、再起動時の自動起動設定など、環境固有のハマりどころが多く、万人向けの手順としてはまだ書き起こせていない。GPUを使う予定がなければ、上記のVPS構成のままで十分運用できる。自宅サーバーへの興味がある場合は、今後別記事として書く予定。</p>
 <h2 id="正直な難易度感">正直な難易度感</h2>
 <p>ここまで読んで「思ったより大変そう」と感じたなら、その感覚は正しい。自分の場合も、自宅サーバーへの切り替えではWindowsとLinux(WSL2)の両方の知識が必要になったり、再起動のたびにサービスが自動で立ち上がらない不具合に何度も遭遇したりと、一筋縄ではいかない場面が何度もあった。上記のVPS手順自体はそこまで難しくないが、初めてターミナルを触る場合は1〜2時間はかかると思っておいてほしい。</p>
 <p>ただし、これは「一度整えてしまえば、あとはほぼ触らなくていい」類の作業でもある。土台さえできてしまえば、その後の<a href="/guides/google-photos-to-immich/">写真の移行</a>や<a href="/guides/1password-to-vaultwarden/">パスワードの移行</a>といった個別の作業は、ここまでの土台よりずっと軽い。</p>
 <h2 id="この先">この先</h2>
 <p>サーバーが立ち、ドメインからアクセスできる状態まで来たら、あとは個別のサービスを動かすだけ。まずは実際に何を移したかの記録から読んでもらえればと思う。→ <a href="/guides/google-photos-to-immich/">写真をGoogle PhotosからImmichに移す</a></p>
-<p><strong>更新履歴</strong> — 2026-09-13: 初版 / 同日: 「自分がどうやってこの作業を進めているか」(MulmoClaude/Claudeの利用、Lightsail→GALLERIA移設)を追記 / 同日: VPS(AWS Lightsail)でのドメイン取得〜Docker〜Cloudflare Tunnelまでの具体的手順を追記</p>
+<p><strong>更新履歴</strong> — 2026-09-13: 初版 / 同日: 「自分がどうやってこの作業を進めているか」(MulmoClaude/Claudeの利用、Lightsail→GALLERIA移設)を追記 / 同日: VPS(AWS Lightsail)でのドメイン取得〜Docker〜Cloudflare Tunnelまでの具体的手順を追記 / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記</p>
 ]]></content:encoded></item><item><title>写真をGoogle PhotosからImmichに移す</title><link>https://offgrid.taikiito.com/guides/google-photos-to-immich/</link><pubDate>Mon, 24 Aug 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/google-photos-to-immich/</guid><description>Googleフォト3万2千件を自前サーバーに移した記録。何を決め、何を却下し、1年後に何を取りこぼしたか。コマンドはClaude（AIアシスタント）が書いたので、このページの前半は判断だけを扱う。</description><content:encoded><![CDATA[<p>Google Photosの全データ（32,218件、約119GB）を自前サーバーのImmichへ移した記録。</p>
 <p>先に役割を書いておく。<strong>コマンドを書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> 私はエンジニアではない。それでも32,218件は無事に移ったし、今も毎日見られている。</p>
 <p>この分担はやってみると気持ちよかった。<strong>手順を考えなくていいぶん、「何を守るか」だけをじっくり考えられた。</strong> だからこのページも同じ形にしてある。</p>
@@ -240,7 +258,44 @@ Missing metadata: 7
 <hr>
 <p>次は、同じ考え方でGoogle Driveのファイルを移した話。→ <a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a></p>
 <p><strong>更新履歴</strong> — 2026-08-24: 初版 / 2026-09-12: 現状の進捗を追記 / 2026-09-13: 再現可能なレベルに手順を全面追記 / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記。46件の取りこぼしを後日談として追記</p>
-]]></content:encoded></item><item><title>ファイルをGoogle DriveからNextcloudに移す</title><link>https://offgrid.taikiito.com/guides/google-drive-to-nextcloud/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/google-drive-to-nextcloud/</guid><description>Google Driveのファイルを自前サーバー(Nextcloud)に移行した時の記録。docker-composeでのNextcloud構築、Cloudflare Tunnelでの公開、rcloneでのバックアップ設定まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>Google Driveのファイルを自分のサーバー上のNextcloudというソフトに移した記録。前回の版は経緯中心だったので、今回は実際に使ったdocker-composeの設定内容やコマンドまで書き足した。<strong>この記事だけで、Nextcloudを自分のサーバーに構築するところまで再現できることを目指している。</strong></p>
+]]></content:encoded></item><item><title>ファイルをGoogle DriveからNextcloudに移す</title><link>https://offgrid.taikiito.com/guides/google-drive-to-nextcloud/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/google-drive-to-nextcloud/</guid><description>Google Driveのファイルを自前サーバー(Nextcloud)に移した記録。Nextcloudを選んだ理由と「全部は移さない」と決めた理由を前半に、docker-compose・Cloudflare Tunnel・rcloneの実際の手順を後半に置いた。コマンドはClaude(AIアシスタント)が書いたもの。</description><content:encoded><![CDATA[<p>Google Driveのファイルを、自分のサーバー上のNextcloudというソフトに移した記録。</p>
+<p>先に役割を書いておく。<strong>docker-composeの設定やコマンドを書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> 私はエンジニアではない。それでも契約書など「人に預けたくないもの」は自分の手元に戻り、今もMacからGoogle Driveと変わらない感覚で使えている。手順を考えなくていいぶん、「何を移し、何を移さないか」だけをじっくり考えられた。</p>
+<p>だからこのページも、前半に判断（何を決め、何を選ばなかったか）、後半に手順（Claudeが書き、自分の環境で実行して結果を確かめたもの）という順で置いてある。</p>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>写真をImmichに移した(<a href="/guides/google-photos-to-immich/">前の記事</a>)のと同じ理由で、Google Driveに置きっぱなしにしていたファイルも自分の手元に戻したいと思った。写真ほど量は多くない(実質100〜150MB程度)が、契約書や身分証のコピーなど「人に預けたくないもの」が混ざっていたのが動機だった。</p>
+<hr>
+<h2 id="決定1--nextcloudを選んだ">決定1 — Nextcloudを選んだ</h2>
+<p><strong>日付</strong> 2026年9月12日（初版公開の時点）</p>
+<p><strong>迷ったこと</strong> Google Driveの代わりになる自前ホスト型のソフトはいくつかある。次の4つを比べた。</p>
+<p><strong>採った案</strong> <strong>Nextcloud。</strong> ファイル同期に加えて、連絡先・カレンダー・メモアプリなど周辺機能が豊富で、後から機能を足しやすい。</p>
+<p><strong>却下した案と、なぜ却下したか</strong></p>
+<ul>
+<li><strong>Seafile</strong> — ファイル同期に特化していて速いという評判だが、周辺機能はNextcloudほど無い。</li>
+<li><strong>Syncthing</strong> — サーバーを介さず端末同士が直接同期する仕組み。管理はシンプルだが、Google Driveのような「どこからでもブラウザで見る」用途には向かない。</li>
+<li><strong>Filestash</strong> — 既存のストレージ(自分のNASなど)にWeb UIを被せるツール。今回は土台のストレージ自体を新規に用意する必要があったので、選択肢から外れた。</li>
+</ul>
+<p>決め手は<strong>拡張性</strong>だった。今後、連絡先やカレンダーも同じ場所に集約したくなる見込みがあった。</p>
+<p><strong>後から見た当たり外れ</strong> <strong>当たり。</strong> 実際にこの後、<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先・カレンダーも同じNextcloudに移す</a>ことになった。</p>
+<p><strong>残った教訓</strong> 選ぶときの軸は「今あるデータを移せるか」だけではなく、「この後、何を同じ場所に集めたくなるか」だった。</p>
+<hr>
+<h2 id="決定2--全部は移さないと決めた">決定2 — 全部は移さないと決めた</h2>
+<p><strong>日付</strong> 2026年9月12日（初版公開の時点）</p>
+<p><strong>迷ったこと</strong> 写真の時は「全部Immichに取り込む」という単純な方針にしたが、Google Driveは事情が違った。中身を確認すると、自分のファイルの他に、家族と共有しているフォルダが2つ(iPhoneの体組成計・血圧データを自動書き出しする仕組みと、ビザ手続き関連の共有フォルダ)混ざっていた。</p>
+<p><strong>採った案</strong> <strong>自分専用ファイル(契約書などの<code>archive</code>フォルダ)だけをNextcloudに移し、共有フォルダ2つはGoogle側に残す。</strong></p>
+<p><strong>却下した案</strong> 全部まとめてNextcloudへ移す。</p>
+<p><strong>なぜ却下したか</strong> この2つは「相手(連携先アプリや家族)がGoogle前提で動いている」ため、無理にNextcloudへ移すと連携が壊れる。<strong>移行の効果(データ主権が増える度合い)と、移すコスト・壊れるリスクを天秤にかけて</strong>残すと決めた。</p>
+<p><strong>後から見た当たり外れ</strong> 当たり。共有フォルダ2つは「無理に移さない」という判断のままGoogleに残っており、これはこれで納得している状態。</p>
+<p><strong>残った教訓</strong> 相手がいるデータは、自分一人の都合では動かせない。「どれだけ主権が増えるか」と「何が壊れるか」を1件ずつ天秤にかけるのが、全部移すより先にやる仕事だった。</p>
+<hr>
+<h2 id="つまづいた所積み残し">つまづいた所・積み残し</h2>
+<p><strong>9.68GBの謎</strong>: 作業の途中、Googleのストレージ画面で「Driveが9.68GB使用中」と表示されているのに気づいた。しかし実際に移行した中身は100〜150MB程度しかない。90倍以上の差があり、計算が全く合わなかった。調べてみると、以前どこかのタイミングで大きなファイルを削除した際、<strong>ゴミ箱を空にしていなかった</strong>可能性が濃厚だという所まで辿り着いた。Googleドライブのゴミ箱は自動では空にならず、手動で「ゴミ箱を空にする」を押さない限り容量を圧迫し続ける。ここは正直に書いておくと、<strong>この謎は最終的に自分の手では確認しきれず、保留のまま</strong>になっている。</p>
+<p><strong>家族との共有</strong>: Google Driveで便利だったことの一つに、家族とのフォルダ共有がある。Nextcloudでも同じことは可能で、家族専用アカウントを作って権限を細かく設定する方法と、アカウント不要のリンク共有で手軽に済ませる方法の2通りがある。これは記事執筆時点でまだどちらにするか決めきれていない、<strong>現在進行系の課題</strong>として正直に残しておく。</p>
+<h2 id="結果">結果</h2>
+<p>自分専用のファイルはNextcloud経由でMacからGoogle Driveと変わらない感覚で使えるようになった。家族共有フォルダ2つは「無理に移さない」という判断のままGoogleに残っており、これはこれで納得している状態。</p>
+<hr>
+<h1 id="手順">手順</h1>
+<p>ここから下は<strong>Claudeが書き、自分の環境で実行して結果を確かめたもの</strong>だ。2026年9月の版で、実際にこれで<code>archive</code>フォルダのファイルが移り、今も毎日動いている。</p>
+<p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが先に分かる</strong>こと。見てのとおり4段階で、終わりのある作業だ。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。ゼロから説明するより、動いた実例を見せたほうが早い。あなたもClaudeやChatGPTのようなAIを使えるなら、自分の環境に合わせて出し直してもらうのがいちばんいい。</p>
 <h2 id="前提">前提</h2>
 <p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
 <ul>
@@ -248,19 +303,7 @@ Missing metadata: 7
 <li>自分名義のドメイン、およびCloudflare(無料プランで可)でそのドメインを管理していること</li>
 <li>Cloudflare Tunnel(<code>cloudflared</code>というソフトを使い、自宅のルーターの設定を一切いじらずに自宅サーバーを安全にインターネット公開する仕組み)がすでに動いている状態。導入手順は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を参照</li>
 </ul>
-<h2 id="何をしたかったか">何をしたかったか</h2>
-<p>写真をImmichに移した(<a href="/guides/google-photos-to-immich/">前の記事</a>)のと同じ理由で、Google Driveに置きっぱなしにしていたファイルも自分の手元に戻したいと思った。写真ほど量は多くない(実質100〜150MB程度)が、契約書や身分証のコピーなど「人に預けたくないもの」が混ざっていたのが動機だった。</p>
-<h2 id="step-1-nextcloudを選び全部は移さないと決めた">Step 1: Nextcloudを選び、全部は移さないと決めた</h2>
-<p>Google Driveの代わりになる自前ホスト型のソフトはいくつかある。今回は次の4つを比べた。</p>
-<ul>
-<li><strong>Nextcloud</strong> — ファイル同期に加えて、連絡先・カレンダー・メモアプリなど周辺機能が豊富。後から機能を足しやすい。</li>
-<li><strong>Seafile</strong> — ファイル同期に特化していて速いという評判だが、周辺機能はNextcloudほど無い。</li>
-<li><strong>Syncthing</strong> — サーバーを介さず端末同士が直接同期する仕組み。管理はシンプルだが、Google Driveのような「どこからでもブラウザで見る」用途には向かない。</li>
-<li><strong>Filestash</strong> — 既存のストレージ(自分のNASなど)にWeb UIを被せるツール。今回は土台のストレージ自体を新規に用意する必要があったので、ここでは選択肢から外れた。</li>
-</ul>
-<p>最終的に、**拡張性(今後、連絡先やカレンダーも同じ場所に集約したくなる見込みがあった)**を決め手にNextcloudにした。実際にこの後、<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先・カレンダーも同じNextcloudに移す</a>ことになったので、この判断は結果的に正しかった。</p>
-<p>写真の時は「全部Immichに取り込む」という単純な方針にしたが、Google Driveは事情が違った。中身を確認すると、自分のファイルの他に、家族と共有しているフォルダが2つ(iPhoneの体組成計・血圧データを自動書き出しする仕組みと、ビザ手続き関連の共有フォルダ)混ざっていた。この2つは「相手(連携先アプリや家族)がGoogle前提で動いている」ため、無理にNextcloudへ移すと連携が壊れる。<strong>移行の効果(データ主権が増える度合い)と、移すコスト・壊れるリスクを天秤にかけて、この2つはGoogle側に残すと決めた。</strong> 残りの自分専用ファイル(契約書などの<code>archive</code>フォルダ)だけをNextcloudに移した。</p>
-<h2 id="step-2-docker-composeでnextcloudを構築する">Step 2: docker-composeでNextcloudを構築する</h2>
+<h2 id="step-1-docker-composeでnextcloudを構築する">Step 1: docker-composeでNextcloudを構築する</h2>
 <p>作業用フォルダを作り、<code>docker-compose.yml</code>を用意する。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/nextcloud <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/nextcloud
 </span></span></code></pre></div><p><code>docker-compose.yml</code>の中身(Nextcloud本体<code>app</code>と、データを整理して保存しておくデータベースソフト<code>db</code>〈MariaDB〉の2つのコンテナをセットで起動する構成):</p>
@@ -299,7 +342,7 @@ Missing metadata: 7
 </span></span><span class="line"><span class="cl">docker compose ps
 </span></span></code></pre></div><p><code>app</code>・<code>db</code>の2つが起動していることを確認したら、<code>http://localhost:8081</code>にアクセスして管理者アカウント(<code>NEXTCLOUD_ADMIN_USER</code>/<code>NEXTCLOUD_ADMIN_PASSWORD</code>で指定した内容)でログインできることを確認する。</p>
 <p><strong>Nextcloudの管理者ユーザー名は一度決めると後から変更できない</strong>ので、<code>admin</code>のような分かりやすい名前で最初から決めておくとよい。</p>
-<h2 id="step-3-cloudflare-tunnelで公開する">Step 3: Cloudflare Tunnelで公開する</h2>
+<h2 id="step-2-cloudflare-tunnelで公開する">Step 2: Cloudflare Tunnelで公開する</h2>
 <p><code>/etc/cloudflared/config.yml</code>(Cloudflare Tunnelの設定ファイル)の<code>ingress</code>(どのドメイン宛のアクセスを、サーバー内のどのポートに転送するかのルール一覧)に、Nextcloud用の行を追記する。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ingress</span><span class="p">:</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">drive.taikiito.com</span><span class="w">
@@ -310,9 +353,9 @@ Missing metadata: 7
 <p>DNS側は、Cloudflareの管理画面(またはAPI)で<code>drive</code>(サブドメイン部分)のCNAMEレコードを<code>&lt;トンネルID&gt;.cfargotunnel.com</code>に向ける。反映後、<code>https://drive.taikiito.com</code>でNextcloudのログイン画面が表示されれば成功。</p>
 <p><strong>Nextcloud特有の注意点</strong>: Nextcloud(内部でApacheというソフトを使っている)は、自分がHTTPS経由でアクセスされていることを正しく認識できないと、ログイン後に無限リダイレクトを起こすことがある。Cloudflare Tunnelは末端(サーバーとの接続)を暗号化しないHTTP接続で待ち受けるため、この設定が必要になる場合がある。症状が出た場合は、Nextcloudの<code>config/config.php</code>に以下を追記して回避する。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-php" data-lang="php"><span class="line"><span class="cl"><span class="s1">&#39;overwriteprotocol&#39;</span> <span class="o">=&gt;</span> <span class="s1">&#39;https&#39;</span><span class="p">,</span>
-</span></span></code></pre></div><h2 id="step-4-macと同期する">Step 4: Macと同期する</h2>
+</span></span></code></pre></div><h2 id="step-3-macと同期する">Step 3: Macと同期する</h2>
 <p>ここからは、サーバーさえ用意できていれば誰でもできる部分。Google DriveにはMacの「Finder」(ファイル一覧の画面)に統合される専用アプリがあったが、Nextcloudにも同じような公式デスクトップアプリがある。これをインストールしてログインすると、Finder上にNextcloudのフォルダが表示され、Google Driveの時とほぼ同じ感覚でファイルを開いたり保存したりできる。同期は「全部」ではなく<strong>フォルダ単位で選べる</strong>。最初はNextcloudが用意するお試し用のサンプルフォルダ(Documents、Photos、Templatesなど)が並んでいたが、これは削除してよい。本物のデータが入っているのは、移行した<code>archive</code>フォルダだけだった。</p>
-<h2 id="step-5-バックアップを設定する">Step 5: バックアップを設定する</h2>
+<h2 id="step-4-バックアップを設定する">Step 4: バックアップを設定する</h2>
 <p>「移した先が壊れたら意味がない」ので、移行作業そのものと同じくらいバックアップ体制を大事にしている。<code>rclone</code>(色々なオンラインストレージをコマンドラインから操作できるツール)を使い、Backblaze B2という安価なオンラインストレージへ、Nextcloudのデータを毎日自動でコピーする設定にした。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># データベースのダンプ</span>
 </span></span><span class="line"><span class="cl">docker compose -f ~/nextcloud/docker-compose.yml <span class="nb">exec</span> -T db <span class="se">\
@@ -322,30 +365,50 @@ Missing metadata: 7
 </span></span><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
 </span></span></span><span class="line"><span class="cl">  ~/nextcloud/data <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/nextcloud/data&#34;</span>
 </span></span></code></pre></div><p>これを日次のcron(定期実行の仕組み)に登録しておけば、毎晩自動でバックアップが取られる。</p>
-<h2 id="つまづいた所積み残し">つまづいた所・積み残し</h2>
-<p><strong>9.68GBの謎</strong>: 作業の途中、Googleのストレージ画面で「Driveが9.68GB使用中」と表示されているのに気づいた。しかし実際に移行した中身は100〜150MB程度しかない。90倍以上の差があり、計算が全く合わなかった。調べてみると、以前どこかのタイミングで大きなファイルを削除した際、<strong>ゴミ箱を空にしていなかった</strong>可能性が濃厚だという所まで辿り着いた。Googleドライブのゴミ箱は自動では空にならず、手動で「ゴミ箱を空にする」を押さない限り容量を圧迫し続ける。ここは正直に書いておくと、<strong>この謎は最終的に自分の手では確認しきれず、保留のまま</strong>になっている。</p>
-<p><strong>家族との共有</strong>: Google Driveで便利だったことの一つに、家族とのフォルダ共有がある。Nextcloudでも同じことは可能で、家族専用アカウントを作って権限を細かく設定する方法と、アカウント不要のリンク共有で手軽に済ませる方法の2通りがある。これは記事執筆時点でまだどちらにするか決めきれていない、<strong>現在進行系の課題</strong>として正直に残しておく。</p>
-<h2 id="結果">結果</h2>
-<p>自分専用のファイルはNextcloud経由でMacからGoogle Driveと変わらない感覚で使えるようになった。家族共有フォルダ2つは「無理に移さない」という判断のままGoogleに残っており、これはこれで納得している状態。</p>
+<hr>
 <p>次は、同じNextcloudに連絡先とカレンダーも集約した話。→ <a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</a></p>
-<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し</p>
-]]></content:encoded></item><item><title>パスワードを1PasswordからVaultwardenに移す</title><link>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</guid><description>1Passwordを解約し、自前ホストのVaultwardenにパスワードを一本化した記録。docker-composeでの構築、Cloudflare Tunnelでの公開、パスワード・パスキーそれぞれの移行手順まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>1Passwordで管理していたパスワードとパスキーを、自分のサーバー上で動かすVaultwardenというソフトに移した記録。パスワード自体の移行はエクスポート・インポートで数分で終わるが、パスキー(WebAuthnという国際標準規格で実現されている、パスワードの代わりに指紋・顔認証などでログインする仕組み)は仕組み上コピーができず、サイトごとに手作業で登録し直す必要があった。</p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記</p>
+]]></content:encoded></item><item><title>パスワードを1PasswordからVaultwardenに移す</title><link>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</guid><description>1Passwordを解約し、自前ホストのVaultwardenにパスワードを一本化した記録。何を決め、何を選ばなかったか（移行先の選定、パスキーの使い分け、バックアップの鍵の置き場所）を前半に、docker-composeでの構築からパスキー再登録までの手順を後半に置いた。</description><content:encoded><![CDATA[<p>1Passwordで管理していたパスワードとパスキーを、自分のサーバー上で動かすVaultwardenというソフトに移した記録。パスワード15件・パスキー15件、全て移行を終えて1Passwordは解約した。</p>
+<p>先に役割を書いておく。<strong>コマンドと設定ファイルを書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> 構築の中身を考えなくていいぶん、「どのパスワードをどこに預けるか」という本題だけを考えられた。だからこのページも、前半に判断、後半に手順という形にしてある。</p>
+<p>パスワード自体の移行はエクスポート・インポートで数分で終わる。時間がかかるのはパスキー(WebAuthnという国際標準規格で実現されている、パスワードの代わりに指紋・顔認証などでログインする仕組み)で、仕組み上コピーができず、サイトごとに手作業で登録し直す必要があった。</p>
+<hr>
+<h2 id="決定1--移行先はvaultwardenにした">決定1 — 移行先はVaultwardenにした</h2>
+<p><strong>日付</strong> 2026年9月12日</p>
+<p><strong>迷ったこと</strong> パスワードマネージャーの自前ホスト選択肢は複数ある。どれにするか。</p>
+<p><strong>採った案</strong> <strong>Vaultwarden</strong> — Bitwardenというサービスの非公式互換サーバー実装。公式のBitwardenアプリ・ブラウザ拡張機能がそのまま使え、UIの完成度も高い。ゼロ知識暗号化(サーバー側もマスターパスワードを知らない設計)。普段使っているNextcloud・Immichと同じサーバー上に同居させられる手軽さと、公式アプリがそのまま使える点が決め手だった。</p>
+<p><strong>却下した案</strong></p>
+<ul>
+<li><strong>KeePassXC</strong> — サーバーを立てず、暗号化されたファイル1つで管理するタイプ。</li>
+<li><strong>Bitwarden公式のクラウド版</strong> — セルフホストではなく、Bitwarden社のサーバーに預ける形。</li>
+</ul>
+<p><strong>なぜ却下したか</strong> KeePassXCはオフラインで完結するが、複数端末間の同期を自分で用意する必要がある(クラウドストレージと組み合わせるのが一般的)。公式クラウド版は1Passwordと似た構図になるため、今回の「自分の手元に取り戻す」という目的には合わない。</p>
+<p><strong>残った教訓</strong> 目的が「自分の手元に取り戻す」なら、<strong>預け先の会社が変わるだけの案は、どれだけ出来が良くても候補から外れる。</strong> 比べるべきは製品の出来ではなく、目的との向きだった。</p>
+<hr>
+<h2 id="決定2--パスキーを全部vaultwardenに寄せなかった">決定2 — パスキーを全部Vaultwardenに寄せなかった</h2>
+<p><strong>日付</strong> 2026年9月12日</p>
+<p><strong>迷ったこと</strong> 1Passwordを棚卸しして出てきたパスキー全15件を、どこに登録し直すか。</p>
+<p><strong>採った案</strong> <strong>用途によって使い分ける。</strong> 会社PC(Windows)からのログインが必要なアカウントは、ブラウザ拡張機能のインストールが要らずQRコードでのクロスデバイス認証に対応しているiCloud Keychainへ。個人利用でデータ主権の方針に寄せたいアカウントは、パスワードと同じ場所で一元管理できるVaultwardenへ。</p>
+<p><strong>却下した案</strong> 全件をVaultwardenに一本化する。</p>
+<p><strong>なぜ却下したか</strong> 会社PCでは拡張機能を自由に入れられない。そこで使うアカウントまでVaultwardenに寄せると、いざ使う場面でログインできない。</p>
+<p><strong>残った教訓</strong> <strong>「全部を1箇所に」はそれ自体が目的ではない。</strong> 使う場面ごとに成立する置き場所を選ぶほうが、一元管理の見た目の美しさより実用に効く。</p>
+<hr>
+<h2 id="決定3--バックアップの取り出し鍵をvaultwarden自身に預けた">決定3 — バックアップの取り出し鍵を、Vaultwarden自身に預けた</h2>
+<p><strong>日付</strong> 2026年9月13日（バックアップ設定時）</p>
+<p><strong>迷ったこと</strong> バックアップ自体はVaultwardenのフォルダをBackblaze B2へ同期するだけで済む。問題は、そのB2に接続するための鍵(<code>rclone</code>の設定ファイル<code>~/.config/rclone/rclone.conf</code>)がサーバー本体にしか無いこと。サーバーが完全に壊れた時、バックアップを取り出す鍵ごと失われてしまう。</p>
+<p><strong>採った案</strong> この設定ファイルの中身を、<strong>Vaultwarden自身にSecure Note(パスワード以外のメモも安全に保存できる機能)として複製保存した。</strong> Vaultwardenはクライアントアプリに一度ログインしておけばオフラインキャッシュが残るため、サーバーが全損してもスマホから鍵を取り出せる。</p>
+<p><strong>却下した案</strong> 設定ファイルをサーバー本体にだけ置いたままにする(何もしなければこの状態になる)。</p>
+<p><strong>なぜ却下したか</strong> 「鶏と卵」の形になっているから。バックアップがあっても、それを開ける鍵がバックアップ対象の機械の中にしか無いなら、全損時には両方いっぺんに失う。</p>
+<p><strong>残った教訓</strong> <strong>バックアップの取り出し鍵自体も、バックアップしておく。</strong> バックアップの有無だけ見ていると、この一段上の依存関係を見落とす。</p>
+<hr>
+<h1 id="手順">手順</h1>
+<p>ここから下は<strong>Claudeが書き、自分の環境で実行して結果を確かめたもの</strong>だ。2026年9月の版で、実際にこれでパスワード15件・パスキー15件が移った。</p>
+<p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが先に分かる</strong>こと。見てのとおり5段階で、サーバー側は半日もかからない。時間を食うのはパスキーの再登録だけだ。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。ゼロから説明するより、動いた実例を見せたほうが早い。版が新しくなっていれば、そのとき合った形に直してくれる。</p>
 <h2 id="前提">前提</h2>
 <p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
 <ul>
 <li>常時起動しているLinux環境(Docker Engineが使える状態)</li>
 <li>自分名義のドメイン、Cloudflare Tunnelが動いている状態(導入手順は<a href="/guides/google-drive-to-nextcloud/">前々回の記事</a>のStep 3と同じ)</li>
 </ul>
-<h2 id="何をしたかったか">何をしたかったか</h2>
-<p>写真(<a href="/guides/google-photos-to-immich/">前の記事</a>)やファイル(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)と同じ理由で、1Passwordに預けていたパスワードも自分の手元に戻したいと思った。加えて、1Passwordは年額のサブスクリプションなので、自前ホストに切り替えれば単純にコストも減らせる。</p>
-<h2 id="vaultwardenを選んだ理由">Vaultwardenを選んだ理由</h2>
-<p>パスワードマネージャーの自前ホスト選択肢は複数ある。</p>
-<ul>
-<li><strong>Vaultwarden</strong> — Bitwardenというサービスの非公式互換サーバー実装。公式のBitwardenアプリ・ブラウザ拡張機能がそのまま使え、UIの完成度も高い。ゼロ知識暗号化(サーバー側もマスターパスワードを知らない設計)。</li>
-<li><strong>KeePassXC</strong> — サーバーを立てず、暗号化されたファイル1つで管理するタイプ。オフラインで完結するが、複数端末間の同期を自分で用意する必要がある(クラウドストレージと組み合わせるのが一般的)。</li>
-<li><strong>Bitwarden公式のクラウド版</strong> — セルフホストではなく、Bitwarden社のサーバーに預ける形。1Passwordと似た構図になるため、今回の「自分の手元に取り戻す」という目的には合わない。</li>
-</ul>
-<p>普段使っているNextcloud・Immichと同じサーバー上に同居させられる手軽さと、公式アプリがそのまま使える点を決め手にVaultwardenにした。</p>
 <h2 id="step-1-docker-composeでvaultwardenを構築する">Step 1: docker-composeでVaultwardenを構築する</h2>
 <p>Vaultwardenは公式イメージを使えばコンテナ1つで完結し、Nextcloudのようにデータベースを別途用意する必要もない分、今回の中では一番シンプルな部類だった。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/vaultwarden <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/vaultwarden
@@ -384,7 +447,7 @@ Missing metadata: 7
 <p>ブラウザはChrome・Firefoxの両方にBitwarden拡張機能を追加し、接続先の設定(拡張機能アイコン → 設定 → Self-hosted environment)に自分の<code>vault.taikiito.com</code>を入力する。スマートフォン用の公式Bitwardenアプリも同様に接続先を変更するだけで使える。</p>
 <p>パスワード自体の移行は、1Password側でエクスポートしたデータ(CSV形式など)をVaultwardenの「Import data」機能でインポートするだけで数分で終わった。ここは特につまづくところがなかった。</p>
 <h2 id="step-4-パスキーの移行">Step 4: パスキーの移行</h2>
-<p>パスワードと違い、パスキー(WebAuthn)はエクスポート・インポートで移せない仕様になっている。サイトごとに「旧パスキーを削除 → 新しいマネージャーで再登録」という地道な作業が必要だった。手元の1Passwordを棚卸ししたところ、登録済みのパスキーは全15件。</p>
+<p>パスワードと違い、パスキー(WebAuthn)はエクスポート・インポートで移せない仕様になっている。サイトごとに「旧パスキーを削除 → 新しいマネージャーで再登録」という地道な作業が必要だった。どのパスキーをVaultwardenに寄せ、どれをiCloud Keychainに残したかの基準は決定2のとおり。</p>
 <p>作業中に見つかった落とし穴:</p>
 <ul>
 <li><strong>ブラウザ拡張機能の競合</strong>: 1Password拡張機能を有効にしたままだと、WebAuthnのリクエストを1Password側が横取りしてしまい、Bitwarden/Vaultwarden拡張機能が反応できない。<code>chrome://extensions</code>で1Password拡張機能を完全にOFFにする必要があった。</li>
@@ -392,21 +455,48 @@ Missing metadata: 7
 <li><strong>iCloud Keychainを使う場合の見落としがちな設定</strong>: macOSでiCloudキーチェーン経由のパスキー登録をするには、システム設定 → 一般 → AutoFill &amp; Passwords の「Passwords」トグルが事前にONになっている必要がある(初期状態はOFF)。</li>
 <li><strong>削除する前に、実際に使っているか確認する</strong>: 「もう使っていないはず」と思っていたサービスのパスキーが、実は仕事の特定システムのログインで現役だと後から判明した件があった。1Password内の一覧だけを見て「使っていなさそう」で判断せず、実際に使う場面があるかを確認してから削除する方が安全だった。</li>
 </ul>
-<p>全部をVaultwardenに寄せたわけではなく、用途によって使い分けている。<strong>会社PC(Windows)からのログインが必要なアカウント</strong>はブラウザ拡張機能のインストールが要らずQRコードでのクロスデバイス認証に対応しているiCloud Keychainへ、<strong>個人利用でデータ主権の方針に寄せたいアカウント</strong>はパスワードと同じ場所で一元管理できるVaultwardenへ、という基準にした。</p>
 <h2 id="step-5-バックアップを設定する">Step 5: バックアップを設定する</h2>
 <p>Nextcloud・Immichと同じく<code>rclone</code>でBackblaze B2へ日次バックアップする。Vaultwardenの場合はデータベース(SQLite、1ファイルにまとまった軽量なデータベース形式)がそのままフォルダの中に入っているので、フォルダごと同期するだけでよい。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
 </span></span></span><span class="line"><span class="cl">  ~/vaultwarden/vw-data <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/vaultwarden&#34;</span>
-</span></span></code></pre></div><p><strong>このバックアップの取り出し鍵自体もバックアップしておく</strong>、という一段階上の注意点がある。<code>rclone</code>の設定ファイル(<code>~/.config/rclone/rclone.conf</code>、B2に接続するための鍵が入っている)がサーバー本体にしか無いと、サーバーが完全に壊れた時にバックアップを取り出す鍵ごと失われてしまう。自分はこの設定ファイルの中身を、Vaultwarden自身にSecure Note(パスワード以外のメモも安全に保存できる機能)として複製保存しておくことで、この「鶏と卵」問題を解決した。Vaultwardenはクライアントアプリに一度ログインしておけばオフラインキャッシュが残るため、サーバーが全損してもスマホから鍵を取り出せる。このバックアップ自体を「乗っ取られても消されない」形にする話は<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>に別途書いた。</p>
+</span></span></code></pre></div><p>このとき、<code>rclone</code>の設定ファイル(<code>~/.config/rclone/rclone.conf</code>、B2に接続するための鍵が入っている)の複製をVaultwarden自身のSecure Noteに入れておく。理由は決定3に書いた。このバックアップ自体を「乗っ取られても消されない」形にする話は<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>に別途書いた。</p>
 <h2 id="結果">結果</h2>
 <p>パスワード15件・パスキー15件、全て移行完了。1Passwordは解約し、年間の固定費を1本減らせた。パスワードの移行自体は簡単だが、パスキーは仕組み上コピーできないので、サイトごとの再登録作業を見込んでおくとよい。</p>
 <p>次は、連絡先とカレンダーをNextcloudに集約した話。→ <a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</a></p>
-<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し</p>
-]]></content:encoded></item><item><title>連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</title><link>https://offgrid.taikiito.com/guides/icloud-google-to-nextcloud-contacts-calendar/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-google-to-nextcloud-contacts-calendar/</guid><description>iCloud連絡先81件・Google連絡先553件をNextcloud Contactsへ、Googleカレンダーの個人予定232件をNextcloud Calendarへ移した記録。アプリパスワードの発行方法、CalDAV/CardDAVへ直接PUTする実際のコマンドまで書いた。</description><content:encoded><![CDATA[<p>連絡先とカレンダーを、Nextcloudの標準機能(Contacts・Calendar)に一本化した記録。すでにファイル(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)で使っていたNextcloudに機能を足すだけなので、新しいサーバーを立てる作業は無かった。件数が多かった分、Web UIのインポート機能が信頼できず、結局CalDAV(カレンダーの同期方法を定めた業界標準規格)・CardDAV(連絡先の同期方法を定めた業界標準規格)という仕組みへ直接データを送り込む方式に切り替えることになった。</p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記</p>
+]]></content:encoded></item><item><title>連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</title><link>https://offgrid.taikiito.com/guides/icloud-google-to-nextcloud-contacts-calendar/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-google-to-nextcloud-contacts-calendar/</guid><description>iCloud連絡先81件・Google連絡先553件をNextcloud Contactsへ、Googleカレンダーの個人予定232件をNextcloud Calendarへ移した記録。前半は何を決め、何を選ばなかったか。後半の手順（アプリパスワードの発行からCalDAV/CardDAVへ直接PUTするコマンドまで）はClaudeが書き、実行して確かめたもの。</description><content:encoded><![CDATA[<p>連絡先とカレンダーを、Nextcloudの標準機能(Contacts・Calendar)に一本化した記録。すでにファイル(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)で使っていたNextcloudに機能を足すだけなので、新しいサーバーを立てる作業は無かった。</p>
+<p>先に役割を書いておく。<strong>コマンドを書いたのはClaude(AnthropicのAIアシスタント)で、私は決める側をやった。</strong> 手順を考えなくていいぶん、「どのデータを移し、どれを残すか」だけをじっくり考えられた。だからこのページも、前半に判断、後半に実際の手順という形にしてある。</p>
 <h2 id="前提">前提</h2>
 <p>すでにNextcloudが動いていることを前提にする。まだの場合は先に<a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a>を読んでほしい。</p>
 <h2 id="何をしたかったか">何をしたかったか</h2>
 <p>連絡先はiCloudとGoogleの両方に分散していた。カレンダーは個人の予定をGoogleカレンダーで管理していた。どちらも「今後もGoogle/Appleに預け続けるほどの理由がない」データなので、ファイルや写真と同じ流れでNextcloudに集約することにした。同期方式は特定の会社に縛られない業界標準の規格(CardDAV・CalDAV)なので、Mac標準の「連絡先」「カレンダー」アプリやiPhoneからもそのまま繋げられる。</p>
+<hr>
+<h2 id="決定1--web-uiのインポートをやめcarddavcaldavへ直接putした">決定1 — Web UIのインポートをやめ、CardDAV/CalDAVへ直接PUTした</h2>
+<p><strong>日付</strong> 2026年9月12日</p>
+<p><strong>迷ったこと</strong> 連絡先633件・カレンダー232件を、Nextcloud Web UI(ブラウザ上の管理画面)のインポート機能で読み込ませるか。</p>
+<p><strong>採った案</strong> <strong>CalDAV(カレンダーの同期方法を定めた業界標準規格)・CardDAV(連絡先の同期方法を定めた業界標準規格)のエンドポイント(データの送り先URL)へ、1件ずつ<code>PUT</code>(データをサーバーへ送り込む処理)する方式に切り替えた。</strong> 地道なやり方だが、Web UIのインポートより確実に反映される。</p>
+<p><strong>却下した案</strong> Web UIの「連絡先をインポート」「カレンダーをインポート」機能。</p>
+<p><strong>なぜ却下したか</strong> 実際に試して通らなかったからだ。連絡先は件数が多いと不安定だった。カレンダーは<code>.ics</code>ファイルを読み込ませたところ「could not be parsed」(うまく読み取れなかった、というエラーメッセージ)で止まり、<code>.ics</code>ファイルの行折り返し(RFC5545というカレンダーデータの技術仕様で決められたルール)を手直ししても解決しなかった。</p>
+<p><strong>後から見た当たり外れ</strong> 当たり。連絡先633件・カレンダー232件、全てこの方式で成功した。</p>
+<p><strong>残った教訓</strong> <strong>Web UIの一括インポートは大量データに弱い。</strong> 少数なら問題ないと思うが、数百件規模ならCalDAV/CardDAVへ直接PUTする方式を最初から選んだ方が早い。</p>
+<hr>
+<h2 id="決定2--妻と共有しているカレンダーはgoogleに残した">決定2 — 妻と共有しているカレンダーは、Googleに残した</h2>
+<p><strong>日付</strong> 2026年9月12日</p>
+<p><strong>迷ったこと</strong> カレンダーをどこまでNextcloudへ移すか。</p>
+<p><strong>採った案</strong> <strong>個人の予定232件だけを移し、反映を確認したうえでGoogle Calendar側の元データは削除した。妻と共有しているカレンダーはGoogleに残した。</strong></p>
+<p><strong>却下した案</strong> 共有カレンダーも含めて全部移す。</p>
+<p><strong>なぜ却下したか</strong> 相手がGoogle前提で使っているためだ。<a href="/guides/google-drive-to-nextcloud/">ファイル移行</a>の時の「<strong>移す理由が移さない理由に勝つものだけ移す</strong>」という基準を、ここでも踏襲した形だ。</p>
+<p><strong>残った教訓</strong> 自分だけのデータと、相手のいるデータは同じ基準では動かせない。移さない判断も移行の一部だ。</p>
+<hr>
+<h2 id="つまづいた所と積み残し">つまづいた所と積み残し</h2>
+<p><strong><code>.well-known/carddav</code>のリダイレクトが失敗する</strong>: macOSは通常、サーバーアドレスを短く入力するだけで<code>.well-known/carddav</code>という決まったパスへ自動でアクセスし、正しいCardDAVのURLへリダイレクトしてくれる仕組みになっている。ところが、Cloudflare経由のリダイレクト処理の影響で、この自動検出がうまく機能しなかった。自動検出をあきらめてフルパスを直接指定することで解決した(後半のStep 4参照)。同じ症状はCalDAV側(<code>.well-known/caldav</code>)でも起こりうるので、うまくいかない場合は同じ対処(フルパス直接指定)を試すとよい。</p>
+<p>積み残しもある。祖父の命日のような毎年繰り返す予定は、Google側で表示されていた2025〜2029年分のインスタンスだけを削除しており、繰り返しルールそのもの(マスター)は消していない。2030年以降にまた自動で出現する可能性があるため、気になったら改めてGoogle Calendar側で対応する必要がある。また、Gmailにはフライトやレストランの予約確認メールを自動でGoogleカレンダーに追加してくれる機能があるが、これは自前のメール+Nextcloudカレンダーの組み合わせには存在しない、Google独自の仕組みで、メール・カレンダーのどちらか片方だけ移しても再現できない。同等の仕組みを自作するなら別プロジェクトになるので、今回は見送っている。</p>
+<h2 id="結果">結果</h2>
+<p>連絡先633件・カレンダー232件、どちらも移行完了。MacとiPhoneから、Google/iCloudの時とほぼ変わらない感覚で使えている。大量データの移行はWeb UIのインポートを過信せず、CalDAV/CardDAVへの直接PUTを検討するとよい、というのが一番の学びだった。</p>
+<hr>
+<h1 id="手順">手順</h1>
+<p>ここから下は<strong>Claudeが書き、自分の環境で実行して結果を確かめたもの</strong>だ。2026年9月の版で、実際にこれで連絡先633件・予定232件が移った。</p>
+<p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが先に分かる</strong>こと。見てのとおり、アプリパスワードの発行からカレンダー移行まで5段階の話だ。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。ゼロから説明するより、動いた実例を見せたほうが早いし、あなたの環境に合わせた形に直してくれる。</p>
 <h2 id="step-1-nextcloudのアプリパスワードを発行する">Step 1: Nextcloudのアプリパスワードを発行する</h2>
 <p>まず、CardDAV/CalDAV経由でアクセスするための専用パスワードを発行する。Nextcloud本体のログインパスワードをそのまま外部アプリに渡すのは避け、用途ごとに無効化できる「アプリパスワード」を使うのが基本。</p>
 <p>Nextcloudの画面右上のアイコン → <strong>個人設定(Personal settings)</strong> → <strong>セキュリティ(Security)</strong> → 「新しいアプリパスワードを作成」から、名前(例: <code>contacts-migration</code>)を付けて発行する。表示されたパスワードは、この画面を閉じると二度と表示されないので、一時的にメモしておく。</p>
@@ -418,7 +508,7 @@ Missing metadata: 7
 </ul>
 <p>重複1件を除いた633件を、まとめた1つの<code>.vcf</code>ファイルにしておく(vCard形式は複数の連絡先を1ファイルに連結できる)。</p>
 <h2 id="step-3-carddavへ直接putする">Step 3: CardDAVへ直接PUTする</h2>
-<p>Nextcloud Web UI(ブラウザ上の管理画面)の「連絡先をインポート」機能も試したが、件数が多いと不安定だったため、CardDAVのエンドポイント(データの送り先URL)へ、1件ずつ<code>PUT</code>(データをサーバーへ送り込む処理)する方式に切り替えた。</p>
+<p>決定1のとおり、Web UIのインポートではなくCardDAVのエンドポイントへ1件ずつ送り込む。</p>
 <p>まず、まとめた<code>.vcf</code>ファイルを連絡先1件ずつのファイルに分割する(Pythonの<code>vobject</code>ライブラリや、<code>csplit</code>のようなテキスト分割コマンドで、<code>BEGIN:VCARD</code>〜<code>END:VCARD</code>の区切りごとに切り出す)。分割できたら、1件ずつ以下のようにアップロードする。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -u <span class="s2">&#34;admin:&lt;Step1のアプリパスワード&gt;&#34;</span> <span class="se">\
 </span></span></span><span class="line"><span class="cl">  -X PUT <span class="se">\
@@ -428,34 +518,47 @@ Missing metadata: 7
 </span></span></code></pre></div><p>これを633件分、シェルスクリプトの<code>for</code>ループなどで繰り返す。1件ずつリソースとしてサーバーに送り込む地道なやり方だが、Web UIのインポートより確実に反映される。</p>
 <h2 id="step-4-macで連絡先を同期する">Step 4: Macで連絡先を同期する</h2>
 <p>Macの「連絡先」アプリ → 環境設定 → アカウント → 「アカウントを追加」→「他のアカウント」→「CardDAVアカウントを追加」。</p>
-<p>ここでハマったポイントがある。macOSは通常、サーバーアドレスを短く入力するだけで<code>.well-known/carddav</code>という決まったパスへ自動でアクセスし、正しいCardDAVのURLへリダイレクトしてくれる仕組みになっている。ところが、Cloudflare経由のリダイレクト処理の影響で、この自動検出がうまく機能しなかった。</p>
-<p><strong>解決策</strong>: サーバーアドレスの欄に、自動検出用の短いURL(<code>drive.taikiito.com</code>)ではなく、以下のフルパスを直接入力する。</p>
+<p>ここで前述の<code>.well-known/carddav</code>の件にハマった。<strong>解決策</strong>: サーバーアドレスの欄に、自動検出用の短いURL(<code>drive.taikiito.com</code>)ではなく、以下のフルパスを直接入力する。</p>
 <pre tabindex="0"><code>https://drive.taikiito.com/remote.php/dav/principals/users/admin/
 </code></pre><p>ユーザー名は<code>admin</code>(Nextcloudのユーザー名)、パスワードはStep 1で発行したアプリパスワードを使う。iPhoneの「連絡先」アプリでも同じ設定項目がある。</p>
 <h2 id="step-5-カレンダーの移行232件">Step 5: カレンダーの移行(232件)</h2>
 <p>個人用のGoogleカレンダーに入っていた予定(2019〜2029年、232件)をNextcloud Calendarの「Personal」カレンダーへ移す。</p>
 <p>まず<a href="https://calendar.google.com">calendar.google.com</a>の設定画面から、対象のカレンダーを<code>.ics</code>ファイル(カレンダーの予定データをやり取りするための標準的なファイル形式)としてエクスポートする。</p>
-<p>最初はNextcloud Web UIの「カレンダーをインポート」機能で<code>.ics</code>ファイルをそのまま読み込ませようとしたが、「could not be parsed」(うまく読み取れなかった、というエラーメッセージ)というエラーで通らなかった。<code>.ics</code>ファイルの行折り返し(RFC5545というカレンダーデータの技術仕様で決められたルール)を手直ししても解決しなかったため、連絡先と同じくCalDAVへ直接PUTする方式に切り替えた。</p>
-<p><code>.ics</code>ファイルを1イベントずつに分割し(<code>BEGIN:VEVENT</code>〜<code>END:VEVENT</code>の区切りで切り出す)、以下のようにアップロードする。</p>
+<p>決定1のとおり、Web UIのインポートは通らなかったので、連絡先と同じくCalDAVへ直接PUTする。<code>.ics</code>ファイルを1イベントずつに分割し(<code>BEGIN:VEVENT</code>〜<code>END:VEVENT</code>の区切りで切り出す)、以下のようにアップロードする。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">curl -u <span class="s2">&#34;admin:&lt;アプリパスワード&gt;&#34;</span> <span class="se">\
 </span></span></span><span class="line"><span class="cl">  -X PUT <span class="se">\
 </span></span></span><span class="line"><span class="cl">  --data-binary @event-001.ics <span class="se">\
 </span></span></span><span class="line"><span class="cl">  -H <span class="s2">&#34;Content-Type: text/calendar; charset=utf-8&#34;</span> <span class="se">\
 </span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.taikiito.com/remote.php/dav/calendars/users/admin/personal/event-001.ics&#34;</span>
-</span></span></code></pre></div><p>232件全てこの方式でアップロードしたところ、全て成功した。反映を確認したうえで、Google Calendar側の元データは削除した。ただし、妻と共有しているカレンダーはGoogleに残す判断にした(相手がGoogle前提で使っているため)。ファイル移行の時の「移す理由が移さない理由に勝つものだけ移す」という基準を、ここでも踏襲した形だ。</p>
-<h2 id="つまづいた所">つまづいた所</h2>
-<p><strong>1. Web UIの一括インポートは大量データに弱い</strong>: 連絡先・カレンダーともに、NextcloudのWeb UIインポート機能は件数が多いと信頼できなかった。少数なら問題ないと思うが、数百件規模ならCalDAV/CardDAVへ直接PUTする方式を最初から選んだ方が早い、というのが今回の教訓。</p>
-<p><strong>2. <code>.well-known/carddav</code>のリダイレクトが失敗する</strong>: 上記Step 4の通り、自動検出をあきらめてフルパスを直接指定することで解決した。同じ症状はCalDAV側(<code>.well-known/caldav</code>)でも起こりうるので、うまくいかない場合は同じ対処(フルパス直接指定)を試すとよい。</p>
-<p>積み残しもある。祖父の命日のような毎年繰り返す予定は、Google側で表示されていた2025〜2029年分のインスタンスだけを削除しており、繰り返しルールそのもの(マスター)は消していない。2030年以降にまた自動で出現する可能性があるため、気になったら改めてGoogle Calendar側で対応する必要がある。また、Gmailにはフライトやレストランの予約確認メールを自動でGoogleカレンダーに追加してくれる機能があるが、これは自前のメール+Nextcloudカレンダーの組み合わせには存在しない、Google独自の仕組みで、メール・カレンダーのどちらか片方だけ移しても再現できない。同等の仕組みを自作するなら別プロジェクトになるので、今回は見送っている。</p>
-<h2 id="結果">結果</h2>
-<p>連絡先633件・カレンダー232件、どちらも移行完了。MacとiPhoneから、Google/iCloudの時とほぼ変わらない感覚で使えている。大量データの移行はWeb UIのインポートを過信せず、CalDAV/CardDAVへの直接PUTを検討するとよい、というのが一番の学びだった。</p>
+</span></span></code></pre></div><p>232件全てこの方式でアップロードしたところ、全て成功した。反映の確認後にGoogle側の元データをどう扱ったかは決定2に書いた。</p>
+<hr>
 <p>次は、メモをJoplinに移そうとして、結局全部は移さなかった話。→ <a href="/guides/icloud-notes-to-joplin/">メモをiCloud NotesからJoplinに移す</a></p>
-<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: アプリパスワードの発行手順・実際のcurl PUTコマンドを追記し、再現可能なレベルに書き直し</p>
-]]></content:encoded></item><item><title>メモをiCloud NotesからJoplinに移す(で、結局移さなかった話)</title><link>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</guid><description>iCloud Notes 1,649件をJoplinに一本化しようとして、結局は「過去分は移さず、新規メモだけJoplinで書く」という決着にした記録。Nextcloud WebDAV同期の実際の設定手順、iPhone発熱問題も。</description><content:encoded><![CDATA[<p>iCloud Notesに溜まっていたメモを、自前で管理できるJoplinというソフトに移そうとした記録。結論から書くと、過去の1,649件は結局移行せず、Joplinは新規メモ専用として運用することにした。「全部きれいに移す」ことにこだわらなかった判断の話でもある。</p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: アプリパスワードの発行手順・実際のcurl PUTコマンドを追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記</p>
+]]></content:encoded></item><item><title>メモをiCloud NotesからJoplinに移す(で、結局移さなかった話)</title><link>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</guid><description>iCloud Notes 1,649件をJoplinに一本化しようとして、「過去分は移さず、新規メモだけJoplinで書く」と決めた記録。何を迷い、なぜ完全移行を却下したかを前半に、Nextcloud WebDAV同期の実際の設定手順を後半に置いた。</description><content:encoded><![CDATA[<p>iCloud Notesに溜まっていたメモ1,649件を、自前で管理できるJoplinというソフトに移そうとした記録。結論から書くと、過去の1,649件は移行せず、Joplinは新規メモ専用として運用することにした。「全部きれいに移す」ことにこだわらなかった判断の話でもある。</p>
+<p>先に役割を書いておく。<strong>同期の設定値を調べて書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> この記事に限っては、設定より判断のほうがはっきり重い。環境を整えること自体は半日もかからず、本題は「1,649件をどうするか」を決めることだった。だからこのページも、前半に判断、後半に手順という形にしてある。</p>
+<hr>
+<h2 id="決定1--過去の1649件を移さなかった">決定1 — 過去の1,649件を移さなかった</h2>
+<p><strong>日付</strong> 2026年9月12日</p>
+<p><strong>迷ったこと</strong> 環境は整ったが、肝心の「iCloud Notesの過去メモをどうやってJoplinに移すか」で立ち止まった。エクスポート自体は可能(Macの「メモ」アプリからPDFや個別ファイルとして書き出せる)。</p>
+<p><strong>採った案</strong> <strong>過去の1,649件はiCloud Notes側にそのまま残し、Joplinは今後書く新規メモ専用として運用する。</strong> 「全部を完璧に移してから使い始める」のではなく、「新しい方から始めて、今後蓄積されるものだけを自分の手元で管理する」という割り切り方だ。</p>
+<p><strong>却下した案</strong> 1,649件をエクスポートしてJoplinに取り込む、当初計画どおりの完全移行。</p>
+<p><strong>なぜ却下したか</strong> 実際に中身を見返してみると、大した情報が入っていないメモがほとんどだった。買い物リストの切れ端、一度きりのちょっとしたメモ、すでに用が済んでいる下書きなど。1,649件を一つ一つ精査して移す価値があるかというと、かかる手間に見合わないと判断した。</p>
+<p><strong>後から見た当たり外れ</strong> 運用してみて、iCloud Notesの過去メモを能動的に見返すことはほとんどない。アーカイブとして置いてあれば足りている。</p>
+<p><strong>残った教訓</strong> <strong>「完全移行」にこだわらず、価値のある部分だけを新しい仕組みに乗せる、という判断も移行の一つの形だ。</strong> ファイル移行の時の「移す理由が移さない理由に勝つものだけ移す」という基準の延長線上にある。</p>
+<hr>
+<h2 id="決定2--同期を自動ではなく手動にした">決定2 — 同期を「自動」ではなく「手動」にした</h2>
+<p><strong>日付</strong> 2026年9月12日</p>
+<p><strong>迷ったこと</strong> Mac・iPhone間の同期を、アプリ任せの自動にするか、自分でボタンを押す手動にするか。</p>
+<p><strong>採った案</strong> <strong>手動。</strong> メモを書いたタイミングで自分で同期ボタンを押す。</p>
+<p><strong>却下した案</strong> 自動同期(バックグラウンドでの定期的なポーリング)。</p>
+<p><strong>なぜ却下したか</strong> iPhoneで自動同期を有効にすると本体が発熱する症状が出たため。常時バックグラウンドで同期し続けるより、手動の運用の方が今のところ実用上困らないと判断した。</p>
+<p><strong>残った教訓</strong> 同期は「常に自動であるべき」ものではない。<strong>端末に実害が出るなら、自分の使い方で困らない範囲まで落とす</strong>ほうが長続きする。</p>
+<hr>
+<h1 id="手順">手順</h1>
+<p>ここから下は<strong>Claudeが書き、自分の環境で設定して動くことを確かめたもの</strong>だ。2026年9月の版で、実際にこの設定でMac・iPhoneの同期が動いている。</p>
+<p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが先に分かる</strong>こと。見てのとおり3段階で、新しいサーバーを立てる作業は無く、既存のNextcloudに設定を足すだけだ。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。ゼロから説明するより、動いた実例を見せたほうが早い。版が新しくなっていれば、そのとき合った形に直してくれる。</p>
 <h2 id="前提">前提</h2>
 <p>すでにNextcloudが動いていることを前提にする。まだの場合は先に<a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a>を読んでほしい。Joplin自体は自分でサーバーを用意する必要がなく、既存のNextcloudをファイル置き場として使うだけなので、新しいDockerコンテナを立てる作業は無い。</p>
-<h2 id="何をしたかったか">何をしたかったか</h2>
-<p>iCloud Notesには、思いついたことをその場で書き留めたメモが1,649件溜まっていた。写真やファイルと同じく、Appleに預けっぱなしのデータを自分の手元に戻したいと考え、Joplinの導入を決めた。</p>
 <h2 id="step-1-joplinを選ぶ">Step 1: Joplinを選ぶ</h2>
 <p>メモアプリの自前ホスト選択肢もいくつかあるが、Markdown形式(見出しや箇条書きなどを簡単な記号だけで書ける、プレーンテキストに近いメモの書き方)でメモを書けること、Nextcloud WebDAV(ファイルをネットワーク越しにやり取りするための標準規格。専用サーバーソフトを別途用意しなくても、既存のNextcloudがそのまま使える)経由で同期できること、Mac・iPhone両方に公式アプリがあることを決め手にJoplinにした。</p>
 <h2 id="step-2-nextcloud側にjoplin専用フォルダとアプリパスワードを用意する">Step 2: Nextcloud側にJoplin専用フォルダとアプリパスワードを用意する</h2>
@@ -470,27 +573,71 @@ Missing metadata: 7
 <li>パスワード: Step 2で発行したアプリパスワード</li>
 </ul>
 <p>設定後、同期ボタンを押して接続が成功することを確認する。Mac・iPhoneの両方に同じ設定を入れることで、同じNextcloudフォルダを見に行く形になる。</p>
-<p><strong>同期は「自動」ではなく「手動」に設定している。</strong> 理由は、iPhoneで自動同期(バックグラウンドでの定期的なポーリング)を有効にすると本体が発熱する症状が出たため。常時バックグラウンドで同期し続けるより、メモを書いたタイミングで自分で同期ボタンを押す運用の方が、今のところ実用上困らないと判断した。</p>
-<h2 id="step-4-過去の1649件をどうするか検討する">Step 4: 過去の1,649件をどうするか検討する</h2>
-<p>ここまで環境は整ったが、肝心の「iCloud Notesの過去メモをどうやってJoplinに移すか」で立ち止まった。</p>
-<p>エクスポート自体は可能(Macの「メモ」アプリからPDFや個別ファイルとして書き出せる)だが、実際に中身を見返してみると、大した情報が入っていないメモがほとんどだった。買い物リストの切れ端、一度きりのちょっとしたメモ、すでに用が済んでいる下書きなど。1,649件を一つ一つ精査して移す価値があるかというと、かかる手間に見合わないと判断した。</p>
-<p>最終的に、<strong>過去の1,649件はiCloud Notes側にそのまま残し、Joplinは今後書く新規メモ専用として運用する</strong>ことにした。「全部を完璧に移してから使い始める」のではなく、「新しい方から始めて、今後蓄積されるものだけを自分の手元で管理する」という割り切り方だ。ファイル移行の時の「移す理由が移さない理由に勝つものだけ移す」という基準の延長線上にある判断でもある。</p>
+<p>同期は決定2のとおり「自動」ではなく「手動」に設定している。</p>
 <h2 id="結果">結果</h2>
-<p>Joplinは新規メモの置き場として運用中。iCloud Notesの過去メモはアーカイブとしてそのまま残しているが、能動的に見返すことはほとんどない。「完全移行」にこだわらず、価値のある部分だけを新しい仕組みに乗せる、という判断も移行の一つの形だと思っている。</p>
+<p>Joplinは新規メモの置き場として運用中。iCloud Notesの過去メモはアーカイブとしてそのまま残しているが、能動的に見返すことはほとんどない。</p>
 <p>次は、メールをGmailから自分のドメインに移した、一番苦労した話。→ <a href="/guides/gmail-to-own-domain/">メールをGmailから自分のドメインに移す</a></p>
-<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: NextcloudのWebDAV同期の実際の設定手順(URL・アプリパスワード)を追記し、再現可能なレベルに書き直し</p>
-]]></content:encoded></item><item><title>メールをGmailから自分のドメイン(iCloud+カスタムドメイン)に移す</title><link>https://offgrid.taikiito.com/guides/gmail-to-own-domain/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/gmail-to-own-domain/</guid><description>Gmailを卒業し、自分のドメインのメールアドレス(iCloud+カスタムドメイン機能)に一本化した記録。DNSレコードの実際の設定値、Thunderbirdの3層アカウント構造でハマった話、復旧作業中に4,293件のメールを誤って喪失し原本から復元した話まで、正直に書く。</description><content:encoded><![CDATA[<p>長年使っていたGmailをやめて、自分のドメインのメールアドレスに主メールを一本化した記録。土台はiCloud+の「カスタムメールドメイン」機能で、既にiPhoneのバックアップ用にiCloud+を契約していたため追加コストはかからなかった。作業自体は数日がかりで、途中で本当にメールを失いかけた場面もあった。この記事はその過程を、うまくいかなかった所も含めて正直に書く。</p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: NextcloudのWebDAV同期の実際の設定手順(URL・アプリパスワード)を追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、設定をClaudeが書いたことを明記</p>
+]]></content:encoded></item><item><title>メールをGmailから自分のドメイン(iCloud+カスタムドメイン)に移す</title><link>https://offgrid.taikiito.com/guides/gmail-to-own-domain/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/gmail-to-own-domain/</guid><description>Gmailを卒業し、自分のドメインのメールアドレス(iCloud+カスタムドメイン機能)に一本化した記録。何を決め、何を却下したかを前半に、DNSレコードの実際の設定値と移行手順を後半に置いた。復旧作業中に4,293件を誤って喪失し原本から復元した話まで、正直に書く。</description><content:encoded><![CDATA[<p>長年使っていたGmailをやめて、自分のドメインのメールアドレスに主メールを一本化した記録。土台はiCloud+の「カスタムメールドメイン」機能で、既にiPhoneのバックアップ用にiCloud+を契約していたため追加コストはかからなかった。</p>
+<p>先に役割を書いておく。<strong>DNSの設定値や移行スクリプトを書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側と、移ったかどうかを確かめる側をやった。</strong> 作業自体は数日がかりで、途中で本当にメールを失いかけた場面もあったが、46,544件のメールは最終的にほぼ完全に移った。手順を考えなくていいぶん、「どこに移すか」「いつ消すか」という判断に集中できた。</p>
+<p>だからこのページも、前半に判断（何を決め、何を選ばなかったか）と当時ハマったことを、後半に手順（Claudeが書き、自分の環境で実行して結果を確かめたもの）を置く。うまくいかなかった所も含めて正直に書く。</p>
+<h2 id="何をしたかったか">何をしたかったか</h2>
+<p>Gmailは便利だが、Googleに完全に預けているアカウントでもある。自分名義のドメインを取得したことで、自分のドメインでメールを受け取れる状態が整った。iCloud+はもともとiPhoneのバックアップ用に契約していたので、カスタムドメインのメールボックスを足しても容量を共有するだけで実質タダ。これなら移行のコストに見合うと判断した。</p>
+<hr>
+<h2 id="決定1--fastmailではなくicloudのカスタムドメインにした">決定1 — FastmailではなくiCloud+のカスタムドメインにした</h2>
+<p><strong>日付</strong> 2026年9月（移行作業の時期）</p>
+<p><strong>迷ったこと</strong> 自前ドメインでメールを使う場合、有名な選択肢としてFastmailがある。料金以外の軸(標準プロトコル対応、Apple以外の端末での使い勝手、エイリアスの上限、送信ドメインとしての評判、データの持ち出しやすさ)で比較検討した。</p>
+<p><strong>採った案</strong> <strong>iCloud+のカスタムメールドメイン機能。</strong></p>
+<p><strong>却下した案</strong> Fastmailへの乗り換え。</p>
+<p><strong>なぜ却下したか</strong> 比較の途中で、自分の思い込みが一つ崩れた。iCloud MailはApple製品専用だとばかり思っていたが、実際には標準のIMAP/SMTP(メールの受信・送信をやり取りするための業界共通の通信規格。この2つに対応していれば、どのメールソフトからでも接続できる)にアプリ専用パスワードでアクセスすれば、Thunderbirdのような普通のメールクライアント(メールを読み書きするためのアプリ)からも使える。<strong>「ロックインされて出られなくなる」という一番の懸念はほぼ杞憂だった。</strong> すでに契約しているiCloud+の容量を共有できて実質無料な点も踏まえ、Fastmailへの乗り換えは見送った。</p>
+<p><strong>後から見た当たり外れ</strong> のちにこの構成そのものを一周考え直し、Fastmailへ移すことになった。その経緯と理由は<a href="/guides/own-domain-mail-to-fastmail/">続きの記事</a>に書いた。</p>
+<p><strong>残った教訓</strong> 「出られなくなるかどうか」は印象で判断できない。標準規格(IMAP/SMTP)に対応しているかを確かめれば答えが出る。</p>
+<hr>
+<h2 id="決定2--dmarcは段階を飛ばしてprejectまで一気に締めた">決定2 — DMARCは段階を飛ばして<code>p=reject</code>まで一気に締めた</h2>
+<p><strong>日付</strong> 2026年9月（ドメインの送信環境が安定してきた後）</p>
+<p><strong>迷ったこと</strong> なりすまし対策(DMARC)をどの順で強めるか。<code>p=none</code>(様子見) → <code>p=quarantine</code>(怪しいメールを迷惑メール行き) → <code>p=reject</code>(なりすましメールを完全拒否)の順に段階を踏むのが一般的とされている。</p>
+<p><strong>採った案</strong> <strong>段階を飛ばして一気に<code>p=reject</code>まで進めた。</strong> SPFも<code>~all</code>(該当しない送信元は「疑わしい」扱い)から<code>-all</code>(該当しない送信元は「完全に拒否」)へ強化した。</p>
+<p><strong>却下した案</strong> 段階を踏む一般的な手順。</p>
+<p><strong>なぜ却下したか</strong> 自分の場合は送信経路がiCloudのみで、SPF/DKIMがすでに正常に機能していたため、リスク評価をした上で飛ばせると判断した。</p>
+<p><strong>残った教訓</strong> 段階を踏むかどうかは儀式ではなく、送信経路が何本あるかで決まる。経路が1本で認証が機能しているなら飛ばせる。ただし<code>p=reject</code>にすると、使っている経路以外からは一切メールが届かなくなるので、今後別のメールサービスを足す場合はSPFレコードに新しい送信元を<code>include:</code>で追加し忘れないこと。</p>
+<hr>
+<h2 id="決定3--gmailを即削除しなかった">決定3 — Gmailを即削除しなかった</h2>
+<p><strong>日付</strong> 2026年9月（移行完了後）</p>
+<p><strong>迷ったこと</strong> 移行が終わったGmail側のメールと、Googleアカウント自体をどうするか。</p>
+<p><strong>採った案</strong> バックアップ済み・移行件数の整合性確認済み・新着メールの転送設定済みの3点を確認したうえで、指定日より前の全メール(49,755件)を<strong>Gmailの「ゴミ箱」フォルダへ移動</strong>した。Gmailのゴミ箱は30日後に自動で完全削除される仕組みなので、<strong>即座に完全削除したわけではなく、猶予期間を残した状態</strong>にしてある。</p>
+<p><strong>却下した案</strong> 即時の完全削除、およびGoogleアカウント自体の削除。</p>
+<p><strong>なぜ却下したか</strong> しばらく<code>me@taikiito.com</code>側の運用が安定するのを見届けてから、次の判断(アカウント自体を消すかどうか)をするつもりでいるため。この記事を書いている時点で、Googleアカウント自体はまだ削除していない。</p>
+<p><strong>残った教訓</strong> 消すのは最後で、しかも猶予をはさむ。移行元の生データ(Google Takeoutの原本)も、移行作業が完全に終わるまで絶対に消さない。これは下の「当時ハマったこと」の3件目で身をもって学んだ。</p>
+<hr>
+<h2 id="当時ハマったこと3つ">当時ハマったこと（3つ）</h2>
+<p><strong>1. Thunderbirdの「3層構造」に気づかず認証が通らなかった</strong></p>
+<p>WindowsでThunderbirdを使って移行作業をしようとしたところ、何度設定してもIMAP/SMTPの認証が通らなかった。原因は、iCloudのアカウント構造が3層になっていたこと。</p>
+<ul>
+<li>表向きのApple IDサインイン用メールアドレス</li>
+<li>実際のIMAP/SMTP認証に使う、真のiCloudアカウントアドレス(<code>@icloud.com</code>形式)</li>
+<li>送受信に使う見た目のアドレス(カスタムドメインのエイリアス)</li>
+</ul>
+<p>ポイントは<strong>ユーザー名欄</strong>で、一番上のApple IDのアドレスでも、送受信に使うカスタムドメインのアドレスでもなく、<strong>中間層の真のiCloudアカウントアドレスをフルで入力する</strong>必要がある。これはApple公式の設定手順のどこにも明記されておらず、突き止めるまで何度も認証エラーに悩まされた。実際のサーバー設定値は手順のStep 4に表で載せた。</p>
+<p><strong>2. 「完了」と判断したが、実は直近1〜2ヶ月分が抜けていた</strong></p>
+<p>Gmailの全メール(46,544件)をThunderbird経由でiCloud側へ移すスクリプト(Claudeが書き、自分の環境で実行したもの)を走らせた。進捗ログを見ながら待ち、件数がおおよそ一致したことを確認して「移行完了」と判断した。</p>
+<p>ところが後日、送信済みメールを見返していて、直近のメールが見当たらないことに気づいた。調べると、スクリプトは古いメールから新しいメールへ順番に処理する作りで、確認した時点では全体の約8割(37,362件/46,544件)までしか進んでおらず、<strong>直近1〜2ヶ月分がまだ移行されていない状態で「完了」と誤判断していた</strong>ことが分かった。「件数がざっくり合っている」だけでは、移行完了の確認として不十分だったという教訓。</p>
+<p><strong>3. 復旧作業中に4,293件を誤って喪失、Google Takeoutの原本から復元</strong></p>
+<p>上記の見落としを受けて調査していたところ、さらに深刻な問題が見つかった。iCloud側で重複メールを整理する作業をしていた際、<strong>4,293件のメールを誤って消してしまっていた</strong>。加えて、作業の混乱の中でThunderbirdのローカルインポートフォルダ自体も誤って削除してしまい、復元の頼みの綱を一つ失った。</p>
+<p>幸い、Gmailの公式エクスポート機能(Google Takeout、<a href="/guides/google-photos-to-immich/">写真移行の記事</a>で使ったのと同じ機能)で取得していた元データ(zipファイル、Gmailの全メールをmbox形式(メールをまとめて1つのファイルに保存する一般的な形式)で含む)がゴミ箱に残っていた。これは「Thunderbirdの中間コピー」ではなく「Gmail公式のエクスポート原本」なので、むしろ最も確実な復旧元だった。</p>
+<p>Message-ID(メール1通ごとの一意な識別子、ヘッダーに必ず含まれる)単位で「Takeoutの原本」と「今iCloud側にあるメール」を突き合わせる復旧スクリプトをClaudeが書き、欠落していたメールを復元した。最終的に、iCloudの1通あたりのサイズ上限を超えている(添付ファイルが大きい)ため原理的に復元不可能な2〜3件を除いて、ほぼ完全に復旧できた。</p>
+<p><strong>このとき得た一番の教訓</strong>: 大量データの移行を「件数がだいたい合っている」だけで完了と判断しない。Message-IDで突き合わせる方式が、確実に検証する唯一の方法だった。<strong>そしてGoogle Takeoutのような「移行元の公式エクスポート」は、移行作業が終わるまで絶対に消さないこと。</strong></p>
+<h2 id="結果">結果</h2>
+<p><code>me@taikiito.com</code>が主メールとして定着し、日常的に使っている。途中でメールを実際に失いかけた一件は、この移行作業の中で一番肝を冷やした部分だったが、Google Takeoutで原本のバックアップを取っておいたことが最終的に救いになった。<strong>大量データを移す時は、移行先だけでなく移行元の生データも別途バックアップしておく</strong>、というのが今回一番強く実感した教訓だった。</p>
+<hr>
+<h1 id="手順">手順</h1>
+<p>ここから下は<strong>Claudeが書き、自分の環境で実行して結果を確かめたもの</strong>だ。2026年9月の版で、実際にこれで46,544件のメールが移った。</p>
+<p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが先に分かる</strong>こと。見てのとおり5段階で、数日がかりだが終わりのある作業だ。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。あなたもClaudeやChatGPTのようなAIを使えるなら、自分のドメインと環境に合わせて出し直してもらうのがいちばんいい。そのとき前半の判断が頼む前の材料になる。</p>
 <h2 id="前提">前提</h2>
 <ul>
 <li>自分名義のドメイン(取得方法は各ドメインレジストラのサイトを参照。自分はCloudflare Registrarを使った)</li>
 <li>iCloud+の契約(月額サブスクリプション。iPhoneのバックアップ用など、何らかの理由ですでに契約していれば追加コストはかからない)</li>
 <li>ドメインのDNS(「<code>taikiito.com</code>というドメインは実際にはどのサーバーを指すか」をインターネット全体に教えるための住所録のような仕組み)を自分で編集できる状態(Cloudflareなど)</li>
 </ul>
-<h2 id="何をしたかったか">何をしたかったか</h2>
-<p>Gmailは便利だが、Googleに完全に預けているアカウントでもある。自分名義のドメインを取得したことで、自分のドメインでメールを受け取れる状態が整った。iCloud+はもともとiPhoneのバックアップ用に契約していたので、カスタムドメインのメールボックスを足しても容量を共有するだけで実質タダ。これなら移行のコストに見合うと判断した。</p>
-<h2 id="何に移すか-icloud-vs-fastmailで迷った話">何に移すか: iCloud+ vs Fastmailで迷った話</h2>
-<p>自前ドメインでメールを使う場合、有名な選択肢としてFastmailがある。料金以外の軸(標準プロトコル対応、Apple以外の端末での使い勝手、エイリアスの上限、送信ドメインとしての評判、データの持ち出しやすさ)で比較検討した。</p>
-<p>比較の途中で、自分の思い込みが一つ崩れた。iCloud MailはApple製品専用だとばかり思っていたが、実際には標準のIMAP/SMTP(メールの受信・送信をやり取りするための業界共通の通信規格。この2つに対応していれば、どのメールソフトからでも接続できる)にアプリ専用パスワードでアクセスすれば、Thunderbirdのような普通のメールクライアント(メールを読み書きするためのアプリ)からも使える。「ロックインされて出られなくなる」という一番の懸念はほぼ杞憂だった。すでに契約しているiCloud+の容量を共有できて実質無料な点も踏まえ、Fastmailへの乗り換えは見送り、iCloud+のカスタムドメイン機能を使うことにした。</p>
 <h2 id="step-1-icloudでカスタムドメインを設定する">Step 1: iCloud+でカスタムドメインを設定する</h2>
 <p>iPhoneの「設定」アプリ → 自分の名前(Apple ID) → iCloud → 「メール」→「カスタムメールドメイン」から設定を開始する(Mac版System Settingsからも同じ設定にたどり着ける)。ドメイン名(例: <code>taikiito.com</code>)を入力すると、iCloud側が必要なDNSレコードを画面に表示してくれるので、それを自分のドメインのDNS管理画面(Cloudflareなど)にそのまま追加する。実際に追加したレコードは以下の3種類だった。</p>
 <table>
@@ -516,24 +663,17 @@ Missing metadata: 7
 	</tbody>
 </table>
 <p>iCloud+の設定ウィザードはこの3つだけを要求し、<strong>DMARC(後述、なりすまし対策をさらに強化するレコード)は必須ではなく任意</strong>なので、最初は追加しなくても動く。反映には数分〜数十分かかる。全て緑のチェックマークになれば、そのドメインでメールアドレス(自分の場合は<code>me@taikiito.com</code>)を作成できる。</p>
-<h2 id="step-2-会社のメール環境への到達を確認する">Step 2: 会社のメール環境への到達を確認する</h2>
+<h2 id="step-2-主要な送信先への到達を確認する">Step 2: 主要な送信先への到達を確認する</h2>
 <p>自分の場合、<code>me@taikiito.com</code>からGmailへは問題なく届いたが、会社のメール(Microsoft 365ベース)には<strong>エラーも通知もなく、静かに届かない</strong>という問題が起きた。SPF/DKIMを見直しても直らなかったため、DMARC(TXTレコード)を追加した。</p>
 <pre tabindex="0"><code>_dmarc.taikiito.com  TXT  &#34;v=DMARC1; p=none; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
-</code></pre><p><code>p=none</code>はまず様子見のモード(ポリシー違反があっても何もしない、レポートだけ受け取る)。これでも解決しなかったが、SPF/DKIM/DMARCの設定自体には問題が無いことが確認できたので、<strong>原因は取得したばかりのドメインが「送信履歴の無い新規ドメイン」として会社側のメールフィルタに警戒されていることだと判断し、時間経過で解決するのを待つ方針にした</strong>。実際、数日後には特に追加の変更をしないまま届くようになった。<strong>新しく取ったドメインでメールを送る場合、最初の数日〜1週間は主要な送信先に届かないことがある</strong>と見込んでおくとよい。</p>
+</code></pre><p><code>p=none</code>はまず様子見のモード(ポリシー違反があっても何もしない、レポートだけ受け取る)。これでも解決しなかったが、SPF/DKIM/DMARCの設定自体には問題が無いことが確認できたので、<strong>原因は取得したばかりのドメインが「送信履歴の無い新規ドメイン」として受信側のメールフィルタに警戒されていることだと判断し、時間経過で解決するのを待つ方針にした</strong>。実際、数日後には特に追加の変更をしないまま届くようになった。<strong>新しく取ったドメインでメールを送る場合、最初の数日〜1週間は主要な送信先に届かないことがある</strong>と見込んでおくとよい。</p>
 <h2 id="step-3-なりすまし対策を強化するspfdmarcの締め上げ">Step 3: なりすまし対策を強化する(SPF/DMARCの締め上げ)</h2>
-<p>ドメインの送信環境が安定してきたら、なりすまし対策を強める。最終的には以下の設定にした。</p>
+<p>ドメインの送信環境が安定してきたら、なりすまし対策を強める。判断の経緯は決定2に書いた。最終的には以下の設定にした。</p>
 <pre tabindex="0"><code>_dmarc.taikiito.com  TXT  &#34;v=DMARC1; p=reject; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
-</code></pre><p><code>p=none</code>(様子見) → <code>p=quarantine</code>(怪しいメールを迷惑メール行き) → <code>p=reject</code>(なりすましメールを完全拒否)の順に段階を踏むのが一般的だが、自分の場合は送信経路がiCloudのみでSPF/DKIMがすでに正常に機能していたため、リスク評価をした上で段階を飛ばして<code>p=reject</code>まで一気に進めた。SPFも<code>~all</code>(該当しない送信元は「疑わしい」扱い)から<code>-all</code>(該当しない送信元は「完全に拒否」)へ強化した。</p>
+</code></pre><p>SPFも<code>~all</code>から<code>-all</code>へ強化した。</p>
 <p><strong>注意</strong>: <code>p=reject</code>にすると、このドメインからのメールを送るときに使う経路(自分の場合はiCloudのみ)以外からは一切メールが届かなくなる。今後、別のメールサービスを追加で使う場合は、SPFレコードに新しい送信元を<code>include:</code>で追加し忘れないこと。</p>
-<h2 id="step-4-gmailからの引っ越しで3つハマったこと">Step 4: Gmailからの引っ越しで3つハマったこと</h2>
-<p><strong>1. Thunderbirdの「3層構造」に気づかず認証が通らなかった</strong></p>
-<p>WindowsでThunderbirdを使って移行作業をしようとしたところ、何度設定してもIMAP/SMTPの認証が通らなかった。原因は、iCloudのアカウント構造が3層になっていたこと。</p>
-<ul>
-<li>表向きのApple IDサインイン用メールアドレス</li>
-<li>実際のIMAP/SMTP認証に使う、真のiCloudアカウントアドレス(<code>@icloud.com</code>形式)</li>
-<li>送受信に使う見た目のアドレス(カスタムドメインのエイリアス)</li>
-</ul>
-<p>Thunderbirdの手動設定画面で、サーバー情報は以下のようにする。</p>
+<h2 id="step-4-過去メールを移す">Step 4: 過去メールを移す</h2>
+<p>ThunderbirdでiCloud側に接続する。手動設定画面のサーバー情報は以下のようにする。</p>
 <table>
 	<thead>
 			<tr>
@@ -560,21 +700,14 @@ Missing metadata: 7
 			</tr>
 	</tbody>
 </table>
-<p>ポイントは<strong>ユーザー名欄</strong>で、一番上のApple IDのアドレスでも、送受信に使うカスタムドメインのアドレスでもなく、<strong>中間層の真のiCloudアカウントアドレスをフルで入力する</strong>必要がある。これはApple公式の設定手順のどこにも明記されておらず、自力で突き止めるまで何度も認証エラーに悩まされた。</p>
-<p><strong>2. 「完了」と判断したが、実は直近1〜2ヶ月分が抜けていた</strong></p>
-<p>Gmailの全メール(46,544件)をThunderbird経由でiCloud側へ移す自作スクリプトを作り、実行した。進捗ログを見ながら待ち、件数がおおよそ一致したことを確認して「移行完了」と判断した。</p>
-<p>ところが後日、送信済みメールを見返していて、直近のメールが見当たらないことに気づいた。調べると、スクリプトは古いメールから新しいメールへ順番に処理する作りで、確認した時点では全体の約8割(37,362件/46,544件)までしか進んでおらず、<strong>直近1〜2ヶ月分がまだ移行されていない状態で「完了」と誤判断していた</strong>ことが分かった。「件数がざっくり合っている」だけでは、移行完了の確認として不十分だったという教訓。</p>
-<p><strong>3. 復旧作業中に4,293件を誤って喪失、Google Takeoutの原本から復元</strong></p>
-<p>上記の見落としを受けて調査していたところ、さらに深刻な問題が見つかった。iCloud側で重複メールを整理する作業をしていた際、<strong>4,293件のメールを誤って消してしまっていた</strong>。加えて、作業の混乱の中でThunderbirdのローカルインポートフォルダ自体も誤って削除してしまい、復元の頼みの綱を一つ失った。</p>
-<p>幸い、Gmailの公式エクスポート機能(Google Takeout、<a href="/guides/google-photos-to-immich/">写真移行の記事</a>で使ったのと同じ機能)で取得していた元データ(zipファイル、Gmailの全メールをmbox形式(メールをまとめて1つのファイルに保存する一般的な形式)で含む)がゴミ箱に残っていた。これは「Thunderbirdの中間コピー」ではなく「Gmail公式のエクスポート原本」なので、むしろ最も確実な復旧元だった。</p>
-<p>Message-ID(メール1通ごとの一意な識別子、ヘッダーに必ず含まれる)単位で「Takeoutの原本」と「今iCloud側にあるメール」を突き合わせる復旧スクリプトを書き、欠落していたメールを復元した。最終的に、iCloudの1通あたりのサイズ上限を超えている(添付ファイルが大きい)ため原理的に復元不可能な2〜3件を除いて、ほぼ完全に復旧できた。</p>
-<p><strong>このとき得た一番の教訓</strong>: 大量データの移行を「件数がだいたい合っている」だけで完了と判断しない。Message-IDで突き合わせる方式が、確実に検証する唯一の方法だった。<strong>そしてGoogle Takeoutのような「移行元の公式エクスポート」は、移行作業が終わるまで絶対に消さないこと。</strong></p>
+<p>ユーザー名欄に何を入れるかで何度も認証エラーになった経緯は「当時ハマったこと」の1に書いた。</p>
+<p>接続できたら、Gmailの全メールをThunderbird経由でiCloud側へ移すスクリプトで移行する。<strong>完了の判定は「件数がだいたい合っている」ではなく、Message-ID単位でGoogle Takeoutの原本と突き合わせること。</strong> 件数だけで判断して起きたことは「当時ハマったこと」の2と3に書いた。そして<strong>Takeoutの原本zipは、移行作業が完全に終わるまで絶対に消さない。</strong></p>
 <h2 id="step-5-移行後の後片付け">Step 5: 移行後の後片付け</h2>
 <p>Gmail側に<code>me@taikiito.com</code>への自動転送(Forwarding、Gmailの設定 → 「メール転送とPOP/IMAP」から設定できる)を設定し、移行後にGmail宛へ届く新着メールも自動的に新しいアドレスへ流れるようにした。Google Takeoutのバックアップzipは、Backblaze B2とNextcloudの両方に保存。この3点(バックアップ済み・移行件数の整合性確認済み・新着メールの転送設定済み)を確認したうえで、Gmail側の整理に着手した。</p>
-<p>整理は、GmailのAPI(他のプログラムからGmailを操作するための窓口)や管理画面からではなく、IMAP(前述の受信用の通信規格)を直接操作する自作スクリプトで、指定日より前の全メール(49,755件)をGmailの「ゴミ箱」フォルダへ移動する処理を実行した。Gmailのゴミ箱は30日後に自動で完全削除される仕組みなので、今のところ<strong>即座に完全削除したわけではなく、猶予期間を残した状態</strong>にしてある。この記事を書いている時点では、Gmail側のメールはゴミ箱送りまで完了しているが、<strong>Googleアカウント自体はまだ削除していない</strong>。しばらく<code>me@taikiito.com</code>側の運用が安定するのを見届けてから、次の判断(アカウント自体を消すかどうか)をするつもりでいる。</p>
-<h2 id="結果">結果</h2>
-<p><code>me@taikiito.com</code>が主メールとして定着し、日常的に使っている。途中でメールを実際に失いかけた一件は、この移行作業の中で一番肝を冷やした部分だったが、Google Takeoutで原本のバックアップを取っておいたことが最終的に救いになった。<strong>大量データを移す時は、移行先だけでなく移行元の生データも別途バックアップしておく</strong>、というのが今回一番強く実感した教訓だった。</p>
-<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: DNSレコードの実際の設定値・Thunderbirdのサーバー設定項目を追記し、再現可能なレベルに書き直し</p>
+<p>整理は、GmailのAPI(他のプログラムからGmailを操作するための窓口)や管理画面からではなく、IMAP(前述の受信用の通信規格)を直接操作するスクリプト(これもClaudeが書いたもの)で、指定日より前の全メール(49,755件)をGmailの「ゴミ箱」フォルダへ移動する処理を実行した。即時の完全削除ではなく30日の猶予を残した理由と、Googleアカウント自体をまだ消していない理由は決定3に書いた。</p>
+<hr>
+<p>この構成をさらに一周考え直して、メールボックスをFastmailへ移した続きがある。→ <a href="/guides/own-domain-mail-to-fastmail/">自分のドメインのメールをどこに置くか、一周して決め直した</a></p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: DNSレコードの実際の設定値・Thunderbirdのサーバー設定項目を追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記</p>
 ]]></content:encoded></item><item><title>バックアップを「消されても戻せる」形にする</title><link>https://offgrid.taikiito.com/guides/backup-ransomware-resistant/</link><pubDate>Thu, 01 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/backup-ransomware-resistant/</guid><description>毎晩クラウドへバックアップしていたが、サーバーが乗っ取られたらバックアップごと消されると気づいた。鍵の権限削減・削除が伝播しない複製バケット・サーバーの外で動く見張りの3層で、ハードウェアを増やさずに作り直した記録。踏んだ落とし穴も全部書いた。</description><content:encoded><![CDATA[<p>写真・パスワード・ファイルを自分のサーバーに集めたあと、毎晩クラウドストレージ(Backblaze B2)へバックアップを取る仕組みを作って安心していた。ところが鍵の権限を実際に調べてみたら、<strong>サーバーを乗っ取られた時点でバックアップも全部消せる状態</strong>だった。それを作り直した記録。</p>
 <h2 id="前提">前提</h2>
 <ul>
@@ -1099,29 +1232,70 @@ Phase H  移行後(バックアップの再構築・監視・検証)
 </ul>
 <p>費用は全バックアップ合計125GBで<strong>月約$0.69</strong>。一本化で減ったのは費用ではなく、<strong>気にかけておく仕組みの数</strong>だった。</p>
 <p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
-]]></content:encoded></item><item><title>予定表と住所録を、全部入りのNextcloudから軽いRadicaleへ切り出す</title><link>https://offgrid.taikiito.com/guides/nextcloud-to-radicale/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/nextcloud-to-radicale/</guid><description>予定236件・連絡先575件をNextcloudからRadicaleへ移した記録。データは.ics/.vcfの素のファイルになり速くなったが、Web画面と共有機能は失う。選ぶ前に知るべき制約として「Radicaleは重いREPORT問い合わせを同時に受けられない(並列5本で全滅、直列なら1本4.7秒)」という実測も書いた。</description><content:encoded><![CDATA[<p><a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">前の記事</a>で、連絡先とカレンダーをiCloud・GoogleからNextcloudへ移した。それを今度はNextcloudから引き剥がして、Radicaleという「予定表と住所録しかできない」小さなサーバーへ移した記録。</p>
-<p>先に正直に書くと、<strong>Nextcloudで困っていたことは何も無かった</strong>。故障の修理ではなく、作りを良くするための工事だ。だから得たものと同じ分量で、失ったものを書く。</p>
+]]></content:encoded></item><item><title>予定表と住所録を、全部入りのNextcloudから軽いRadicaleへ切り出す</title><link>https://offgrid.taikiito.com/guides/nextcloud-to-radicale/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/nextcloud-to-radicale/</guid><description>予定236件・連絡先575件をNextcloudからRadicaleへ移した記録。何を決め、何を捨てたかを前半に、構築・流し込み・端末の繋ぎ直しの手順を後半に。選ぶ前に知るべき制約として「Radicaleは重いREPORT問い合わせを同時に受けられない(並列5本で全滅、直列なら1本4.7秒)」という実測も書いた。</description><content:encoded><![CDATA[<p><a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">前の記事</a>で、連絡先とカレンダーをiCloud・GoogleからNextcloudへ移した。それを今度はNextcloudから引き剥がして、Radicaleという「予定表と住所録しかできない」小さなサーバーへ移した記録。移行は予定236件・連絡先575件が失敗0件で完了し、今もMacとiPhoneから繋がっている。</p>
+<p>先に役割を書いておく。<strong>コマンドと流し込みのスクリプトを書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> 作業の中身を考えなくていいぶん、「何を得て何を捨てるか」の見極めに時間を使えた。この移行は、まさにそこが全てだった。先に正直に書くと、<strong>Nextcloudで困っていたことは何も無かった</strong>。故障の修理ではなく、作りを良くするための工事だ。だから得たものと同じ分量で、失ったものを書く。このページも前半に判断、後半に手順という形にしてある。</p>
+<hr>
+<h2 id="決定1--困っていないnextcloudから予定表と住所録を切り出した">決定1 — 困っていないNextcloudから、予定表と住所録を切り出した</h2>
+<p><strong>日付</strong> 2026年10月5日</p>
+<p><strong>迷ったこと</strong> 予定表と住所録を、動いているNextcloudに置いたままにするか、専用の小さなサーバーへ切り出すか。繰り返すが、Nextcloudで困っていたことは何も無かった。</p>
+<p><strong>採った案</strong> <strong>Radicaleへ切り出す。</strong> 動機は「規模が不釣り合い」の一点だ。移す前にNextcloud側の中身を<code>?export</code>で実測したら、住所録<strong>575件</strong>、予定表<strong>236件</strong>、そして<strong>空の予定表が2つ</strong>(片方はiPhoneのリマインダーが勝手に作ったもの)。実データの合計は<strong>約230KB</strong>。テキストファイル1枚に収まる量だ。これに対してNextcloudはPHPで書かれた大きな母屋にデータベースまで抱えている。やっている仕事に対して仕掛けが大きすぎる、というのが唯一の動機だった。</p>
+<p>🔴 ついでに分かったこと。前の記事に書いた「連絡先633件・予定232件」は誤りだった。<strong>移した件数は、移した日に書き留めただけでは当てにならない。</strong></p>
+<p><strong>却下した案</strong> Nextcloudのまま運用を続ける。困っていなかったのだから、これが一番楽な案だった。</p>
+<p><strong>なぜ却下したか</strong> 切り出しで得られるものが具体的に3つあった。速さ、攻撃される面の小ささ(PHPの大きな母屋とデータベースが無くなる)、そして<strong>バックアップがフォルダのコピーで済み、ソフトが壊れても中身はテキストで読める</strong>こと。代わりに捨てたものは4つ。使えるWeb画面、共有のUI、ファイル置き場としての機能、何でも1箇所にある便利さ(サーバーが1つ増え、端末のアカウントも1つ増える)。この3つのために4つを捨てた。<strong>判断は人によって逆でいい。</strong></p>
+<p><strong>後から見た当たり外れ</strong> 切り出し自体は成功で、今も使っている。ただし<strong>選ぶ前に知っておくべき制約を、選んだ後に実測で踏んだ</strong>。Radicaleは重いREPORT問い合わせを同時に受けられない(本文の該当節に実測を書いた)。選定時にこれを知っていたかった、という意味で見積もりには穴があった。</p>
+<p><strong>残った教訓</strong> 故障していないものを動かすときは、<strong>得たものと同じ分量で失ったものを数える。</strong> 「何ではないか」のほうが「何であるか」より判断の材料になる。</p>
+<hr>
+<h2 id="決定2--ファイル置き場はnextcloudに残した">決定2 — ファイル置き場はNextcloudに残した</h2>
+<p><strong>日付</strong> 2026年10月5日</p>
+<p><strong>迷ったこと</strong> 予定表と住所録を切り出すなら、ファイル置き場としてのNextcloudも同じ発想で別のものに移すか。</p>
+<p><strong>採った案</strong> <strong>据え置き。</strong> 契約書の保管などファイル置き場の役割はNextcloudに残した。</p>
+<p><strong>却下した案</strong> 調べたファイル置き場の移行先候補へ移す。</p>
+<p><strong>なぜ却下したか</strong> 素のファイルを普通のフォルダ構造で保存しているという一点では、調べた移行先候補よりNextcloudのほうが上だったからだ。</p>
+<p><strong>残った教訓</strong> <strong>目的が「データを読める形に保つ」なのに、手段がそこを後退させるなら却下する。</strong> 切り出しは目的ではなく手段で、同じ基準を当てると今度は「動かさない」が正解になった。</p>
+<hr>
+<h2 id="radicaleは何で何ではないか">Radicaleは何で、何ではないか</h2>
+<p>Radicaleは<strong>CalDAV/CardDAVだけを話す小さなサーバー</strong>。データベースを持たず、予定1件が<code>.ics</code>ファイル1枚、連絡先1件が<code>.vcf</code>ファイル1枚として、普通のフォルダにただ並んでいるだけ。</p>
+<p>やっているのは「フォルダのテキストファイルを、CalDAVという会話の形に翻訳して端末に見せる」中継だけだ。Appleのカレンダーアプリには「このフォルダを見ろ」という設定が存在せず、CalDAVでしか話せないので、この翻訳役が必要になる。あとは各予定にetag(版番号)を付けて差分と衝突を管理するだけ。</p>
+<p><strong>何ではないか</strong>のほうが重要だと思う。決定1で捨てた4つの内訳はこうだ。</p>
+<ul>
+<li><strong>使えるWeb画面が無い</strong>。ブラウザで開いても予定を見る画面は出てこない。どうしても画面が欲しければ、CalDAVを外から繋げられるメールサービス(自分はFastmail)を窓口にする手はある。</li>
+<li><strong>共有リンクも共有のUIも無い</strong>。「この予定表をあの人に見せる」をボタンで作れない。</li>
+<li><strong>ファイル置き場ではない</strong>。PDFもWordも置けない。契約書の保管はNextcloudに残した(決定2)。</li>
+<li><strong>何でも1箇所にある便利さを捨てる</strong>。サーバーが1つ増え、端末のアカウントも1つ増える。</li>
+</ul>
+<h2 id="-radicaleは重いreport問い合わせを同時に受けられない">🔴 Radicaleは重いREPORT問い合わせを同時に受けられない</h2>
+<p><strong>Radicaleを選ぶ前に知っておくべき制約</strong>で、しかもほとんどどこにも書かれていない。自分は後から実測で踏んだ。</p>
+<p>REPORTは、カレンダーアプリが「この日からこの日までに何が入っているか教えて」と尋ねるCalDAVの問い合わせだ。Radicaleはこれを受けると<strong>フォルダの中の全ファイルを毎回走査する</strong>。繰り返す予定は1ファイルにルールが1行入っているだけなので、「表示を1年先までに絞る」といった対策は効かない。<strong>遅さを決めているのは問い合わせの範囲ではなく、フォルダ内のファイル総数</strong>だ。</p>
+<p>予定表が現在2,626件まで増えた結果、1回の範囲問い合わせに<strong>約4.7秒</strong>かかる。これ自体は待てる。問題は同時に投げたときだった。</p>
+<ul>
+<li>事前読み込みを<strong>直列3本から並列5本に変えたら、30秒で5本とも通信切れになり、取れた予定は0件</strong>になった。</li>
+<li><strong>直列に戻したら、5期間228件が23.3秒で全部成功</strong>した(1本あたり約4.7秒)。</li>
+</ul>
+<p>つまり<strong>Radicaleは重いREPORTを並べて投げられると、速くなるどころか全部落ちる</strong>。「カレンダーアプリを2つ同時に開く」「月を素早く切り替える」「複数の範囲を先読みする自作ツール」のどれでも起こり得る。付き合い方は、どれも「並列化しない」方向になる。</p>
+<ol>
+<li><strong>1本ずつ流す列を作る</strong>。手前のサーバーに順番待ちの列を1本入れ、範囲問い合わせは必ず直列で流す。</li>
+<li><strong>同じ範囲の同時要求は1本に相乗りさせる</strong>。2箇所から同じ月を聞かれたら投げるのは1回で、答えを2箇所に配る。画面の操作から来た要求だけ列の先頭に割り込ませると、裏の先読みが詰まっていても人は待たされない。</li>
+<li><strong>一度取ったら捨てない</strong>。1件保存・削除するたびに全期間のキャッシュを丸ごと捨てて再取得していたのが最悪の形だった。<strong>変わった1件だけを手元で差し替える</strong>ようにしたら、保存のたびの5秒が消えた。</li>
+<li><strong>範囲は広めに取って一度だけ聞く</strong>。細かく刻んで何度も聞くほうが遅い。</li>
+</ol>
+<p>⭐ 一般則。<strong>相手が1本ずつしか捌けない所へ、並べて投げてはいけない。速くする手は並列化ではなく、①同じものを二度聞かない ②要るものだけ聞く、の2つしかない。</strong></p>
+<h2 id="時間帯は最初に片付ける">時間帯は最初に片付ける</h2>
+<p>2人で共有するカレンダーを、互いに別の国にいる状態で使っている。<strong>時間帯(タイムゾーン)の扱いは後から足す機能ではなく、土台</strong>だった。救われたのは、保存の形が最初から正しかったことだ。<code>.ics</code>の中では開始時刻が<code>DTSTART;TZID=Asia/Singapore:...</code>のように**「どの地域の時計で何時か」の形で書かれている**ので、絶対の時刻として一意に決まる。Apple純正のカレンダーはこれを読む側の端末の時間帯で出し直してくれる。<strong>標準形式に素直に保存されていれば、時間帯は自動で解決する。</strong> 壊れたのは自作の画面のほうで、そこから学んだのは次の3つ。</p>
+<ul>
+<li><strong>変換は入口と出口の2箇所だけでやる</strong>。画面に出す直前と、入力を受け取った直後。途中の計算に混ぜると、どこが変換済みか分からなくなって必ず二重変換が起きる。</li>
+<li><strong>「いまどの時間帯で見ているか」を常に画面に出す</strong>。Google・Apple・Thunderbirdのどれもこうしている。あとから読まれる文章に時刻を書くときも、必ず時間帯を添える(保存された文は読む人の時間帯に書き直せない)。</li>
+<li><strong>時刻の変換は、画面で確かめる前に机上で全パターン流す</strong>。夏時間の切り替わりの前後、30分ずれる地域、日付をまたぐ西側の地域は、実機を1件ずつ見ても踏めない。</li>
+</ul>
+<hr>
+<h1 id="手順">手順</h1>
+<p>ここから下は<strong>Claudeが書き、自分の環境で実行して結果を確かめたもの</strong>だ。2026年10月の版で、実際にこれで575件・236件がNextcloud側と完全一致・失敗0件で移った。</p>
+<p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが先に分かる</strong>こと。サーバーを立てて流し込むまでは短く、一番地味で一番時間がかかるのは端末の繋ぎ直しだ、という配分が先に見える。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。ゼロから説明するより、動いた実例を見せたほうが早い。版が新しくなっていれば、そのとき合った形に直してくれる。</p>
 <h2 id="前提">前提</h2>
 <ul>
 <li>常時起動しているLinux環境とDocker(ソフトを1つずつ箱に入れて動かす仕組み)が使えること。土台は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a></li>
 <li>すでにNextcloudの連絡先・カレンダーを使っている状態(<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">前の記事</a>)</li>
 <li>CalDAV(予定表をやりとりするための標準的な通信規約)・CardDAV(住所録用の同じもの)の名前だけ知っていれば十分</li>
 </ul>
-<h2 id="動かした理由は規模が不釣り合いの一点">動かした理由は「規模が不釣り合い」の一点</h2>
-<p>移す前に、Nextcloud側の中身を<code>?export</code>で実測した。住所録<strong>575件</strong>、予定表<strong>236件</strong>、そして<strong>空の予定表が2つ</strong>(片方はiPhoneのリマインダーが勝手に作ったもの)。</p>
-<p>🔴 前の記事に書いた「連絡先633件・予定232件」は誤りだった。<strong>移した件数は、移した日に書き留めただけでは当てにならない。</strong></p>
-<p>実データの合計は<strong>約230KB</strong>。テキストファイル1枚に収まる量だ。これに対してNextcloudはPHPで書かれた大きな母屋にデータベースまで抱えている。やっている仕事に対して仕掛けが大きすぎる、というのが唯一の動機だった。</p>
-<h2 id="radicaleは何で何ではないか">Radicaleは何で、何ではないか</h2>
-<p>Radicaleは<strong>CalDAV/CardDAVだけを話す小さなサーバー</strong>。データベースを持たず、予定1件が<code>.ics</code>ファイル1枚、連絡先1件が<code>.vcf</code>ファイル1枚として、普通のフォルダにただ並んでいるだけ。</p>
-<p>やっているのは「フォルダのテキストファイルを、CalDAVという会話の形に翻訳して端末に見せる」中継だけだ。Appleのカレンダーアプリには「このフォルダを見ろ」という設定が存在せず、CalDAVでしか話せないので、この翻訳役が必要になる。あとは各予定にetag(版番号)を付けて差分と衝突を管理するだけ。</p>
-<p><strong>何ではないか</strong>のほうが重要だと思う。</p>
-<ul>
-<li><strong>使えるWeb画面が無い</strong>。ブラウザで開いても予定を見る画面は出てこない。どうしても画面が欲しければ、CalDAVを外から繋げられるメールサービス(自分はFastmail)を窓口にする手はある。</li>
-<li><strong>共有リンクも共有のUIも無い</strong>。「この予定表をあの人に見せる」をボタンで作れない。</li>
-<li><strong>ファイル置き場ではない</strong>。PDFもWordも置けない。契約書の保管はNextcloudに残した。</li>
-<li><strong>何でも1箇所にある便利さを捨てる</strong>。サーバーが1つ増え、端末のアカウントも1つ増える。</li>
-</ul>
-<p>代わりに得たのは、速さ、攻撃される面の小ささ(PHPの大きな母屋とデータベースが無くなる)、そして<strong>バックアップがフォルダのコピーで済み、ソフトが壊れても中身はテキストで読める</strong>こと。この3つのために上の4つを捨てた。判断は人によって逆でいい。</p>
 <h2 id="立てて流し込む">立てて流し込む</h2>
 <p>構成は<code>docker compose</code>で1つ、<code>tomsquest/docker-radicale</code>(Radicale 3.8.1)。<code>127.0.0.1</code>にだけ口を開け、外から直接は触れないようにした。認証はhtpasswd(ユーザー名とパスワードの対応表ファイル)だけ。<strong>設定の書き方は版で変わるので公式ドキュメントのConfigurationの項を見てほしい。</strong></p>
 <p>移行前にNextcloudから控えを取る。</p>
@@ -1156,50 +1330,26 @@ Phase H  移行後(バックアップの再構築・監視・検証)
 <li>古い側を消すのは、①手元に控えがある②新しい側の件数が一致している、の両方を実測してから。</li>
 <li>🔴 <strong>Nextcloudの予定表は<code>204</code>が返っても消えていない</strong>。ごみ箱行き(論理削除)になり、一覧に出続けて中身も読める。完全に消すには削除要求に<code>X-NC-CalDAV-No-Trashbin: 1</code>を付ける。住所録はごみ箱が無く一発で消えるので、挙動が揃っていない。</li>
 </ul>
-<h2 id="-radicaleは重いreport問い合わせを同時に受けられない">🔴 Radicaleは重いREPORT問い合わせを同時に受けられない</h2>
-<p><strong>Radicaleを選ぶ前に知っておくべき制約</strong>で、しかもほとんどどこにも書かれていない。自分は後から実測で踏んだ。</p>
-<p>REPORTは、カレンダーアプリが「この日からこの日までに何が入っているか教えて」と尋ねるCalDAVの問い合わせだ。Radicaleはこれを受けると<strong>フォルダの中の全ファイルを毎回走査する</strong>。繰り返す予定は1ファイルにルールが1行入っているだけなので、「表示を1年先までに絞る」といった対策は効かない。<strong>遅さを決めているのは問い合わせの範囲ではなく、フォルダ内のファイル総数</strong>だ。</p>
-<p>予定表が現在2,626件まで増えた結果、1回の範囲問い合わせに<strong>約4.7秒</strong>かかる。これ自体は待てる。問題は同時に投げたときだった。</p>
-<ul>
-<li>事前読み込みを<strong>直列3本から並列5本に変えたら、30秒で5本とも通信切れになり、取れた予定は0件</strong>になった。</li>
-<li><strong>直列に戻したら、5期間228件が23.3秒で全部成功</strong>した(1本あたり約4.7秒)。</li>
-</ul>
-<p>つまり<strong>Radicaleは重いREPORTを並べて投げられると、速くなるどころか全部落ちる</strong>。「カレンダーアプリを2つ同時に開く」「月を素早く切り替える」「複数の範囲を先読みする自作ツール」のどれでも起こり得る。付き合い方は、どれも「並列化しない」方向になる。</p>
-<ol>
-<li><strong>1本ずつ流す列を作る</strong>。手前のサーバーに順番待ちの列を1本入れ、範囲問い合わせは必ず直列で流す。</li>
-<li><strong>同じ範囲の同時要求は1本に相乗りさせる</strong>。2箇所から同じ月を聞かれたら投げるのは1回で、答えを2箇所に配る。画面の操作から来た要求だけ列の先頭に割り込ませると、裏の先読みが詰まっていても人は待たされない。</li>
-<li><strong>一度取ったら捨てない</strong>。1件保存・削除するたびに全期間のキャッシュを丸ごと捨てて再取得していたのが最悪の形だった。<strong>変わった1件だけを手元で差し替える</strong>ようにしたら、保存のたびの5秒が消えた。</li>
-<li><strong>範囲は広めに取って一度だけ聞く</strong>。細かく刻んで何度も聞くほうが遅い。</li>
-</ol>
-<p>⭐ 一般則。<strong>相手が1本ずつしか捌けない所へ、並べて投げてはいけない。速くする手は並列化ではなく、①同じものを二度聞かない ②要るものだけ聞く、の2つしかない。</strong></p>
-<h2 id="時間帯は最初に片付ける">時間帯は最初に片付ける</h2>
-<p>2人で共有するカレンダーを、互いに別の国にいる状態で使っている。<strong>時間帯(タイムゾーン)の扱いは後から足す機能ではなく、土台</strong>だった。救われたのは、保存の形が最初から正しかったことだ。<code>.ics</code>の中では開始時刻が<code>DTSTART;TZID=Asia/Singapore:...</code>のように**「どの地域の時計で何時か」の形で書かれている**ので、絶対の時刻として一意に決まる。Apple純正のカレンダーはこれを読む側の端末の時間帯で出し直してくれる。<strong>標準形式に素直に保存されていれば、時間帯は自動で解決する。</strong> 壊れたのは自作の画面のほうで、そこから学んだのは次の3つ。</p>
-<ul>
-<li><strong>変換は入口と出口の2箇所だけでやる</strong>。画面に出す直前と、入力を受け取った直後。途中の計算に混ぜると、どこが変換済みか分からなくなって必ず二重変換が起きる。</li>
-<li><strong>「いまどの時間帯で見ているか」を常に画面に出す</strong>。Google・Apple・Thunderbirdのどれもこうしている。あとから読まれる文章に時刻を書くときも、必ず時間帯を添える(保存された文は読む人の時間帯に書き直せない)。</li>
-<li><strong>時刻の変換は、画面で確かめる前に机上で全パターン流す</strong>。夏時間の切り替わりの前後、30分ずれる地域、日付をまたぐ西側の地域は、実機を1件ずつ見ても踏めない。</li>
-</ul>
 <h2 id="バックアップは単純になった">バックアップは単純になった</h2>
 <p>データが素のファイルになったので、バックアップは<strong>フォルダを同期するだけ</strong>になった。既存の日次スクリプトに2行足して終わりで、初回送信は1,035ファイル・379KiBで32秒。ただし<strong>消されても戻せる形にしておくことは、データが素のファイルになっても別途必要</strong>で、そこは変わらない(<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>)。</p>
 <h2 id="結果">結果</h2>
-<p>575件・236件の移行は失敗0で完了し、MacとiPhoneから繋がっている。サーバー上にあるのは1,000枚ほどのテキストファイルで、<code>cat</code>で開けば中身が読める。</p>
-<p>ファイル置き場のNextcloudは据え置いた。素のファイルを普通のフォルダ構造で保存しているという一点では、調べた移行先候補よりNextcloudのほうが上だったからだ。<strong>目的が「データを読める形に保つ」なのに、手段がそこを後退させるなら却下する。</strong></p>
-<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
-]]></content:encoded></item><item><title>自分のドメインのメールをどこに置くか、一周して決め直した</title><link>https://offgrid.taikiito.com/guides/own-domain-mail-to-fastmail/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/own-domain-mail-to-fastmail/</guid><description>検索が効かなくなったのをきっかけに、自分のドメインのメールの置き場所を考え直した記録。Mailcow/Mailuでの自前ホスティングを本気で検討して却下した理由、「住所の層」と「倉庫の層」を分ける考え方、切替で送信が全滅しかけたDNSの罠、数週間かかった登録アドレスの付け替えまで書いた。</description><content:encoded><![CDATA[<p><a href="/guides/gmail-to-own-domain/">メールをGmailから自分のドメインに移す</a>の続き。あの時点の構成は「ドメインは自分の所有、メールボックスは大手の個人向けサービスのカスタムドメイン機能、読み書きはデスクトップのメールソフト」だった。これを一周考え直して、有料のメールサービス(Fastmail)に移した。途中で自前ホスティングを本気で検討して却下しているので、その理由を一番厚く書く。</p>
+<p>575件・236件の移行は失敗0で完了し、MacとiPhoneから繋がっている。サーバー上にあるのは1,000枚ほどのテキストファイルで、<code>cat</code>で開けば中身が読める。ファイル置き場のNextcloudは決定2のとおり据え置いた。</p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版 / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記</p>
+]]></content:encoded></item><item><title>自分のドメインのメールをどこに置くか、一周して決め直した</title><link>https://offgrid.taikiito.com/guides/own-domain-mail-to-fastmail/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/own-domain-mail-to-fastmail/</guid><description>検索が効かなくなったのをきっかけに、自分のドメインのメールの置き場所を考え直した記録。Mailcow/Mailuでの自前ホスティングを本気で検討して却下した理由と「住所の層」と「倉庫の層」を分ける考え方を前半に、送信が全滅しかけたDNSの罠を含む切替手順を後半に置いた。</description><content:encoded><![CDATA[<p><a href="/guides/gmail-to-own-domain/">メールをGmailから自分のドメインに移す</a>の続き。あの時点の構成は「ドメインは自分の所有、メールボックスは大手の個人向けサービスのカスタムドメイン機能、読み書きはデスクトップのメールソフト」だった。これを一周考え直して、有料のメールサービス(Fastmail)に移した。</p>
+<p>先に役割を書いておく。<strong>DNSの設定値や切替の手順を書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> 約5万通・10GBのメールは無事に移り、きっかけだった「検索が効かない」問題は解決した。手順を考えなくていいぶん、「メールだけは自前でやらない」という、この移行で一番大きな判断をじっくり考えられた。だからこのページも前半が判断、後半が手順で、自前ホスティングを検討して却下した理由を一番厚く書く。</p>
 <p>ドメイン名は<code>example.com</code>、自分のアドレスは<code>me@example.com</code>と書く。実際の値は自分のものに読み替えてほしい。</p>
-<h2 id="前提">前提</h2>
-<ul>
-<li>自分名義のドメインを持ち、DNS(「<code>example.com</code>は実際にどのサーバーを指すか」をインターネット全体に教える住所録のような仕組み)を自分で編集できる状態</li>
-<li>そのドメインでメールを送受信できている状態(前記事の到達点)。なりすまし対策は<code>p=reject</code>まで締めてある</li>
-<li>移行対象のメールは約5万通、容量10GB</li>
-</ul>
 <h2 id="きっかけは検索が効かなくなったこと">きっかけは「検索が効かなくなった」こと</h2>
 <p>不満はひとつだけだった。<strong>メールソフトで検索しても出てこない</strong>。「豚汁」と打つ。その語を含むメールは確かにあるのに、ヒットしない。他のキーワードなら出る。壊れていたのは検索機能ではなく、<strong>索引(どの単語がどのメールに入っているかの目次)が一部だけ欠けている</strong>状態だった。</p>
 <p>使っていたのはThunderbirdで、ここは索引を手元のPCの中に自分で作る方式だ。数万通あると索引作りが追いつかず壊れやすい。IMAP(メールサーバー上のメールをそのまま読み書きするための通信規約)ではサーバー側の検索と手元の検索が混在して挙動が安定しない。</p>
 <p>索引を作り直す手はある(プロファイルフォルダの<code>global-messages-db.sqlite</code>を付随ファイルごと消して再起動すると自動で再構築が始まる)。自分はやらなかった。<strong>今回直せても、メールが増えれば同じことが起きる仕組みのままだから</strong>だ。検索はメールの価値の大半で、10年分の過去メールが「あるのに取り出せない」なら持っている意味が薄い。</p>
-<h2 id="メールだけは自前でホスティングしないと決めた">メールだけは自前でホスティングしないと決めた</h2>
-<p>写真・ファイル・パスワード・カレンダーは自分のサーバーに移している(<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>)。だからメールもできるはずだと考えて、<strong>Mailcow</strong>と<strong>Mailu</strong>を調べた。どちらもDocker(アプリを必要な部品ごと一つの箱に詰めて動かす仕組み)で動くメールサーバーのOSS一式で、Mailcowは送信・受信・迷惑メール判定・ウイルス検査・Webメールをまとめた<strong>18コンテナ構成・メモリ最低4GB推奨</strong>のオールインワン、Mailuはより疎結合で軽い個人向け。</p>
+<hr>
+<h2 id="決定1--メールだけは自前でホスティングしない">決定1 — メールだけは自前でホスティングしない</h2>
+<p><strong>日付</strong> 2026年10月5日（初版の時点）</p>
+<p><strong>迷ったこと</strong> 写真・ファイル・パスワード・カレンダーは自分のサーバーに移している(<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>)。だからメールもできるはずだと考えて、<strong>Mailcow</strong>と<strong>Mailu</strong>を調べた。どちらもDocker(アプリを必要な部品ごと一つの箱に詰めて動かす仕組み)で動くメールサーバーのOSS一式で、Mailcowは送信・受信・迷惑メール判定・ウイルス検査・Webメールをまとめた<strong>18コンテナ構成・メモリ最低4GB推奨</strong>のオールインワン、Mailuはより疎結合で軽い個人向け。</p>
 <p>立ち上げまでは20分程度、<strong>初回の構築全体で3〜4時間</strong>という見積りに落ち着いた。残りはほぼ全部DNS側の作業(MXレコード、SPF/DKIM/DMARC、逆引き申請、到達テスト)だ。<strong>つまり「立てる」のは難しくない。やめた理由は別のところにある。</strong></p>
+<p><strong>採った案</strong> <strong>自前ホスティングはやらず、メールボックスは業者に置く。</strong></p>
+<p><strong>却下した案</strong> Mailcow/Mailuでの自前ホスティング。あわせて「受信と保管は自前、送信だけ信頼のある業者から中継する」折衷案も検討した。</p>
+<p><strong>なぜ却下したか</strong></p>
 <p><strong>1. 家の回線からは原理的にできない。</strong> 送信には25番ポート(メールサーバー同士がメールを受け渡しする通信の出入口)が必要だが、<strong>ほぼすべてのISP(インターネット接続業者)が家庭向け回線でこれを塞いでいる</strong>。解除を申請できる業者もあるが、自分の住まいはサービスアパートで回線の契約者は建物の管理会社なので<strong>申請の当事者にすらなれない</strong>。多くのクラウド事業者も既定で塞いでいるので、借りる前に開放の可否を確認する必要がある。</p>
 <p><strong>2. 届くかどうかの9割は自分の手の外にある。</strong> 到達率を決めるのは<strong>DNSの認証設定(SPF/DKIM/DMARC)と逆引き、そして送信元IPアドレスの素性</strong>だ。前者は自分で正しく書ける。問題は後者で、<strong>VPS(レンタルサーバー)のアドレス帯は、過去に誰がどんな送信をしたかの履歴を引きずっている</strong>。自分が真面目に運用していても、同じ帯の隣人が迷惑メールを送っていれば巻き添えになる。なお新しいIPを「育てる」作業(初日10通→2日目50通→3日目200通と2〜4週間)が要るのは大量送信の場合で、<strong>個人の少量送信なら特別な対応は不要</strong>。🔴 自分はここを一度誤解していた。<strong>IPの素性が影響するのは自分が送るメールだけ</strong>で、受信には関係ない。</p>
 <p><strong>3. 壊れたことが自分には見えない。</strong> これが決定打だった。自前の写真サーバーが止まったら自分がアクセスして気づくし、困るのも自分だけだ。<strong>メールサーバーが止まった時に起きるのは「何も起きない」</strong>。</p>
@@ -1210,7 +1360,9 @@ Phase H  移行後(バックアップの再構築・監視・検証)
 <li><strong>一番危ないのはドメインの失効</strong>だ。自動更新とカードの有効期限が切れていれば、サーバーが完璧でもアドレスごと死ぬ</li>
 </ul>
 <p><strong>4. 少数派であることの意味。</strong> セルフホスト界隈の2025年のアンケート(約4,080人回答、約8割がIT系の職業)では、<strong>メールを自前ホストしている人は約14%</strong>。同じ調査でファイル共有(Nextcloud)は約30%いる。<strong>自前ホストに前向きなIT職の集団の中でさえメールは少数派</strong>で、「他の人が普通にやっているから自分にもできるだろう」という見積りはここでは通用しない。</p>
-<p>「受信と保管は自前、送信だけ信頼のある業者から中継する」折衷案も検討した。到達率は買い取れるが構成が二重になり壊れる箇所が増える。検索の不満を解決するために構成を複雑にするのは逆方向だと判断して、検討を打ち切った。</p>
+<p>折衷案については、到達率は買い取れるが構成が二重になり壊れる箇所が増える。検索の不満を解決するために構成を複雑にするのは逆方向だと判断して、検討を打ち切った。</p>
+<p><strong>残った教訓</strong> 自前にするかどうかの基準は「立てられるか」ではない。<strong>壊れた時に自分で気づけるか、困るのが自分だけで済むか</strong>だ。メールはどちらも満たさない。</p>
+<hr>
 <h2 id="考え方が変わった点-住所の層と倉庫の層を分ける">考え方が変わった点: 「住所の層」と「倉庫の層」を分ける</h2>
 <p>自前をやめた直後、別の疑問が出た。「有料サービスに預けるなら、Googleに預けていたのと何が違うのか」。整理するとこうなる。<strong>自分をロックインしているのはアドレスであって、メールの保管場所ではない。</strong></p>
 <ul>
@@ -1219,25 +1371,60 @@ Phase H  移行後(バックアップの再構築・監視・検証)
 </ul>
 <p><strong>データ主権の本質は「依存ゼロ」ではなく「依存を取り替え可能にすること」だ</strong>、という整理に行き着いた。この形なら、業者にお金を払うことは主権の放棄ではない。副産物として自分の依存の所在も見直せた。<strong>大手の個人向けサービスに本当に縛られていたのは写真とストレージの方で、メールではなかった</strong>。メールはドメインを持った時点ですでに自由だったのに、「乗り換えは大変だから」と思い込んでいた。</p>
 <p>同じ理屈で、<strong>エイリアス層(アドレスを発行する層)とメールボックス層(メールを保管する層)も分けられる</strong>。エイリアス専業のサービスを手前に噛ませて受信箱は現状維持、という案はかなり有力だった(addy.ioはOSSで自前ホストもでき年$12、2026年9月時点)。却下したのは<strong>実質ひとりで運営されているサービスだったから</strong>で、メールの経路に置く部品としてはそこだけ飲めなかった。</p>
-<h2 id="比較で見た軸">比較で見た軸</h2>
-<p>見た軸は<strong>①検索の質 ②標準規格(IMAP/JMAP/CalDAV/CardDAV)への対応 ③カスタムドメインとエイリアスの扱い ④出口の広さ ⑤料金</strong>。料金はすべて2026年9月時点に自分が調べた額で、改定されるので契約前に各社の料金ページを見てほしい。</p>
+<hr>
+<h2 id="決定2--fastmailにした説明文ではなく実測で">決定2 — Fastmailにした。説明文ではなく実測で</h2>
+<p><strong>日付</strong> 2026年10月5日（初版の時点。料金はすべて2026年9月時点に自分が調べた額で、改定されるので契約前に各社の料金ページを見てほしい）</p>
+<p><strong>迷ったこと</strong> どの業者に預けるか。見た軸は<strong>①検索の質 ②標準規格(IMAP/JMAP/CalDAV/CardDAV)への対応 ③カスタムドメインとエイリアスの扱い ④出口の広さ ⑤料金</strong>。</p>
+<p><strong>採った案</strong> <strong>Fastmail</strong>(豪州)。カスタムドメイン最大100個・アドレス数の実質上限なし、IMAPとJMAP(IMAPの後継としてFastmail自身が標準化を主導した軽量な通信規約)に対応。<strong>Individual年€60</strong>(60GB)、30日間の無料トライアルあり。</p>
+<p>年€60を払う価値があるとすれば、それは<strong>サーバー側の全文検索</strong>だった。手元のPCで索引を作らない方式なら冒頭の問題は原理的に起きない。裏付けもあった。FastmailはIMAPサーバーの主要な開発元のひとつで、検索には全文検索エンジン(Xapian)を使い、<strong>日本語・中国語・韓国語の分かち書きに対応するためにそのフォークを自前でメンテナンスしている</strong>。日本語は英語のように単語が空白で区切られていないので、ここが検索の成否を分ける。</p>
+<p>ただし<strong>説明文で判断せず実測で決めた</strong>。無料トライアルに申し込み、既存のメールを丸ごと流し込んだ。DNSは一切触らないので既存環境への影響はゼロ。インポートはサーバー側で自走するのでPCを閉じてよかった(前回の移行がスクリプト頼みで何度も中断したのとは対照的だった)。保存先のリージョンはEUを選んだ(既定は米国)。<strong>5万通強のインポート完了後、「豚汁」で検索した。即座に出た。</strong> 唯一の未検証点が消えたので課金を決めた。</p>
+<p>🔴 <strong>トライアルではカスタムドメインが使えない</strong>(有料プラン必須)。他に送信120通/日、サーバー側の振り分けルール作成不可といった制限もある。<strong>本番切替は「先に年額を払う」ところから始まる</strong>。トライアルでできるのは検索の実測までだと割り切るしかない。</p>
+<p><strong>却下した案と、なぜ却下したか</strong></p>
 <ul>
 <li><strong>Gmail / Google Workspace</strong>: 検索は最強。ただしデータ主権の観点では**「同じ課題を抱えた有料版」**で、変わるのは主権ではなく管理のしやすさだ。なおGoogleは2017年に個人向けGmailの広告目的の本文スキャンを公式に停止しているので、<strong>比較軸を「広告の有無」に置くのは的外れ</strong>だと途中で気づいた</li>
 <li><strong>大手の個人向けサービスのカスタムドメイン機能(移行前の構成)</strong>: 料金は圧倒的に安い。ただし<strong>1ドメインに作れるアドレス数に上限があり、キャッチオール(そのドメイン宛の存在しないアドレスも全部受け取る設定)に非対応</strong>。IMAPは使えるがメールソフトとの相性に癖がある</li>
-<li><strong>Fastmail</strong>(豪州): カスタムドメイン最大100個・アドレス数の実質上限なし、IMAPとJMAP(IMAPの後継としてFastmail自身が標準化を主導した軽量な通信規約)に対応。<strong>Individual年€60</strong>(60GB)、30日間の無料トライアルあり</li>
-<li><strong>その他</strong>: Migaduはドメイン数無制限だが最安プランは<strong>送信が1日20通まで</strong>。Proton MailとTutaは<strong>無料プランがIMAP非対応で普通のメールソフトから使えない</strong>。国内事業者は日本語サポートが魅力だが安いプランは<strong>送信用IPが他の契約者と共有</strong>で、②の「隣人の巻き添え」をそのまま引き受ける</li>
+<li><strong>その他</strong>: Migaduはドメイン数無制限だが最安プランは<strong>送信が1日20通まで</strong>。Proton MailとTutaは<strong>無料プランがIMAP非対応で普通のメールソフトから使えない</strong>。国内事業者は日本語サポートが魅力だが安いプランは<strong>送信用IPが他の契約者と共有</strong>で、「隣人の巻き添え」をそのまま引き受ける</li>
 </ul>
 <p>🔴 <strong>前提がひとつ間違っていた</strong>。Fastmailを「大手の傘下」だと記憶していたが、買収は2010年で<strong>2013年に従業員が買い戻して以降は独立系</strong>だった。親会社リスクの評価をやり直すことになった。<strong>業者の資本関係は記憶で判断しないこと。</strong></p>
-<h2 id="決めたこと-fastmail">決めたこと: Fastmail</h2>
-<p>年€60を払う価値があるとすれば、それは<strong>サーバー側の全文検索</strong>だった。手元のPCで索引を作らない方式なら冒頭の問題は原理的に起きない。裏付けもあった。FastmailはIMAPサーバーの主要な開発元のひとつで、検索には全文検索エンジン(Xapian)を使い、<strong>日本語・中国語・韓国語の分かち書きに対応するためにそのフォークを自前でメンテナンスしている</strong>。日本語は英語のように単語が空白で区切られていないので、ここが検索の成否を分ける。</p>
-<p>ただし<strong>説明文で判断せず実測で決めた</strong>。無料トライアルに申し込み、既存のメールを丸ごと流し込んだ。DNSは一切触らないので既存環境への影響はゼロ。インポートはサーバー側で自走するのでPCを閉じてよかった(前回の移行が自作スクリプト頼みで何度も中断したのとは対照的だった)。保存先のリージョンはEUを選んだ(既定は米国)。<strong>5万通強のインポート完了後、「豚汁」で検索した。即座に出た。</strong> 唯一の未検証点が消えたので課金を決めた。</p>
-<p>🔴 <strong>トライアルではカスタムドメインが使えない</strong>(有料プラン必須)。他に送信120通/日、サーバー側の振り分けルール作成不可といった制限もある。<strong>本番切替は「先に年額を払う」ところから始まる</strong>。トライアルでできるのは検索の実測までだと割り切るしかない。</p>
-<p>得たのは検索だ。失ったものも書いておく。</p>
+<p><strong>失ったもの</strong> 得たのは検索だ。失ったものも書いておく。</p>
 <ul>
 <li><strong>うろ覚えに強い検索ではない</strong>。速度はGmail級だが、Gmailの「表記ゆれや曖昧な記憶でも何となく当ててくる」ランキングは無く、書いた通りに素直に探す</li>
 <li><strong>迷惑メールフィルタはGmailと同格ではない</strong>。Gmailは世界最大の受信データで学習していて事実上最強だ。漏れを感じたら自分で学習させ、振り分けルールで詰める手間がかかる</li>
 <li><strong>カレンダーと連絡先は自己完結型</strong>だった。この2つの本体は自前のサーバーに置いているので「データは自分で持ったまま画面だけ借りる」ができるか調べた。カレンダーは外部のサーバーを登録して双方向に同期できる(ただし予定のコピーが業者側にも載る)。<strong>連絡先には同等の機能が無く</strong>、一度だけの取り込みしかできない。結果、この2つの移行は見送った。🔴 この件で自分は<strong>2回誤った断定をした</strong>。「外部カレンダーは読み取り専用しか無い」と書いたが、設定画面には「アカウントを追加」と「購読」という別々の欄があり、読み取り専用なのは後者だけだった。<strong>公式ヘルプの検索結果で機能の有無を断定せず、設定画面を開いて確かめること</strong></li>
 <li><strong>「航空券やレストランの予約確認メールが自動でカレンダーに入る」機能は失われる</strong>。大手の独自のメール解析エンジンに依存した機能なので、メールとカレンダーのどちらか片方を移しても再現されない。<strong>標準規格ではないものは移行で残らない</strong>という分かりやすい例だった。取り戻す道は、予約確認メールを検知して自分のカレンダーに書き込む仕掛けを自作することだけ。まだ作っていない</li>
+</ul>
+<p><strong>残った教訓</strong> 業者は説明文で選ばない。自分にとっての唯一の未検証点(今回なら日本語の全文検索)を実測で消してから、お金を払う。</p>
+<hr>
+<h2 id="決定3--サービスごとに別アドレスを配る案は半分だけ採った">決定3 — サービスごとに別アドレスを配る案は、半分だけ採った</h2>
+<p><strong>日付</strong> 2026年10月5日（初版の時点）</p>
+<p><strong>迷ったこと</strong> ドメインを持っていると<strong>サービスごとに別のアドレスを配る</strong>ことができる。漏れたらどこから漏れたか分かるし、1本ずつ止められる。移行先にはこれを自動でやる機能があり、自前のパスワードマネージャー(Vaultwarden)から呼び出して<strong>ログイン情報を保存する操作と同時に新しいアドレスを発行できる</strong>。実際に動かした。ここで立ち止まった。<strong>「迷惑メールはサーバー側のフィルタで止まるのだから、これに意味があるのか」</strong>。</p>
+<p><strong>採った案</strong> <strong>既存サービスの一括移行はやらず、新規登録の時だけ使う。</strong> 新規はボタン1回でコストがほぼゼロだが、既存の移行は実作業に加えて24時間ルール・ログインIDを変更できないサービス・連絡経路が切れるといった失敗モードを抱えるので、損益が非対称になる。</p>
+<p><strong>却下した案</strong> 既存の登録サービスも含めた一括のエイリアス化。</p>
+<p><strong>なぜ却下したか</strong> 考え直して、よく挙げられる利点のほとんどは自分には効かないと認めた。迷惑メールの削減→フィルタで解決済み。使い回し攻撃の防止→すべてのパスワードが固有なので追加効果はほぼゼロ。流出元の特定→分かっても打てる手は無効化だけで、フィルタで捨てるのと同じ。フィッシングの判別→リンクを踏まない習慣があれば不要。</p>
+<p><strong>残る本物の利点は1つだけ。名寄せへの耐性だ。</strong> 単一のアドレスはデータブローカーにとって結合キーになり、A社の流出とB社の流出が機械的に突き合わされてプロファイルが組まれる。迷惑メールフィルタはこれに一切効かない。<strong>受信箱は静かなまま、外側で自分の像が育っていく。</strong> 困っていないが他人が自分のデータでできることを減らす、という動機で、自前ホスティング全般と同じ理由だ。<strong>日々の受信箱の快適さとは無関係なので、使っていて価値を体感できないのは当然</strong>だった。</p>
+<p>使う上で分かった注意点。</p>
+<ul>
+<li>🔑 <strong>発行するドメインを自分のドメインに切り替えてから使い始めること</strong>。既定では業者のドメインで発行される。それで何十本も発行すると、<strong>業者をやめた瞬間に全部死ぬ</strong>という、まさに避けたかったロックインを自分で作り直すことになる。自分のドメインなら、移行先でキャッチオールを有効にすれば受信を継続できる</li>
+<li>⚠️ <strong>発行したアドレスは最初「保留」状態で、一度も使われないまま24時間で自動削除される</strong>。発行だけして後で使うことはできない</li>
+<li>🔴 <strong>そもそも移してはいけない層がある</strong>。メール業者自身、OSやプラットフォームのアカウント、ドメイン登録事業者、DNS事業者、パスワード管理、認証基盤、クラウドストレージ、銀行・証券・カード。<strong>復旧経路にとって「1本ずつ切れる」は「1本ずつ壊れる」に反転する</strong></li>
+<li>📌 <strong>増やしすぎると出口が狭くなる</strong>。業者をやめる時、移行先でキャッチオールが必須になる。数十本なら問題ないが、数百本に膨らませると取り替え可能性を自分で削ることになる。なおキャッチオール自体は<strong>無効(拒否)にした</strong>。有効にすると<code>info@</code>や<code>admin@</code>といった辞書総当たりの迷惑メールを全部受けてしまい、存在しないアドレスなので個別に止める手段がない</li>
+<li>⭐ <strong>一番しっくり来た用途は公共WiFiの登録画面だった</strong>。アドレスをマーケティングリストに流す前提のところが多く、<strong>24時間の自動削除がここでは利点になる</strong>。⚠️ ただし「メールの確認リンクを踏んでください」型だと、<strong>まだ繋がっていないのでそのメールが読めない</strong>。繋ぐ前にモバイル回線で発行しておくしかない</li>
+</ul>
+<p><strong>残った教訓</strong> 利点の一覧を鵜呑みにせず、自分の状況に当てて一つずつ消していく。最後に残ったものだけが本当の動機で、それで足りるかどうかで採用の範囲を決める。</p>
+<hr>
+<h2 id="今の構成とやらなかったこと">今の構成と、やらなかったこと</h2>
+<p>正本=メールサービス側 / バックアップ=自分のサーバー上の追記専用コピー→クラウド(暗号化) / クライアント=公式アプリのみ。デスクトップのメールソフトは撤去した。移行先の安定性を実測で確認できて見張り役が不要になり、ローカルコピーはPC1台の中にしかなくバックアップの本数に数えられなかったからだ。なお<strong>公式アプリもオフライン用にメールをキャッシュするが、これはバックアップに数えない</strong>。サーバーに無いメールを溜め込める古いメールソフトと違い、単なるサーバーの写しだ。</p>
+<p>やらなかったこと。<strong>メールの自前ホスティング</strong> — 決定1で却下した。副産物として、サーバーを選ぶ時の「25番ポートが開放できること」「メール専用のIPを分けられること」という制約が消え、他の用途だけで選べるようになった。<strong>既存サービスのアドレスをサービス別エイリアスに移すこと</strong> — 決定3の通り撤回した。<strong>カレンダーと連絡先の移行</strong> — 「データは自分で持ったまま、一番手前の画面だけ借りる」組み合わせが存在しなかったので見送った。不満が出たら<strong>画面だけ替えればいい</strong>(倉庫が自分のものなら、アプリは捨てられる=取り返しがつく)。</p>
+<p>残っている単一障害点は<strong>ドメインの更新忘れ</strong>だ。メールボックスの業者は取り替えられるが、ドメインを失うとアドレスごと失う。自動更新と登録してあるカードの有効期限は、年に一度は目で見ておくことにした。</p>
+<hr>
+<h1 id="手順">手順</h1>
+<p>ここから下は<strong>Claudeが書き、自分の環境で実行して結果を確かめた切替の実作業</strong>だ。2026年9月〜10月時点の内容で、実際にこれで約5万通・10GBが移った。</p>
+<p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが先に分かる</strong>こと。技術的な切替は1日で終わるが、その後の登録アドレスの付け替えは数週間かかる——この長さの差は始める前に知っておきたいことだと思う。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。あなたもClaudeやChatGPTのようなAIを使えるなら、自分のドメインと移行先に合わせて出し直してもらうのがいちばんいい。そのとき前半の判断が頼む前の材料になる。</p>
+<h2 id="前提">前提</h2>
+<ul>
+<li>自分名義のドメインを持ち、DNS(「<code>example.com</code>は実際にどのサーバーを指すか」をインターネット全体に教える住所録のような仕組み)を自分で編集できる状態</li>
+<li>そのドメインでメールを送受信できている状態(<a href="/guides/gmail-to-own-domain/">前記事</a>の到達点)。なりすまし対策は<code>p=reject</code>まで締めてある</li>
+<li>移行対象のメールは約5万通、容量10GB</li>
 </ul>
 <h2 id="切替作業-順番を間違えると送信が全滅する">切替作業: 順番を間違えると送信が全滅する</h2>
 <p>🔴 <strong>業者の案内通りにやると事故る点が2つあった。</strong> ①**「SPFのTXTレコードを新規追加してください」と指示される<strong>が、既存のSPFがある状態でそれをやると</strong>ドメインにSPFが2つ存在して仕様違反(PermError)になる**。認証が落ち、<code>p=reject</code>なので送信が全滅する。正解は追加ではなく<strong>1つのレコードへのマージ</strong>(<code>include:</code>を並べる)。②<strong>案内された値の末尾が<code>?all</code>(該当しない送信元は判定しない)<strong>で、自分の既存設定は<code>-all</code>(完全に拒否)だった。言われた通りにすると</strong>防御を弱める</strong>ので採用しなかった。</p>
@@ -1261,29 +1448,30 @@ Phase H  移行後(バックアップの再構築・監視・検証)
 </ol>
 <p>🔴 <strong>順番の注意</strong>: 復旧経路になっているサービス(ドメイン登録事業者、DNS事業者、クラウドストレージ、パスワード管理、そしてメール業者自身)から先に手を付けると、作業中に自分を締め出す事故が起きうる。<strong>これらは最後、かつ新しい受信箱が確実に動いていることを確認してから</strong>にした。</p>
 <p>そして正直に書くと、<strong>この作業はまだ終わっていない</strong>。移行から1年近く経っても、旧アドレス宛にしか届かないメールが時々ある。転送を切るタイミングはまだ決めていない。</p>
-<h2 id="サービスごとに別アドレスを配る案は半分だけ採った">サービスごとに別アドレスを配る案は、半分だけ採った</h2>
-<p>ドメインを持っていると<strong>サービスごとに別のアドレスを配る</strong>ことができる。漏れたらどこから漏れたか分かるし、1本ずつ止められる。移行先にはこれを自動でやる機能があり、自前のパスワードマネージャー(Vaultwarden)から呼び出して<strong>ログイン情報を保存する操作と同時に新しいアドレスを発行できる</strong>。実際に動かした。</p>
-<ul>
-<li>🔑 <strong>発行するドメインを自分のドメインに切り替えてから使い始めること</strong>。既定では業者のドメインで発行される。それで何十本も発行すると、<strong>業者をやめた瞬間に全部死ぬ</strong>という、まさに避けたかったロックインを自分で作り直すことになる。自分のドメインなら、移行先でキャッチオールを有効にすれば受信を継続できる</li>
-<li>⚠️ <strong>発行したアドレスは最初「保留」状態で、一度も使われないまま24時間で自動削除される</strong>。発行だけして後で使うことはできない</li>
-</ul>
-<p>ここで立ち止まった。<strong>「迷惑メールはサーバー側のフィルタで止まるのだから、これに意味があるのか」</strong>。考え直して、よく挙げられる利点のほとんどは自分には効かないと認めた。迷惑メールの削減→フィルタで解決済み。使い回し攻撃の防止→すべてのパスワードが固有なので追加効果はほぼゼロ。流出元の特定→分かっても打てる手は無効化だけで、フィルタで捨てるのと同じ。フィッシングの判別→リンクを踏まない習慣があれば不要。</p>
-<p><strong>残る本物の利点は1つだけ。名寄せへの耐性だ。</strong> 単一のアドレスはデータブローカーにとって結合キーになり、A社の流出とB社の流出が機械的に突き合わされてプロファイルが組まれる。迷惑メールフィルタはこれに一切効かない。<strong>受信箱は静かなまま、外側で自分の像が育っていく。</strong> 困っていないが他人が自分のデータでできることを減らす、という動機で、自前ホスティング全般と同じ理由だ。<strong>日々の受信箱の快適さとは無関係なので、使っていて価値を体感できないのは当然</strong>だった。</p>
-<p>そこで<strong>既存サービスの一括移行はやらず、新規登録の時だけ使う</strong>ことにした。新規はボタン1回でコストがほぼゼロだが、既存の移行は実作業に加えて24時間ルール・ログインIDを変更できないサービス・連絡経路が切れるといった失敗モードを抱えるので、損益が非対称になる。</p>
-<ul>
-<li>🔴 <strong>そもそも移してはいけない層がある</strong>。メール業者自身、OSやプラットフォームのアカウント、ドメイン登録事業者、DNS事業者、パスワード管理、認証基盤、クラウドストレージ、銀行・証券・カード。<strong>復旧経路にとって「1本ずつ切れる」は「1本ずつ壊れる」に反転する</strong></li>
-<li>📌 <strong>増やしすぎると出口が狭くなる</strong>。業者をやめる時、移行先でキャッチオールが必須になる。数十本なら問題ないが、数百本に膨らませると取り替え可能性を自分で削ることになる。なおキャッチオール自体は<strong>無効(拒否)にした</strong>。有効にすると<code>info@</code>や<code>admin@</code>といった辞書総当たりの迷惑メールを全部受けてしまい、存在しないアドレスなので個別に止める手段がない</li>
-<li>⭐ <strong>一番しっくり来た用途は公共WiFiの登録画面だった</strong>。アドレスをマーケティングリストに流す前提のところが多く、<strong>24時間の自動削除がここでは利点になる</strong>。⚠️ ただし「メールの確認リンクを踏んでください」型だと、<strong>まだ繋がっていないのでそのメールが読めない</strong>。繋ぐ前にモバイル回線で発行しておくしかない</li>
-</ul>
-<h2 id="今の構成とやらなかったこと">今の構成と、やらなかったこと</h2>
-<p>正本=メールサービス側 / バックアップ=自分のサーバー上の追記専用コピー→クラウド(暗号化) / クライアント=公式アプリのみ。デスクトップのメールソフトは撤去した。移行先の安定性を実測で確認できて見張り役が不要になり、ローカルコピーはPC1台の中にしかなくバックアップの本数に数えられなかったからだ。なお<strong>公式アプリもオフライン用にメールをキャッシュするが、これはバックアップに数えない</strong>。サーバーに無いメールを溜め込める古いメールソフトと違い、単なるサーバーの写しだ。</p>
-<p>やらなかったこと。<strong>メールの自前ホスティング</strong> — この記事の半分を使って却下した。副産物として、サーバーを選ぶ時の「25番ポートが開放できること」「メール専用のIPを分けられること」という制約が消え、他の用途だけで選べるようになった。<strong>既存サービスのアドレスをサービス別エイリアスに移すこと</strong> — 上記の通り撤回した。<strong>カレンダーと連絡先の移行</strong> — 「データは自分で持ったまま、一番手前の画面だけ借りる」組み合わせが存在しなかったので見送った。不満が出たら<strong>画面だけ替えればいい</strong>(倉庫が自分のものなら、アプリは捨てられる=取り返しがつく)。</p>
-<p>残っている単一障害点は<strong>ドメインの更新忘れ</strong>だ。メールボックスの業者は取り替えられるが、ドメインを失うとアドレスごと失う。自動更新と登録してあるカードの有効期限は、年に一度は目で見ておくことにした。</p>
-<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
-]]></content:encoded></item><item><title>AIにアプリを書かせて6週間、効いた習慣と効かなかったやり方</title><link>https://offgrid.taikiito.com/guides/building-with-an-ai-agent/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/building-with-an-ai-agent/</guid><description>プログラムを書けない自分が、AIのコーディングエージェントに指示するだけで毎日使うチャット＋カレンダーのアプリを作り、6週間運用した記録。同じ不具合を9回踏んだ話、直したものが端末に届いていなかった話、スクショを実測しないと色も丸みも合わない話。効いた習慣を5つに絞って書いた。</description><content:encoded><![CDATA[<p>自分はプログラムを書けない。それでも、スマートフォンのブラウザで動くチャット＋カレンダーのアプリを作って、6週間ほど毎日使っている。コードは全部AIのコーディングエージェント(指示を出すと実際にファイルを書き換えて動かすAI)に書かせた。</p>
+<hr>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版 / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記</p>
+]]></content:encoded></item><item><title>AIにアプリを書かせて6週間、効いた習慣と効かなかったやり方</title><link>https://offgrid.taikiito.com/guides/building-with-an-ai-agent/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/building-with-an-ai-agent/</guid><description>プログラムを書けない自分が、Claude（AnthropicのAIアシスタント）のコーディングエージェントに指示するだけで毎日使うチャット＋カレンダーのアプリを作り、6週間運用した記録。同じ不具合を9回踏んだ話、直したものが端末に届いていなかった話、スクショを実測しないと色も丸みも合わない話。効いた習慣を5つに絞って書いた。</description><content:encoded><![CDATA[<p>自分はプログラムを書けない。それでも、スマートフォンのブラウザで動くチャット＋カレンダーのアプリを作って、6週間ほど毎日使っている。コードは全部、Claude(AnthropicのAIアシスタント)のコーディングエージェント(指示を出すと実際にファイルを書き換えて動かす仕組み。自分が使っているのはClaude Code)に書かせた。</p>
+<p>分担を先に書いておく。<strong>コードを書く側はClaude、決める側と確かめる側は自分。</strong> コードを書かなくていいぶん、症状を伝えることと、出てきた直しを実機で判定することに全部の時間を使えた。そして6週間で分かったのは、詰まるのはたいてい書く側ではなく、こちらの説明の側だということだった(5つ目の習慣に書いた)。このサイトの他の記事に出てくるコマンドも、同じ分担で書かれている。</p>
 <p>利用者は自分と、自分以外にもう1人、実際に毎日使っている利用者の2人だけ。この1人が実機で不具合を見つけて報告してくるので、6週間のあいだ「作る」より「直す」のほうがはるかに多かった。そこで身についた習慣を5つだけ書く。どれも、外した回数の記録があるものに限った。</p>
 <h2 id="前提">前提</h2>
 <p>スマートフォンのホーム画面に置いて全画面で使う形式(PWA)のアプリで、iPhoneとAndroidの両方から使っている。置き場所は自分の借りているサーバーで、土台は<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>に書いた構成とほぼ同じ。自分がやるのは、不具合の報告を受け取り、エージェントに状況を伝え、出てきた直しを実機で確かめること。コードは読めるが書けない。</p>
+<hr>
+<h2 id="決定1--推測で直すのをやめ証拠を出す側に回った">決定1 — 推測で直すのをやめ、証拠を出す側に回った</h2>
+<p><strong>日付</strong> 2026年10月5日(初版時点。9回の再発は数日がかり)</p>
+<p><strong>迷ったこと</strong> 9回再発した日本語入力の変換候補の不具合を、10回目も「ありそうな犯人」を潰す形で直すか。</p>
+<p><strong>採った案</strong> <strong>直すのをやめて、端末が実際に報告していることを出す仕掛けを入れた。</strong> 画面に実況ログを流し、JavaScriptを一切かけない捨て用のページで条件を切り分けてから、残った範囲だけを相手にする。</p>
+<p><strong>却下した案</strong> 推測で直し続けること。9回のうち7回はこれだった。毎回それらしい原因が見つかり、毎回直って、毎回また同じ報告が来た。</p>
+<p><strong>後から見た当たり外れ</strong> 当たり。実況のスクショ1枚で「自分のコードは変換中に画面を一切書き換えていない」ことが確定し、残っていた仮説が全部消えた。ただし真因そのものにはまだ届いていない(「これで解決しないこと」参照)。</p>
+<p><strong>残った教訓</strong> <strong>断続的な不具合は「再現を待つ」のではなく「再現したときに証拠が残っている」状態を先に作る。</strong> 詳細は下の1に書いた。</p>
+<hr>
+<h2 id="決定2--動かなくなった版は直さずにまるごと巻き戻した">決定2 — 動かなくなった版は、直さずにまるごと巻き戻した</h2>
+<p><strong>日付</strong> 2026年10月5日(初版時点)</p>
+<p><strong>迷ったこと</strong> 下タブを入れた版でアプリが完全に操作不能になったとき、動かない原因を追って部分的に直すか。</p>
+<p><strong>採った案</strong> <strong>部分的な修正を試さず、導入前のファイルへ丸ごと戻した。</strong> 失ったもの(下タブ・独立した設定画面・カレンダーの月週日の切り替え・起動時の表示先)を記録し、3段に分けて1段ごとに実機で確かめながら作り直した。</p>
+<p><strong>却下した案</strong> 動かない原因を追いながら部分的に修正する。</p>
+<p><strong>なぜ却下したか</strong> <strong>直すより消すほうが安い機能がある。</strong> タブの切り替えアニメーションを機能ごと撤去したときも同じ判断をした(下の4参照)。</p>
+<p><strong>残った教訓</strong> <strong>巻き戻しで何を失ったかを書いておく</strong>と、作り直しの順番がそのまま手順表になる。</p>
+<hr>
 <h2 id="1-推測で直すのをやめ端末が実際に報告していることを出す捨て用のページを作る">1. 推測で直すのをやめ、端末が実際に報告していることを出す「捨て用のページ」を作る</h2>
 <p>一番高くついたのは、日本語入力の変換候補の帯が消える不具合だった。ひらがなを打ってもキーボードの上に出るはずの候補バーが出ない、または打っている途中で消える。<strong>同じ症状を、数日かけて9回踏んだ。原因は毎回違っていた。</strong> 正確に言うと、同じ作りで動かしている自作アプリが2つあり、9回はその両方にまたがっている。同じ型の作りには同じ型の地雷が埋まる、ということでもある。</p>
 <ol>
@@ -1348,5 +1536,5 @@ Phase H  移行後(バックアップの再構築・監視・検証)
 <li><strong>分かっていないものが溜まっていく。</strong> 自分のアプリには、自分が原理を説明できない処理が入っている。説明を求めれば返ってくるが、6週間ぶんを全部覚えているわけではない。壊れたときに「ここは触るな」と言えない箇所がある、という事実は消えていない。</li>
 <li><strong>説明できない症状は、直せない症状のままになる。</strong> 「なんとなく動きが変」は、スクショも実況も実データも出せないので結局手が付かない。9回目の変換候補の件も、まだ真因には届いていない。<strong>残っているのは「本番のコードのどこか」という範囲だけで、名前は付いていない。</strong></li>
 </ul>
-<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版 / 2026-10-07: 冒頭にClaudeとの分担(書く側/決める側)を明記し、判断の記録を「決定」ブロックとして引き上げ</p>
 ]]></content:encoded></item></channel></rss>

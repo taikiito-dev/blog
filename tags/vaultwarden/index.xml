@@ -1,20 +1,44 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Vaultwarden on Off-Grid</title><link>https://offgrid.taikiito.com/tags/vaultwarden/</link><description>Recent content in Vaultwarden on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sun, 13 Sep 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/vaultwarden/index.xml" rel="self" type="application/rss+xml"/><item><title>パスワードを1PasswordからVaultwardenに移す</title><link>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</guid><description>1Passwordを解約し、自前ホストのVaultwardenにパスワードを一本化した記録。docker-composeでの構築、Cloudflare Tunnelでの公開、パスワード・パスキーそれぞれの移行手順まで、同じ環境を再現できる粒度で書いた。</description><content:encoded><![CDATA[<p>1Passwordで管理していたパスワードとパスキーを、自分のサーバー上で動かすVaultwardenというソフトに移した記録。パスワード自体の移行はエクスポート・インポートで数分で終わるが、パスキー(WebAuthnという国際標準規格で実現されている、パスワードの代わりに指紋・顔認証などでログインする仕組み)は仕組み上コピーができず、サイトごとに手作業で登録し直す必要があった。</p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Vaultwarden on Off-Grid</title><link>https://offgrid.taikiito.com/tags/vaultwarden/</link><description>Recent content in Vaultwarden on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Wed, 07 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/vaultwarden/index.xml" rel="self" type="application/rss+xml"/><item><title>パスワードを1PasswordからVaultwardenに移す</title><link>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</guid><description>1Passwordを解約し、自前ホストのVaultwardenにパスワードを一本化した記録。何を決め、何を選ばなかったか（移行先の選定、パスキーの使い分け、バックアップの鍵の置き場所）を前半に、docker-composeでの構築からパスキー再登録までの手順を後半に置いた。</description><content:encoded><![CDATA[<p>1Passwordで管理していたパスワードとパスキーを、自分のサーバー上で動かすVaultwardenというソフトに移した記録。パスワード15件・パスキー15件、全て移行を終えて1Passwordは解約した。</p>
+<p>先に役割を書いておく。<strong>コマンドと設定ファイルを書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> 構築の中身を考えなくていいぶん、「どのパスワードをどこに預けるか」という本題だけを考えられた。だからこのページも、前半に判断、後半に手順という形にしてある。</p>
+<p>パスワード自体の移行はエクスポート・インポートで数分で終わる。時間がかかるのはパスキー(WebAuthnという国際標準規格で実現されている、パスワードの代わりに指紋・顔認証などでログインする仕組み)で、仕組み上コピーができず、サイトごとに手作業で登録し直す必要があった。</p>
+<hr>
+<h2 id="決定1--移行先はvaultwardenにした">決定1 — 移行先はVaultwardenにした</h2>
+<p><strong>日付</strong> 2026年9月12日</p>
+<p><strong>迷ったこと</strong> パスワードマネージャーの自前ホスト選択肢は複数ある。どれにするか。</p>
+<p><strong>採った案</strong> <strong>Vaultwarden</strong> — Bitwardenというサービスの非公式互換サーバー実装。公式のBitwardenアプリ・ブラウザ拡張機能がそのまま使え、UIの完成度も高い。ゼロ知識暗号化(サーバー側もマスターパスワードを知らない設計)。普段使っているNextcloud・Immichと同じサーバー上に同居させられる手軽さと、公式アプリがそのまま使える点が決め手だった。</p>
+<p><strong>却下した案</strong></p>
+<ul>
+<li><strong>KeePassXC</strong> — サーバーを立てず、暗号化されたファイル1つで管理するタイプ。</li>
+<li><strong>Bitwarden公式のクラウド版</strong> — セルフホストではなく、Bitwarden社のサーバーに預ける形。</li>
+</ul>
+<p><strong>なぜ却下したか</strong> KeePassXCはオフラインで完結するが、複数端末間の同期を自分で用意する必要がある(クラウドストレージと組み合わせるのが一般的)。公式クラウド版は1Passwordと似た構図になるため、今回の「自分の手元に取り戻す」という目的には合わない。</p>
+<p><strong>残った教訓</strong> 目的が「自分の手元に取り戻す」なら、<strong>預け先の会社が変わるだけの案は、どれだけ出来が良くても候補から外れる。</strong> 比べるべきは製品の出来ではなく、目的との向きだった。</p>
+<hr>
+<h2 id="決定2--パスキーを全部vaultwardenに寄せなかった">決定2 — パスキーを全部Vaultwardenに寄せなかった</h2>
+<p><strong>日付</strong> 2026年9月12日</p>
+<p><strong>迷ったこと</strong> 1Passwordを棚卸しして出てきたパスキー全15件を、どこに登録し直すか。</p>
+<p><strong>採った案</strong> <strong>用途によって使い分ける。</strong> 会社PC(Windows)からのログインが必要なアカウントは、ブラウザ拡張機能のインストールが要らずQRコードでのクロスデバイス認証に対応しているiCloud Keychainへ。個人利用でデータ主権の方針に寄せたいアカウントは、パスワードと同じ場所で一元管理できるVaultwardenへ。</p>
+<p><strong>却下した案</strong> 全件をVaultwardenに一本化する。</p>
+<p><strong>なぜ却下したか</strong> 会社PCでは拡張機能を自由に入れられない。そこで使うアカウントまでVaultwardenに寄せると、いざ使う場面でログインできない。</p>
+<p><strong>残った教訓</strong> <strong>「全部を1箇所に」はそれ自体が目的ではない。</strong> 使う場面ごとに成立する置き場所を選ぶほうが、一元管理の見た目の美しさより実用に効く。</p>
+<hr>
+<h2 id="決定3--バックアップの取り出し鍵をvaultwarden自身に預けた">決定3 — バックアップの取り出し鍵を、Vaultwarden自身に預けた</h2>
+<p><strong>日付</strong> 2026年9月13日（バックアップ設定時）</p>
+<p><strong>迷ったこと</strong> バックアップ自体はVaultwardenのフォルダをBackblaze B2へ同期するだけで済む。問題は、そのB2に接続するための鍵(<code>rclone</code>の設定ファイル<code>~/.config/rclone/rclone.conf</code>)がサーバー本体にしか無いこと。サーバーが完全に壊れた時、バックアップを取り出す鍵ごと失われてしまう。</p>
+<p><strong>採った案</strong> この設定ファイルの中身を、<strong>Vaultwarden自身にSecure Note(パスワード以外のメモも安全に保存できる機能)として複製保存した。</strong> Vaultwardenはクライアントアプリに一度ログインしておけばオフラインキャッシュが残るため、サーバーが全損してもスマホから鍵を取り出せる。</p>
+<p><strong>却下した案</strong> 設定ファイルをサーバー本体にだけ置いたままにする(何もしなければこの状態になる)。</p>
+<p><strong>なぜ却下したか</strong> 「鶏と卵」の形になっているから。バックアップがあっても、それを開ける鍵がバックアップ対象の機械の中にしか無いなら、全損時には両方いっぺんに失う。</p>
+<p><strong>残った教訓</strong> <strong>バックアップの取り出し鍵自体も、バックアップしておく。</strong> バックアップの有無だけ見ていると、この一段上の依存関係を見落とす。</p>
+<hr>
+<h1 id="手順">手順</h1>
+<p>ここから下は<strong>Claudeが書き、自分の環境で実行して結果を確かめたもの</strong>だ。2026年9月の版で、実際にこれでパスワード15件・パスキー15件が移った。</p>
+<p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが先に分かる</strong>こと。見てのとおり5段階で、サーバー側は半日もかからない。時間を食うのはパスキーの再登録だけだ。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。ゼロから説明するより、動いた実例を見せたほうが早い。版が新しくなっていれば、そのとき合った形に直してくれる。</p>
 <h2 id="前提">前提</h2>
 <p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
 <ul>
 <li>常時起動しているLinux環境(Docker Engineが使える状態)</li>
 <li>自分名義のドメイン、Cloudflare Tunnelが動いている状態(導入手順は<a href="/guides/google-drive-to-nextcloud/">前々回の記事</a>のStep 3と同じ)</li>
 </ul>
-<h2 id="何をしたかったか">何をしたかったか</h2>
-<p>写真(<a href="/guides/google-photos-to-immich/">前の記事</a>)やファイル(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)と同じ理由で、1Passwordに預けていたパスワードも自分の手元に戻したいと思った。加えて、1Passwordは年額のサブスクリプションなので、自前ホストに切り替えれば単純にコストも減らせる。</p>
-<h2 id="vaultwardenを選んだ理由">Vaultwardenを選んだ理由</h2>
-<p>パスワードマネージャーの自前ホスト選択肢は複数ある。</p>
-<ul>
-<li><strong>Vaultwarden</strong> — Bitwardenというサービスの非公式互換サーバー実装。公式のBitwardenアプリ・ブラウザ拡張機能がそのまま使え、UIの完成度も高い。ゼロ知識暗号化(サーバー側もマスターパスワードを知らない設計)。</li>
-<li><strong>KeePassXC</strong> — サーバーを立てず、暗号化されたファイル1つで管理するタイプ。オフラインで完結するが、複数端末間の同期を自分で用意する必要がある(クラウドストレージと組み合わせるのが一般的)。</li>
-<li><strong>Bitwarden公式のクラウド版</strong> — セルフホストではなく、Bitwarden社のサーバーに預ける形。1Passwordと似た構図になるため、今回の「自分の手元に取り戻す」という目的には合わない。</li>
-</ul>
-<p>普段使っているNextcloud・Immichと同じサーバー上に同居させられる手軽さと、公式アプリがそのまま使える点を決め手にVaultwardenにした。</p>
 <h2 id="step-1-docker-composeでvaultwardenを構築する">Step 1: docker-composeでVaultwardenを構築する</h2>
 <p>Vaultwardenは公式イメージを使えばコンテナ1つで完結し、Nextcloudのようにデータベースを別途用意する必要もない分、今回の中では一番シンプルな部類だった。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/vaultwarden <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/vaultwarden
@@ -53,7 +77,7 @@
 <p>ブラウザはChrome・Firefoxの両方にBitwarden拡張機能を追加し、接続先の設定(拡張機能アイコン → 設定 → Self-hosted environment)に自分の<code>vault.taikiito.com</code>を入力する。スマートフォン用の公式Bitwardenアプリも同様に接続先を変更するだけで使える。</p>
 <p>パスワード自体の移行は、1Password側でエクスポートしたデータ(CSV形式など)をVaultwardenの「Import data」機能でインポートするだけで数分で終わった。ここは特につまづくところがなかった。</p>
 <h2 id="step-4-パスキーの移行">Step 4: パスキーの移行</h2>
-<p>パスワードと違い、パスキー(WebAuthn)はエクスポート・インポートで移せない仕様になっている。サイトごとに「旧パスキーを削除 → 新しいマネージャーで再登録」という地道な作業が必要だった。手元の1Passwordを棚卸ししたところ、登録済みのパスキーは全15件。</p>
+<p>パスワードと違い、パスキー(WebAuthn)はエクスポート・インポートで移せない仕様になっている。サイトごとに「旧パスキーを削除 → 新しいマネージャーで再登録」という地道な作業が必要だった。どのパスキーをVaultwardenに寄せ、どれをiCloud Keychainに残したかの基準は決定2のとおり。</p>
 <p>作業中に見つかった落とし穴:</p>
 <ul>
 <li><strong>ブラウザ拡張機能の競合</strong>: 1Password拡張機能を有効にしたままだと、WebAuthnのリクエストを1Password側が横取りしてしまい、Bitwarden/Vaultwarden拡張機能が反応できない。<code>chrome://extensions</code>で1Password拡張機能を完全にOFFにする必要があった。</li>
@@ -61,14 +85,13 @@
 <li><strong>iCloud Keychainを使う場合の見落としがちな設定</strong>: macOSでiCloudキーチェーン経由のパスキー登録をするには、システム設定 → 一般 → AutoFill &amp; Passwords の「Passwords」トグルが事前にONになっている必要がある(初期状態はOFF)。</li>
 <li><strong>削除する前に、実際に使っているか確認する</strong>: 「もう使っていないはず」と思っていたサービスのパスキーが、実は仕事の特定システムのログインで現役だと後から判明した件があった。1Password内の一覧だけを見て「使っていなさそう」で判断せず、実際に使う場面があるかを確認してから削除する方が安全だった。</li>
 </ul>
-<p>全部をVaultwardenに寄せたわけではなく、用途によって使い分けている。<strong>会社PC(Windows)からのログインが必要なアカウント</strong>はブラウザ拡張機能のインストールが要らずQRコードでのクロスデバイス認証に対応しているiCloud Keychainへ、<strong>個人利用でデータ主権の方針に寄せたいアカウント</strong>はパスワードと同じ場所で一元管理できるVaultwardenへ、という基準にした。</p>
 <h2 id="step-5-バックアップを設定する">Step 5: バックアップを設定する</h2>
 <p>Nextcloud・Immichと同じく<code>rclone</code>でBackblaze B2へ日次バックアップする。Vaultwardenの場合はデータベース(SQLite、1ファイルにまとまった軽量なデータベース形式)がそのままフォルダの中に入っているので、フォルダごと同期するだけでよい。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
 </span></span></span><span class="line"><span class="cl">  ~/vaultwarden/vw-data <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/vaultwarden&#34;</span>
-</span></span></code></pre></div><p><strong>このバックアップの取り出し鍵自体もバックアップしておく</strong>、という一段階上の注意点がある。<code>rclone</code>の設定ファイル(<code>~/.config/rclone/rclone.conf</code>、B2に接続するための鍵が入っている)がサーバー本体にしか無いと、サーバーが完全に壊れた時にバックアップを取り出す鍵ごと失われてしまう。自分はこの設定ファイルの中身を、Vaultwarden自身にSecure Note(パスワード以外のメモも安全に保存できる機能)として複製保存しておくことで、この「鶏と卵」問題を解決した。Vaultwardenはクライアントアプリに一度ログインしておけばオフラインキャッシュが残るため、サーバーが全損してもスマホから鍵を取り出せる。このバックアップ自体を「乗っ取られても消されない」形にする話は<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>に別途書いた。</p>
+</span></span></code></pre></div><p>このとき、<code>rclone</code>の設定ファイル(<code>~/.config/rclone/rclone.conf</code>、B2に接続するための鍵が入っている)の複製をVaultwarden自身のSecure Noteに入れておく。理由は決定3に書いた。このバックアップ自体を「乗っ取られても消されない」形にする話は<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>に別途書いた。</p>
 <h2 id="結果">結果</h2>
 <p>パスワード15件・パスキー15件、全て移行完了。1Passwordは解約し、年間の固定費を1本減らせた。パスワードの移行自体は簡単だが、パスキーは仕組み上コピーできないので、サイトごとの再登録作業を見込んでおくとよい。</p>
 <p>次は、連絡先とカレンダーをNextcloudに集約した話。→ <a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</a></p>
-<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し</p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記</p>
 ]]></content:encoded></item></channel></rss>

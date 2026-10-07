@@ -1,8 +1,28 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>メモ on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E3%83%A1%E3%83%A2/</link><description>Recent content in メモ on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Sun, 13 Sep 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E3%83%A1%E3%83%A2/index.xml" rel="self" type="application/rss+xml"/><item><title>メモをiCloud NotesからJoplinに移す(で、結局移さなかった話)</title><link>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</guid><description>iCloud Notes 1,649件をJoplinに一本化しようとして、結局は「過去分は移さず、新規メモだけJoplinで書く」という決着にした記録。Nextcloud WebDAV同期の実際の設定手順、iPhone発熱問題も。</description><content:encoded><![CDATA[<p>iCloud Notesに溜まっていたメモを、自前で管理できるJoplinというソフトに移そうとした記録。結論から書くと、過去の1,649件は結局移行せず、Joplinは新規メモ専用として運用することにした。「全部きれいに移す」ことにこだわらなかった判断の話でもある。</p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>メモ on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E3%83%A1%E3%83%A2/</link><description>Recent content in メモ on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Wed, 07 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E3%83%A1%E3%83%A2/index.xml" rel="self" type="application/rss+xml"/><item><title>メモをiCloud NotesからJoplinに移す(で、結局移さなかった話)</title><link>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</guid><description>iCloud Notes 1,649件をJoplinに一本化しようとして、「過去分は移さず、新規メモだけJoplinで書く」と決めた記録。何を迷い、なぜ完全移行を却下したかを前半に、Nextcloud WebDAV同期の実際の設定手順を後半に置いた。</description><content:encoded><![CDATA[<p>iCloud Notesに溜まっていたメモ1,649件を、自前で管理できるJoplinというソフトに移そうとした記録。結論から書くと、過去の1,649件は移行せず、Joplinは新規メモ専用として運用することにした。「全部きれいに移す」ことにこだわらなかった判断の話でもある。</p>
+<p>先に役割を書いておく。<strong>同期の設定値を調べて書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> この記事に限っては、設定より判断のほうがはっきり重い。環境を整えること自体は半日もかからず、本題は「1,649件をどうするか」を決めることだった。だからこのページも、前半に判断、後半に手順という形にしてある。</p>
+<hr>
+<h2 id="決定1--過去の1649件を移さなかった">決定1 — 過去の1,649件を移さなかった</h2>
+<p><strong>日付</strong> 2026年9月12日</p>
+<p><strong>迷ったこと</strong> 環境は整ったが、肝心の「iCloud Notesの過去メモをどうやってJoplinに移すか」で立ち止まった。エクスポート自体は可能(Macの「メモ」アプリからPDFや個別ファイルとして書き出せる)。</p>
+<p><strong>採った案</strong> <strong>過去の1,649件はiCloud Notes側にそのまま残し、Joplinは今後書く新規メモ専用として運用する。</strong> 「全部を完璧に移してから使い始める」のではなく、「新しい方から始めて、今後蓄積されるものだけを自分の手元で管理する」という割り切り方だ。</p>
+<p><strong>却下した案</strong> 1,649件をエクスポートしてJoplinに取り込む、当初計画どおりの完全移行。</p>
+<p><strong>なぜ却下したか</strong> 実際に中身を見返してみると、大した情報が入っていないメモがほとんどだった。買い物リストの切れ端、一度きりのちょっとしたメモ、すでに用が済んでいる下書きなど。1,649件を一つ一つ精査して移す価値があるかというと、かかる手間に見合わないと判断した。</p>
+<p><strong>後から見た当たり外れ</strong> 運用してみて、iCloud Notesの過去メモを能動的に見返すことはほとんどない。アーカイブとして置いてあれば足りている。</p>
+<p><strong>残った教訓</strong> <strong>「完全移行」にこだわらず、価値のある部分だけを新しい仕組みに乗せる、という判断も移行の一つの形だ。</strong> ファイル移行の時の「移す理由が移さない理由に勝つものだけ移す」という基準の延長線上にある。</p>
+<hr>
+<h2 id="決定2--同期を自動ではなく手動にした">決定2 — 同期を「自動」ではなく「手動」にした</h2>
+<p><strong>日付</strong> 2026年9月12日</p>
+<p><strong>迷ったこと</strong> Mac・iPhone間の同期を、アプリ任せの自動にするか、自分でボタンを押す手動にするか。</p>
+<p><strong>採った案</strong> <strong>手動。</strong> メモを書いたタイミングで自分で同期ボタンを押す。</p>
+<p><strong>却下した案</strong> 自動同期(バックグラウンドでの定期的なポーリング)。</p>
+<p><strong>なぜ却下したか</strong> iPhoneで自動同期を有効にすると本体が発熱する症状が出たため。常時バックグラウンドで同期し続けるより、手動の運用の方が今のところ実用上困らないと判断した。</p>
+<p><strong>残った教訓</strong> 同期は「常に自動であるべき」ものではない。<strong>端末に実害が出るなら、自分の使い方で困らない範囲まで落とす</strong>ほうが長続きする。</p>
+<hr>
+<h1 id="手順">手順</h1>
+<p>ここから下は<strong>Claudeが書き、自分の環境で設定して動くことを確かめたもの</strong>だ。2026年9月の版で、実際にこの設定でMac・iPhoneの同期が動いている。</p>
+<p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが先に分かる</strong>こと。見てのとおり3段階で、新しいサーバーを立てる作業は無く、既存のNextcloudに設定を足すだけだ。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。ゼロから説明するより、動いた実例を見せたほうが早い。版が新しくなっていれば、そのとき合った形に直してくれる。</p>
 <h2 id="前提">前提</h2>
 <p>すでにNextcloudが動いていることを前提にする。まだの場合は先に<a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a>を読んでほしい。Joplin自体は自分でサーバーを用意する必要がなく、既存のNextcloudをファイル置き場として使うだけなので、新しいDockerコンテナを立てる作業は無い。</p>
-<h2 id="何をしたかったか">何をしたかったか</h2>
-<p>iCloud Notesには、思いついたことをその場で書き留めたメモが1,649件溜まっていた。写真やファイルと同じく、Appleに預けっぱなしのデータを自分の手元に戻したいと考え、Joplinの導入を決めた。</p>
 <h2 id="step-1-joplinを選ぶ">Step 1: Joplinを選ぶ</h2>
 <p>メモアプリの自前ホスト選択肢もいくつかあるが、Markdown形式(見出しや箇条書きなどを簡単な記号だけで書ける、プレーンテキストに近いメモの書き方)でメモを書けること、Nextcloud WebDAV(ファイルをネットワーク越しにやり取りするための標準規格。専用サーバーソフトを別途用意しなくても、既存のNextcloudがそのまま使える)経由で同期できること、Mac・iPhone両方に公式アプリがあることを決め手にJoplinにした。</p>
 <h2 id="step-2-nextcloud側にjoplin専用フォルダとアプリパスワードを用意する">Step 2: Nextcloud側にJoplin専用フォルダとアプリパスワードを用意する</h2>
@@ -17,13 +37,9 @@
 <li>パスワード: Step 2で発行したアプリパスワード</li>
 </ul>
 <p>設定後、同期ボタンを押して接続が成功することを確認する。Mac・iPhoneの両方に同じ設定を入れることで、同じNextcloudフォルダを見に行く形になる。</p>
-<p><strong>同期は「自動」ではなく「手動」に設定している。</strong> 理由は、iPhoneで自動同期(バックグラウンドでの定期的なポーリング)を有効にすると本体が発熱する症状が出たため。常時バックグラウンドで同期し続けるより、メモを書いたタイミングで自分で同期ボタンを押す運用の方が、今のところ実用上困らないと判断した。</p>
-<h2 id="step-4-過去の1649件をどうするか検討する">Step 4: 過去の1,649件をどうするか検討する</h2>
-<p>ここまで環境は整ったが、肝心の「iCloud Notesの過去メモをどうやってJoplinに移すか」で立ち止まった。</p>
-<p>エクスポート自体は可能(Macの「メモ」アプリからPDFや個別ファイルとして書き出せる)だが、実際に中身を見返してみると、大した情報が入っていないメモがほとんどだった。買い物リストの切れ端、一度きりのちょっとしたメモ、すでに用が済んでいる下書きなど。1,649件を一つ一つ精査して移す価値があるかというと、かかる手間に見合わないと判断した。</p>
-<p>最終的に、<strong>過去の1,649件はiCloud Notes側にそのまま残し、Joplinは今後書く新規メモ専用として運用する</strong>ことにした。「全部を完璧に移してから使い始める」のではなく、「新しい方から始めて、今後蓄積されるものだけを自分の手元で管理する」という割り切り方だ。ファイル移行の時の「移す理由が移さない理由に勝つものだけ移す」という基準の延長線上にある判断でもある。</p>
+<p>同期は決定2のとおり「自動」ではなく「手動」に設定している。</p>
 <h2 id="結果">結果</h2>
-<p>Joplinは新規メモの置き場として運用中。iCloud Notesの過去メモはアーカイブとしてそのまま残しているが、能動的に見返すことはほとんどない。「完全移行」にこだわらず、価値のある部分だけを新しい仕組みに乗せる、という判断も移行の一つの形だと思っている。</p>
+<p>Joplinは新規メモの置き場として運用中。iCloud Notesの過去メモはアーカイブとしてそのまま残しているが、能動的に見返すことはほとんどない。</p>
 <p>次は、メールをGmailから自分のドメインに移した、一番苦労した話。→ <a href="/guides/gmail-to-own-domain/">メールをGmailから自分のドメインに移す</a></p>
-<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: NextcloudのWebDAV同期の実際の設定手順(URL・アプリパスワード)を追記し、再現可能なレベルに書き直し</p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: NextcloudのWebDAV同期の実際の設定手順(URL・アプリパスワード)を追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、設定をClaudeが書いたことを明記</p>
 ]]></content:encoded></item></channel></rss>
