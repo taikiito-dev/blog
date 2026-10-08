@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Immich on Off-Grid</title><link>https://offgrid.taikiito.com/tags/immich/</link><description>Recent content in Immich on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Thu, 08 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/immich/index.xml" rel="self" type="application/rss+xml"/><item><title>写真をGoogle PhotosからImmichに移す</title><link>https://offgrid.taikiito.com/guides/google-photos-to-immich/</link><pubDate>Mon, 24 Aug 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/google-photos-to-immich/</guid><description>Googleフォト3万2千件を自前サーバーに移した記録。何を決め、何を却下し、1年後に何を取りこぼしたか。コマンドはClaude（AIアシスタント）が書いたので、このページの前半は判断だけを扱う。</description><content:encoded><![CDATA[<p>Google Photosの全データ（32,218件、約119GB）を自前サーバーのImmichへ移した記録。</p>
+<p><strong>この記事でやること</strong> — Google Photosの全データ32,218件・約119GBを、自前サーバーのImmichへ取り込む。元のGoogle Photosは消さず、並行運用のまま残した。手順は<a href="/guides/google-photos-to-immich/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
 <p>先に役割を書いておく。<strong>コマンドを書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> 私はエンジニアではない。それでも32,218件は無事に移ったし、今も毎日見られている。</p>
 <p>この分担はやってみると気持ちよかった。<strong>手順を考えなくていいぶん、「何を守るか」だけをじっくり考えられた。</strong> だからこのページも同じ形にしてある。</p>
 <ul>
@@ -168,6 +169,7 @@ Missing metadata: 7
 <p>次は、同じ考え方でGoogle Driveのファイルを移した話。→ <a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a></p>
 <p><strong>更新履歴</strong> — 2026-08-24: 初版 / 2026-09-12: 現状の進捗を追記 / 2026-09-13: 再現可能なレベルに手順を全面追記 / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記。46件の取りこぼしを後日談として追記</p>
 ]]></content:encoded></item><item><title>写真サーバーの容量が足りない問題に、遠回りして決着をつけた</title><link>https://offgrid.taikiito.com/guides/photo-storage-capacity/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/photo-storage-capacity/</guid><description>自前の写真サーバーは写真が増えるほど容量が足りなくなる。古い写真を安いクラウドストレージへ追い出す仕掛けを一晩かけて作り、10枚で実証まで通したあとに、VPS業者が月数ドルでSSDを増設できることに気づいて全部捨てた記録。測った数字と踏んだ罠を書いた。</description><content:encoded><![CDATA[<p>写真を自分のサーバーに置くようにしてから、ずっと気になっていたことがある。<strong>写真は毎年増えるのに、サーバーのディスクは契約した大きさのまま</strong>だということ。</p>
+<p><strong>この記事でやること</strong> — 自前の写真サーバーの容量不足を、ディスクの増設で片付ける。先に空き容量と年ごとの増え方を実測し、古い写真をオブジェクトストレージへ追い出す仕掛けを10枚で実証したうえで撤去し、最終的にSSDを200GBから400GBへ増やしてパーティションとファイルシステムを無停止で広げた。手順は<a href="/guides/photo-storage-capacity/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
 <p>結論を先に書くと、自分は<strong>古い写真を安いオブジェクトストレージへ追い出す仕掛け</strong>を一晩かけて作り、動くところまで確認してから、<strong>全部捨てた</strong>。業者が月$3.60でディスクを足せると分かったからだ。その遠回りの中身を書く。</p>
 <h2 id="前提">前提</h2>
 <ul>
@@ -322,8 +324,162 @@ Missing metadata: 7
 <p>一晩かけて作って、10枚で実証して、全部捨てた。<strong>月$3.60のボタンを先に押していれば丸ごと要らなかった作業</strong>だ。素直に書くと、「どう作るか」を考えるのが面白くて、「買えば済むか」を確かめる手順を飛ばしていた。</p>
 <p><strong>構成を変える検討を始めるときは、まず今契約しているサービスの管理画面に、その問題をそのまま解決するボタンが無いかを確認する。</strong> 自分は3つの案を丁寧に比較表にしておいて、「ディスクだけ足す」をその表に入れていなかった。<strong>選択肢の作り方を間違えると、どれだけ丁寧に比べても正解には当たらない。</strong></p>
 <p>捨てた作業から残ったものもある。マウントが切れてもImmichのレコードは壊れないこと、削除が30日間は取り返せること、<code>rclone sync</code>がリンクを見て送り先を消すこと、暗号化が速度の障害にならないこと、サムネイルの全件再生成が課金を踏むこと。これは<strong>どの方式を選んでも効く知識</strong>で、1TBを超えた日に取り出せる形でメモに残した。遠回りの元は取れていないが、ゼロでもない。</p>
-<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
-]]></content:encoded></item><item><title>ログインを一本化しても、裏口は閉まらない</title><link>https://offgrid.taikiito.com/guides/sso-does-not-close-password-doors/</link><pubDate>Thu, 08 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/sso-does-not-close-password-doors/</guid><description>入口を1つにまとめて指紋だけで入れるようにしたあと、各アプリが自分で持っているパスワードの扉が残っていないか1つずつ実物で確認した記録。1本は「閉じたつもり」で実際には開いていた。やらないと決めた工事と、閉める作業中に自分の接続を切った失敗まで書く。</description><content:encoded><![CDATA[<p>原油の取引を仕事にしている非エンジニアが、2025年から家族の写真・ファイル・パスワードを他人のサーバーから自分で払う1台へ移して運用している。この記事はその続きで、<strong>ログインの入口を作り変えたあとに残っていた「裏口」の話</strong>だ。</p>
+<hr>
+<h1 id="手順">手順</h1>
+<p>ここから下はClaude（AnthropicのAIアシスタント）が書き、自分の環境で実行して結果を確かめたものだ。</p>
+<p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが着手の前に分かる</strong>こと。本編（Step 1〜6）は実測と確認が大半で、実際にディスクに触るのは2コマンドしかない。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。ゼロから説明するより、動いた実例を見せたほうが早い。</p>
+<p>捨てた側の「追い出す」方式も付録として残した。1TB規模になった日のための材料で、本編とは独立して読める。</p>
+<p>道具とサービスの版は上がるので、管理画面の項目名やオプション名は実行前に公式ドキュメントで現在の形を確認してほしい。</p>
+<h2 id="前提の環境">前提の環境</h2>
+<ul>
+<li>写真管理ソフトのImmichが動いているLinuxサーバー1台。自分の場合はContaboのVPS（6vCPU / 12GB RAM / SSD 200GB、Ubuntu 24.04）</li>
+<li>Docker Engineと<code>docker compose</code>が使える状態</li>
+<li>オブジェクトストレージへの日次バックアップが既に動いていること（自分の送り先はBackblaze B2）。付録の方式は「写真の実体がすでにバックアップ先にある」ことを前提にしている</li>
+<li><code>rclone</code>（いろいろなクラウドストレージへファイルを同期するコマンド）</li>
+</ul>
+<h2 id="step-1-今の空きと増える速さを測る">Step 1: 今の空きと、増える速さを測る</h2>
+<p>まず現実の数字を出す。印象で判断すると、このあとの比較が全部ずれる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">df -h /
+</span></span><span class="line"><span class="cl">docker <span class="nb">exec</span> -it &lt;ImmichのDBコンテナ名&gt; psql -U &lt;DBユーザー&gt; -d &lt;DB名&gt;
+</span></span></code></pre></div><p>Immichのデータベースには撮影年が入っているので、年ごとに集計できる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-sql" data-lang="sql"><span class="line"><span class="cl"><span class="k">select</span><span class="w"> </span><span class="k">extract</span><span class="p">(</span><span class="k">year</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="s2">&#34;fileCreatedAt&#34;</span><span class="p">),</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="n">pg_size_pretty</span><span class="p">(</span><span class="k">sum</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="s2">&#34;fileSizeInByte&#34;</span><span class="p">))</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="k">from</span><span class="w"> </span><span class="n">asset</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">asset_exif</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">e</span><span class="p">.</span><span class="s2">&#34;assetId&#34;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="n">id</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="k">where</span><span class="w"> </span><span class="n">a</span><span class="p">.</span><span class="s2">&#34;deletedAt&#34;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span><span class="w"> </span><span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w">
+</span></span></span></code></pre></div><ul>
+<li><strong>ここで出すべきは「空き」ではなく「年あたりの増加量」</strong>。自分は直近3年で約22GB（年3〜10GB）、それより古い分が約19,000件・約93GBだった。29GBの空きは3年もたない、という形まで出して初めて判断材料になる。</li>
+<li><strong>サムネイル（一覧表示用の縮小画像）がまだ生成されていない時期の数字は過小に出る。</strong> 自分の環境では9.6GBあったので、その分を足して空きを見積もり直した。</li>
+<li><strong>RAW（カメラが記録した無加工のデータ）を撮り始めると桁が変わる</strong>。1枚25〜50MBなので、30MB換算で200GBの空きは約7,000枚にしかならない。</li>
+</ul>
+<h2 id="step-2-契約している業者の管理画面に増設ボタンが無いかを先に見る">Step 2: 契約している業者の管理画面に、増設ボタンが無いかを先に見る</h2>
+<p><strong>これを最初にやる。</strong> 自分はここを飛ばしたせいで一晩を使った。</p>
+<ul>
+<li>Contaboの場合はコントロールパネルに**「Extend SSD Storage」**がある。既存のサーバーにSSDを足せて、再インストールも移行も不要。</li>
+<li>月額の増分で比べる。自分の場合（2026年9月時点）はSSD 200GB増設が**+$3.60**、オブジェクトストレージへ追い出す方式が+$0.87、同社のオブジェクトストレージ（最小250GB）が+$2.99、大きいプランへの引っ越しが+$8〜10だった。</li>
+<li>🔴 <strong>差額が月$2〜3しかないなら、その$2で複雑さを全部買い取れる。</strong> 比較表を作るときは「ディスクだけ足す」を必ず行に入れること。表に無い選択肢は、どれだけ丁寧に比べても選ばれない。</li>
+<li><strong>単価では増設が一番高い</strong>ことは知っておく（自分の実測で、VPSのSSD増設$18/TB ＞ 同社オブジェクトストレージ$11.96/TB ＞ Backblaze B2 $6.95/TB）。200GB規模だから増設が正解だっただけで、TB級になると逆転する。</li>
+<li>⚠️ <strong>プラン自体の変更は増設とは別物</strong>で、データ全消去になる種類がある。<strong>SSDからNVMeへの変更は再インストール必須</strong>なので、容量を足したいだけなら選ばない。</li>
+</ul>
+<h2 id="step-3-増設の直前にバックアップを1回手動で完走させる">Step 3: 増設の直前に、バックアップを1回手動で完走させる</h2>
+<p>次のStepはルートのパーティションテーブルを書き換える操作なので、直前のバックアップは作法として必須。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">/root/backup-scripts/backup-to-b2.sh
+</span></span></code></pre></div><ul>
+<li><strong>「動いているはず」ではなく、全ステップがOKで終わったことを目で見る。</strong> 自分のスクリプトは最後に<code>=== Backup finished OK ===</code>を出す作りにしてあり、それが出るまで待った。</li>
+<li>⚠️ <strong>増設は業者側の強制リセットを伴った。</strong> 公式ヘルプの「activated right away（即座に有効、再起動不要）」とは実態が違い、正常なシャットダウンの記録がなく前のログが突然途切れていた。<strong>ダウンタイムを見込んで作業時間を取ること。</strong></li>
+<li>結果的に、予期しない電源断からの自動復旧が完全に機能することの実証になった（コンテナ14個・常駐サービス7件・公開している9サービスすべて復帰、写真のデータ欠損ゼロ）。そうなるように、コンテナの再起動方針と常駐サービスの自動起動を事前に確認しておくと良い。</li>
+</ul>
+<h2 id="step-4-パーティションとファイルシステムを広げる">Step 4: パーティションとファイルシステムを広げる</h2>
+<p>増えた分は<strong>既存ディスクの拡大として現れる</strong>（別のディスクとしてではない）。ただし<strong>パーティションとファイルシステムは自動では広がらない</strong>ので、ここだけ手作業になる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">lsblk                           <span class="c1"># 増えた分がどこに付いたかを見る</span>
+</span></span><span class="line"><span class="cl">growpart --dry-run /dev/sda <span class="m">1</span>   <span class="c1"># まず空振りで確認</span>
+</span></span><span class="line"><span class="cl">growpart /dev/sda <span class="m">1</span>             <span class="c1"># パーティションを広げる</span>
+</span></span><span class="line"><span class="cl">resize2fs /dev/sda1             <span class="c1"># ファイルシステムを広げる</span>
+</span></span></code></pre></div><ul>
+<li><strong>デバイス名とパーティション番号は環境ごとに違う</strong>ので、<code>lsblk</code>の出力を見てから当てる。</li>
+<li>自分のケースは<strong>対象が最後のパーティションで、直後に連続した空き領域がある</strong>という理想的な形だった。そうでない場合は手順が変わるので、公式ドキュメントで現在の作法を確認すること。</li>
+<li>ext4に<code>resize_inode</code>があるので<strong>マウントしたまま、無停止でオンライン拡張できた</strong>。ファイルシステムの種類によってはコマンドが違う（<code>resize2fs</code>はext系）。</li>
+</ul>
+<h2 id="step-5-広がったことを確かめる">Step 5: 広がったことを確かめる</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">df -h /
+</span></span><span class="line"><span class="cl">lsblk
+</span></span><span class="line"><span class="cl">dmesg <span class="p">|</span> tail        <span class="c1"># I/Oエラーが出ていないこと</span>
+</span></span></code></pre></div><ul>
+<li>自分の結果はパーティション199GB→399GB、ファイルシステム193GB→387GB、<strong>使用率93%→46%、空き16GB→209GB</strong>。</li>
+<li>加えて、書き込みテスト・公開している全サービスの応答確認・写真の件数の不変をその場で見た。<strong>強制リセットを挟んでいるので、容量だけでなく「全部戻ってきたか」を確認する。</strong></li>
+<li><strong>料金の実績は月$9.00 → $12.60</strong>（100GBあたり月$1.80）。請求額が想定どおりかは管理画面で確認する。</li>
+</ul>
+<h2 id="step-6-作って使わなかったものは残さず撤去する">Step 6: 作って使わなかったものは、残さず撤去する</h2>
+<p><strong>「使っていないだけ」で残すのが一番たちが悪い。</strong> あとでバックアップスクリプトを触ったときに、忘れた除外設定が事故になる。</p>
+<ul>
+<li>退避していた実体を元の場所に戻し、追い出し先に作った入れ物を削除する</li>
+<li>常駐マウントのサービスを停止・無効化・削除し、マウント用フォルダと<code>/etc/fuse.conf</code>への追記も撤去する</li>
+<li><strong>バックアップスクリプトとコンテナ設定の変更は、事前に取った<code>.bak</code>との差分で元と一致することを確認してから<code>.bak</code>も消す</strong></li>
+<li>撤去後も検証する。自分は10枚のmd5一致・シンボリックリンク0件・API 10/10・バックアップ先も10/10復元・写真のレコード件数29,716件で不変まで確認した</li>
+<li><strong>残すのはメモだけ。</strong> 実際に効いた相対パスとmd5の一覧を<code>/root/notes/</code>に置いた。将来TB級になって本当に必要になったとき、ゼロからやり直さずに済むように</li>
+</ul>
+<hr>
+<h2 id="付録-撤回した古い写真を追い出す方式">付録: 撤回した「古い写真を追い出す」方式</h2>
+<p>採用しなかった側の手順。<strong>1TBを超えたら差額が年$132規模になり、この複雑さを引き受ける価値が出る</strong>という目安で残している。公式サポート外のやり方なので、やるなら実証を省かないこと。</p>
+<h3 id="先に捨てた方式">先に捨てた方式</h3>
+<ul>
+<li>🔴 <strong>Immichの「External Library」（外部ライブラリ）機能は使えない。</strong> サーバーの外のフォルダを読み込む機能だが、<strong>すでにImmichの中にある写真を引き取れず、新規の写真として再登録される</strong>。アルバム・顔認識の結果・お気に入りが失われる恐れがある。</li>
+<li>🔴 <strong>「年ごとのフォルダを切り出す」はそもそも不可能。</strong> ディスク上の写真は<code>library/upload/&lt;ユーザーID&gt;/&lt;16進2桁&gt;/&lt;16進2桁&gt;/&lt;ランダムな名前&gt;.拡張子</code>という形で<strong>256×256のフォルダに均等にばらまかれている</strong>。年ごとのフォルダは存在しないので、ファイル単位で扱うしかない。</li>
+</ul>
+<p>残ったのは、<strong>写真ファイル1個ずつをシンボリックリンク（ファイルの位置を指すだけのショートカット）に置き換え、リンク先をオブジェクトストレージをフォルダとして見せた場所に向ける</strong>方式。データベースに一切触らないので、Immichから見れば何も変わらない。</p>
+<h3 id="a-読み取り専用のマウントを常駐させる">A. 読み取り専用のマウントを常駐させる</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># /etc/systemd/system/rclone-immich-cold.service の要点</span>
+</span></span><span class="line"><span class="cl"><span class="nv">ExecStart</span><span class="o">=</span>/usr/local/bin/rclone mount &lt;リモート名&gt;:&lt;バケット名&gt;/immich-cold <span class="se">\
+</span></span></span><span class="line"><span class="cl">  /home/&lt;user&gt;/immich/library/cold <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --read-only --allow-other --uid &lt;写真の所有者UID&gt; --gid &lt;同GID&gt; <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --vfs-cache-mode full --vfs-cache-max-size 3G --dir-cache-time 24h
+</span></span></code></pre></div><ul>
+<li><strong><code>rclone</code>の場所は<code>/usr/local/bin/rclone</code>で、<code>/usr/bin/rclone</code>ではなかった。</strong> systemd（Linuxの常駐サービス管理）はそれだけの理由で<code>203/EXEC</code>と言って起動に失敗する。<code>which rclone</code>で確かめてからユニットに書く。</li>
+<li><strong><code>--allow-other</code>には<code>/etc/fuse.conf</code>への<code>user_allow_other</code>の追記も必要。</strong></li>
+<li><strong><code>--dir-cache-time</code>は必ず延ばす。</strong> 既定の5分だと期限切れごとにフォルダ一覧の問い合わせが全件走る。24時間にした。</li>
+<li>ユニットの起動順はDockerより前になるように書いた。<strong>サーバー再起動でマウントが自動復帰するかは実測していない</strong>ので、本採用するならそこを確認すること。</li>
+</ul>
+<h3 id="b-コンテナの中からマウントが見えるようにする">B. コンテナの中からマウントが見えるようにする</h3>
+<p>🔴 <strong>Immichのコンテナ設定で写真フォルダのマウント指定に<code>:rslave</code>を付けないと見えない。</strong> <code>docker-compose.yml</code>の<code>${UPLOAD_LOCATION}:/data</code>を<code>${UPLOAD_LOCATION}:/data:rslave</code>にする。コンテナへのフォルダ受け渡しは既定で「あとから生えたマウントを伝えない」ので、<strong>ホスト側で後から作ったマウントはコンテナの中からは空に見える</strong>。ここで30分溶かした。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker compose up -d immich-server
+</span></span></code></pre></div><ul>
+<li><strong>設定上のサービス名はハイフンの<code>immich-server</code>、コンテナ名がアンダースコアの<code>immich_server</code>。</strong> <code>docker compose up -d immich_server</code>は<code>no such service</code>になる。</li>
+</ul>
+<h3 id="c-バックアップスクリプトを先に直すここが本当の地雷">C. バックアップスクリプトを先に直す（ここが本当の地雷）</h3>
+<p>毎晩のバックアップが<code>rclone sync</code>（送り元に無いものは送り先からも消す片方向ミラー）で動いているなら、<strong>先にこれを直さないと夜のバックアップが写真を消す。</strong></p>
+<p><strong>ローカルの写真をシンボリックリンクに置き換えると、<code>rclone</code>は<code>Can't follow symlink without -L/--copy-links</code>と言ってそれをスキップし、「送り元に無い」と判断して送り先の実体を削除する。</strong></p>
+<ul>
+<li>🔴 <strong>行き先が存在しない壊れたリンクでも同じ挙動で、しかも終了コードは0</strong>（＝成功として記録される）。失敗として検知できない。</li>
+<li><code>--copy-links</code>を付ける解決策は不可。送り先に二重保存になって容量が倍になる。</li>
+</ul>
+<p>正解は<code>--exclude &quot;cold/**&quot;</code>で追い出し先を同期対象から外すこと。直したあとに<code>rclone sync --dry-run</code>で<strong>削除予定が0件</strong>であることを実データで確認してから先へ進む（自分の環境では51,785件の照合に約4分かかった）。</p>
+<h3 id="d-1ファイルずつ順序を守って移す">D. 1ファイルずつ、順序を守って移す</h3>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 1. 送り先の中で複製（同一バケット内のサーバーサイドコピー＝転送ゼロ・一瞬）</span>
+</span></span><span class="line"><span class="cl">rclone copyto REMOTE/immich/library/&lt;rel&gt; REMOTE/immich-cold/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 2. 宛先のサイズを照合</span>
+</span></span><span class="line"><span class="cl">rclone lsl REMOTE/immich-cold/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 3. ローカルの実体は「削除」ではなく退避（ロールバックできるように）</span>
+</span></span><span class="line"><span class="cl">mv library/upload/&lt;rel&gt; /root/poc-staging/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 4. 相対パスのリンクを張る（library まで ちょうど4階層）</span>
+</span></span><span class="line"><span class="cl">ln -s <span class="s2">&#34;../../../../cold/&lt;rel&gt;&#34;</span> library/upload/&lt;rel&gt;
+</span></span><span class="line"><span class="cl">chown -h &lt;user&gt;:&lt;user&gt; library/upload/&lt;rel&gt;
+</span></span><span class="line"><span class="cl"><span class="c1"># 5. リンク越しに md5 を照合。違ったら即ロールバック</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 6. 全件の検証が終わってから、はじめて旧パスを削除</span>
+</span></span><span class="line"><span class="cl">rclone deletefile REMOTE/immich/library/&lt;rel&gt;
+</span></span></code></pre></div><ul>
+<li>🔴 <strong>最も危険な順序は「送り先へコピーする前にシンボリックリンクを作ってしまう」こと。</strong> やると、その夜のバックアップが送り先にある唯一の実体を無言で消す。</li>
+<li><strong>存在確認に<code>rclone lsjson</code>を使ってはいけない。</strong> 存在しないファイルを渡すとフォルダとして扱われ、空の一覧と<strong>終了コード0</strong>を返す。これで一度「送り先にある」と誤判断した。<strong><code>rclone lsl</code>の出力が空でないことを見る。</strong></li>
+<li><strong>リンクは絶対パスではなく相対パスにする。</strong> ホスト側とコンテナ側でパスの見え方が違うが、相対なら両方から同じ場所を指す。</li>
+</ul>
+<h3 id="e-小さく通してから広げる">E. 小さく通してから広げる</h3>
+<p>自分は写真10枚・46MBで最後まで通した。確認したのは次の5点。</p>
+<ol>
+<li>ホストからもコンテナの中からも<strong>同じmd5で読める</strong></li>
+<li>ImmichのAPI経由でオリジナル画像が10/10でHTTP 200かつmd5一致</li>
+<li>サムネイルは10/10がローカルから配信（<strong>一覧の表示速度は一切変わらない</strong>）</li>
+<li>エラーログなし</li>
+<li><strong>マウントが切れたらどうなるか</strong> — <code>systemctl stop</code>で接続を落として測る</li>
+</ol>
+<p>5番が一番大事で、<strong>これが成立しなければ全部やめるつもりだった</strong>。結果はオリジナル画像が404、サムネイルは200のまま、写真のレコード件数は前・中・後で29,716件のまま不変、該当写真の削除日時もnullのまま、マウントを戻すと即座に200に復帰。<strong>Immichは、ファイルが読めなくなっても勝手にレコードを消したりゴミ箱に落としたりしない。</strong></p>
+<p>参考までに、送り先からの初回読み込みは0.39秒（636KB）、キャッシュ後は0.017秒だった。</p>
+<h3 id="f-消した写真が戻せることを実際に戻して確かめる">F. 消した写真が戻せることを、実際に戻して確かめる</h3>
+<p>B2のバケットを「隠してから30日で削除」の設定にしてあれば、<code>rclone deletefile</code>は既定でハード削除ではなく論理削除になる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rclone lsf --b2-versions &lt;リモート名&gt;:&lt;バケット名&gt;/&lt;パス&gt;/     <span class="c1"># 版名を調べる</span>
+</span></span><span class="line"><span class="cl">rclone copyto --b2-versions &lt;リモート名&gt;:&lt;バケット名&gt;/&lt;版名&gt; &lt;ローカル&gt;
+</span></span></code></pre></div><ul>
+<li>版名は<code>&lt;名前&gt;-v&lt;日時&gt;.&lt;拡張子&gt;</code>という形。🔴 <strong><code>--b2-versions</code>を付けても元のファイル名を渡すと失敗する</strong>ので、必ず<code>lsf</code>で版名を取得してから版名で指定する。</li>
+<li>自分は15分前に消した2.1MBのHEICを取り出してmd5一致まで確認した。これで「スクリプトのミスで写真が消える」は<strong>永久喪失ではなく30日以内なら戻せるミス</strong>に格下げされる。<strong>残る課題は復元手段ではなく30日以内に気づくこと</strong>になるので、見張りが別途要る。</li>
+</ul>
+<h3 id="この方式を本採用する前に知っておくこと">この方式を本採用する前に知っておくこと</h3>
+<ul>
+<li>🔴 <strong>Immichに未解決の不具合がある</strong>: <a href="https://github.com/immich-app/immich/issues/10480">issue #10480</a> — サムネイル生成が同じファイルを2回読むため、リモートストレージでは<strong>ダウンロード量が実データの8〜10倍</strong>に膨らむ。16,000ファイル・110GBで900GBという報告がある。B2の無料ダウンロード枠は保存量の3倍/月なので、<strong>サムネイルの全件再生成（Jobs → All）を一度回すと枠を超えて課金が出る。</strong> 必要なときはAPIでアセットを指定して必要分だけ回す。</li>
+<li><strong>サムネイルとトランスコード済み動画は常にローカルのSSDに置く。</strong> 上の理由と、一覧の体感速度のため。</li>
+<li><strong>追い出した写真をImmichで削除すると、シンボリックリンクだけ消えて送り先に孤児オブジェクトが残る。</strong> 定期的な掃除が要る。</li>
+<li><strong><code>--dir-cache-time</code>を24時間にしてあると、追い出し先にファイルを足してもすぐには見えない。</strong> 足したら常駐サービスを再起動する。</li>
+<li><strong>コピー数が減る。</strong> 追い出した写真の実体は送り先の1本だけになる。セルフホスト界隈の定番は3コピー（本番＋ローカルの2本目＋クラウド）で、<strong>「クラウドが唯一のコピー」でやっている人は調べた範囲で1人も見つからなかった。</strong></li>
+<li><strong>暗号化を足すなら速度は障害にならない</strong>（17MBの写真で、暗号化あり0.63〜0.95秒 / 平文0.46〜0.53秒）。⚠️ ただし<strong>ベンチマークは条件を揃えること。</strong> 自分は最初の計測でマウントのオプションが揃っておらず「15倍遅い」という誤った結論を出し、危うく「暗号化は無理」と判断するところだった。</li>
+</ul>
+<p><strong>更新履歴</strong> — 2026-10-08: 手順を追記 / 2026-10-05: 初版</p>
+]]></content:encoded></item><item><title>ログインを一本化しても、裏口は閉まらない</title><link>https://offgrid.taikiito.com/guides/sso-does-not-close-password-doors/</link><pubDate>Thu, 08 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/sso-does-not-close-password-doors/</guid><description>自前サーバーのログイン入口をAuthentikで一本化して指紋で通るようにしたあと、写真保管(Immich)とファイル保管(Nextcloud)に残っていた独自のパスワード画面を1つずつ実物で確認して閉じた記録。1本は「閉じたつもり」で実際には開いていた。設定で閉じられない分はCloudflare側で手前から拒否した。やらないと決めた工事と、閉める作業中に自分の接続を切った失敗まで書く。</description><content:encoded><![CDATA[<p>原油の取引を仕事にしている非エンジニアが、2025年から家族の写真・ファイル・パスワードを他人のサーバーから自分で払う1台へ移して運用している。この記事はその続きで、<strong>ログインの入口を作り変えたあとに残っていた「裏口」の話</strong>だ。</p>
+<p><strong>この記事でやること</strong> — ログインの入口を一本化したあと、各アプリに元から付いている独自のパスワード画面が残っていないかを1つずつ実物で確認し、閉められるものはアプリ側で無効にし、設定では閉められないものはCloudflare側で手前から拒否する。やり方は<a href="/guides/sso-does-not-close-password-doors/#%e3%82%84%e3%82%8a%e6%96%b9">ページ後半</a>にまとめた。</p>
 <h2 id="何を動かしているか">何を動かしているか</h2>
 <p>自分のサーバー1台の上で、写真の保管（Immich）・ファイル保管（Nextcloud）・パスワード金庫（Vaultwarden）・予定表と住所録、それにログインの入口役を担うソフト（Authentik）が動いている。入口役を置いたので、<strong>1回の本人確認で複数のサービスに入れる</strong>——いわゆるSSO（シングルサインオン）の形になっていて、入口はパスワードを使わず指紋や顔で通るようにしてある。</p>
 <p>ここまでやって残っていた問題がこれだ。<strong>入口を新しくしても、各アプリが元から持っている自分用のログイン画面は、勝手には消えない。</strong> 玄関を厳重にしても裏口が開いていれば意味がない。アプリ側から見れば新しい入口は「外部の本人確認サービスも使えるようになった」という<strong>追加の選択肢</strong>にすぎず、元のユーザー名＋パスワードの画面は、明示的に止めない限り動き続ける。</p>

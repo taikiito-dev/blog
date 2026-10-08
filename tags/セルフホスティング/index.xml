@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>セルフホスティング on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E3%82%BB%E3%83%AB%E3%83%95%E3%83%9B%E3%82%B9%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0/</link><description>Recent content in セルフホスティング on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Wed, 07 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E3%82%BB%E3%83%AB%E3%83%95%E3%83%9B%E3%82%B9%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0/index.xml" rel="self" type="application/rss+xml"/><item><title>自前サーバー、14か月の判断記録</title><link>https://offgrid.taikiito.com/guides/self-hosted-server-decisions/</link><pubDate>Wed, 07 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/self-hosted-server-decisions/</guid><description>非エンジニアが自前サーバーを14か月運用した記録。何を動かしているか、採った判断5件、却下した案、後から見た当たり外れを日付つきで残す。</description><content:encoded><![CDATA[<p>私はソフトウェアエンジニアではない。原油の取引を仕事にしていて、コードを書く仕事をしたことは一度もない。</p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>セルフホスティング on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E3%82%BB%E3%83%AB%E3%83%95%E3%83%9B%E3%82%B9%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0/</link><description>Recent content in セルフホスティング on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Thu, 08 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E3%82%BB%E3%83%AB%E3%83%95%E3%83%9B%E3%82%B9%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0/index.xml" rel="self" type="application/rss+xml"/><item><title>自前サーバー、14か月の判断記録</title><link>https://offgrid.taikiito.com/guides/self-hosted-server-decisions/</link><pubDate>Wed, 07 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/self-hosted-server-decisions/</guid><description>非エンジニアが写真・ファイル・パスワード・予定表・メールを借りたサーバー1台へ集め、14か月運用した記録。採った判断5件、却下した案、後から見た当たり外れを日付つきで残し、この構成を一から立てる手順を後半に置いた。</description><content:encoded><![CDATA[<p>私はソフトウェアエンジニアではない。原油の取引を仕事にしていて、コードを書く仕事をしたことは一度もない。</p>
+<p><strong>この記事でやること</strong> — 借りたサーバー1台に写真・ファイル・パスワード・予定表・そして自分のドメインのメールを集め、14か月動かし続ける。その間に自分が決めたこと5件と、却下した案を日付つきで残す。手順は<a href="/guides/self-hosted-server-decisions/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
 <p>2025年に、それまで大手のクラウドサービスに預けていたものを、自分が月額を払う1台のサーバーへ移し始めた。写真、ファイル、パスワード、予定表、そしてメール。</p>
 <p>理由は単純で、<strong>預け先の都合で中身の扱いが変わるのが嫌だった</strong>からだ。値上げ、仕様変更、規約の改定、アカウントの停止。どれも自分では止められない。止められないものの上に、戻ってこない種類のもの（子どもの頃からの写真や、何年ぶんかのやりとり）を全部置いているのが、ある日から落ち着かなくなった。</p>
 <p>それから14か月、そのサーバーを動かし続けている。利用者は2人。1日も手放していない。</p>
-<p>このページは、その14か月で<strong>自分が決めたこと</strong>の記録だ。何に迷い、どの案を採り、どの案を却下し、それが後から見て当たっていたか外れていたか。日付をつけて残す。手順書ではない。手順を探して来た人は、先に下の「何を動かしているか」だけ読んで、あとは<a href="https://github.com/taikiito-dev">リポジトリ側</a>へ行ったほうが早い。</p>
+<p>このページは、その14か月で<strong>自分が決めたこと</strong>の記録だ。何に迷い、どの案を採り、どの案を却下し、それが後から見て当たっていたか外れていたか。日付をつけて残す。前半が判断、後半が手順だ。<strong>この構成を一から立てるなら何をどの順でやるか</strong>は<a href="/guides/self-hosted-server-decisions/#%e6%89%8b%e9%a0%86">ページ後半</a>に書いた。</p>
 <h2 id="何を動かしているか">何を動かしているか</h2>
 <p>借りているサーバー1台。月に10ドル弱の仮想サーバーだ。外から中へ穴を開けるのではなく、サーバー側から外へ繋ぎに行く方式のトンネルを通して公開している。</p>
 <p>その上に、写真、ファイル、パスワード、予定表と連絡先、ログインの入口をひとつにまとめる仕組み、ソースコードの保管庫、死活監視、そして自分用に作ったチャット＋カレンダーのアプリが動いている。バックアップは毎晩、暗号化して別の場所へ送る。</p>
@@ -85,6 +86,109 @@
 <p><strong>自分がこの5件で勝てたのは、疑ったからなのか、たまたま見ていたからなのか。</strong> 46件の写真は、移行作業中にたまたま両方が目の前にあったから見つかった。メールの6週間ぶんは、ゴミ箱に残っていた書き出しで助かった。どちらも自分の手柄とは言いにくい。</p>
 <p>いま入れている確認の手順は、この「たまたま」を手順に変えようとしたものだ。うまくいっているかは、まだ分からない。次に取りこぼしたときに、ここに書き足す。</p>
 <hr>
-<p><em>実装のコマンド・設定・障害の技術的な原因は、このサイトではなく<a href="https://github.com/taikiito-dev">リポジトリ側</a>に置いている。このページは判断の記録で、手順書ではない。</em></p>
 <p><em>14か月、サーバー1台、利用者2人。打っていないが、決めてはいる。</em></p>
+<h1 id="手順">手順</h1>
+<p>ここから下はClaude（AnthropicのAIアシスタント）が書き、自分の環境で実行して結果を確かめたものだ。置いておく理由は2つある。<strong>(1) 着手する前に作業の全体像と長さが分かる。(2) 読者が自分のAIに「これと同じことをやりたい」と渡す材料になる。</strong></p>
+<p>これは14か月の作業を時系列で並べたものではない。<strong>今の構成を一から立てるなら、どの順でやるか</strong>を書いた。上の5件は、この順序のどこで何に刺されたかの記録になっている。コマンドは2026年9月〜10月時点で動いたものなので、各ソフトの現在の書式は公式ドキュメントで確認してほしい。</p>
+<h2 id="前提の環境">前提の環境</h2>
+<ul>
+<li>借りたサーバー1台(Ubuntu 24.04)。2026年9月時点で6vCPU / 12GB RAM / 200GB SSD / 転送量無制限が月$9.00、初期費用ゼロ、1ヶ月契約</li>
+<li>Docker Engineと<code>docker compose</code>が使える状態</li>
+<li>自分が持っているドメイン1つ</li>
+<li>別会社のオブジェクトストレージ1つ(自分はBackblaze B2)。<strong>サーバーと同じ会社にしない</strong></li>
+<li>手元に、そのサーバーとは別のパソコンが1台。<strong>ファイアウォールの検証はこれが無いと原理的にできない</strong>(Step 2)</li>
+</ul>
+<h2 id="step-1-サーバーとドメインを決める">Step 1: サーバーとドメインを決める</h2>
+<p><strong>プランはメモリとディスクで決まる。</strong> ディスクはデータ実測の1.2〜1.5倍。自分は写真115GB＋ファイル16.6GBに対して、OS・Docker・データベース込みで170〜180GBと見積もって200GBから始めた。</p>
+<p><strong>メモリは写真の量ではなくコンテナの数で決まる。</strong> ここは一度間違えかけた。「古い写真を外へ逃がすならメモリも小さくていい」と考えたが違う。自分は常時14コンテナで、以前メモリ不足で全サービスが繰り返し落ちた実績がある。しかも<strong>借りたサーバーにGPUは無いので、顔認識や画像検索をCPUとメモリでやることになり、必要メモリはむしろ増える。</strong> 下げるのは安定を確認してからでいい。</p>
+<p><strong>リージョンは「近いほう」では決まらない。</strong> 自分の場合、第一候補のリージョンは追加料金がつく上に在庫切れだった。追加料金ゼロのリージョンに変えたら、結果として<strong>バックアップ先との経路が短くなり、復元も日次バックアップも速くなる</strong>という副産物があった。申込画面に出る遅延の数字は<strong>生のネットワーク遅延で、トンネル経由の実構成には当てはまらない。</strong></p>
+<p><strong>年契約の割引は見送った。</strong> 移行先が気に入らなかったときにすぐ降りられないのは本末転倒だから。</p>
+<p><strong>ドメインは自分で取り、メールの配信は業者に任せる。</strong> これが14か月で一番効いた。アドレスが自分のものなので、業者を替えても誰にも「アドレスが変わりました」と言わなくて済む。配信まで自前にしない理由は決定2に書いた。</p>
+<h2 id="step-2-外からポートを開けずに公開する">Step 2: 外からポートを開けずに公開する</h2>
+<p><strong>ルーターやファイアウォールに穴を開ける方式をやめ、サーバー側から外へ繋ぎに行くトンネルを使う。</strong> 自分はCloudflare Tunnelを使っている。入口が1本に絞られ、サーバーのアドレスも外に出ない。</p>
+<p>その上で、<strong>コンテナは最初からループバックに縛る。</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="s1">&#39;2283:2283&#39;</span><span class="w">            </span><span class="c"># 🔴 これは全てのネットワークに向けて開く</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="s1">&#39;127.0.0.1:2283:2283&#39;</span><span class="w">  </span><span class="c"># ✅ 自分自身からしか届かない</span><span class="w">
+</span></span></span></code></pre></div><p>トンネルの常駐プロセスはサーバー上で動いて<code>localhost</code>を叩くので、ループバックに縛っても公開には影響しない。<strong>自宅のルーターの内側では両方とも同じ結果になるが、公開アドレスを持つサーバーでは全く違う。</strong> 自分の守りはファイアウォールではなくこの設計に依存させている。1行消えれば無防備に戻るファイアウォールより、そもそも誰も外向きに待ち受けていない状態のほうが強い。</p>
+<p>棚卸しは<strong>除外方式</strong>で書く。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 🔴 これでは漏れる</span>
+</span></span><span class="line"><span class="cl">ss -tlnp <span class="p">|</span> grep 0.0.0.0
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ✅ 「自分自身以外」を除外方式で全部出す</span>
+</span></span><span class="line"><span class="cl">ss -tlnp <span class="p">|</span> grep -vE <span class="s2">&#34;127\.0\.0\.|\[::1\]&#34;</span>
+</span></span></code></pre></div><p><code>*:PORT</code>(IPv4とIPv6の両方で待ち受け)という表記は<code>0.0.0.0</code>では引っかからない。自分は認証なしのポート19本をこの形で見落とした。<strong>ホスト上で直接動いているプロセスはDocker向けのファイアウォール設定では止まらない</strong>ので、コンテナだけ見ていても足りない。<strong>IPv4を塞いだら必ずIPv6も確認する。</strong> 設定は完全に別物だ。</p>
+<p>検証は<strong>必ず別のパソコンから</strong>やる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">nc -vz &lt;サーバーのアドレス&gt; <span class="m">2283</span>   <span class="c1"># → Operation timed out  が正しい</span>
+</span></span><span class="line"><span class="cl">nc -vz &lt;サーバーのアドレス&gt; <span class="m">22</span>     <span class="c1"># → succeeded!            が正しい</span>
+</span></span><span class="line"><span class="cl">nc -vz -6 &lt;IPv6アドレス&gt; <span class="m">2283</span>      <span class="c1"># IPv6も必ず測る</span>
+</span></span></code></pre></div><p>サーバーの中から自分の公開アドレスに繋ぐと内部の経路を通るので、<strong>塞がっているのに必ず「繋がる」と出る。</strong> これを再起動後・ファイアウォールを触った後・コンテナの設定を触った後に回す定型チェックとして文書にしておく。</p>
+<h2 id="step-3-サービスを1本ずつ足す">Step 3: サービスを1本ずつ足す</h2>
+<p>まとめて足さない。1本動かすたびに、トンネルの経路・バックアップの対象・監視の対象に3点セットで登録してから次へ行く。<strong>後から足した分がどれか1つに入っていない</strong>のが、あとで一番高くつく。</p>
+<p>自分が今動かしているのは、写真・ファイル・パスワード・予定表と連絡先・ログインの入口・ソースコードの保管庫・死活監視・自分用のチャットとカレンダーのアプリ。</p>
+<p><strong>HTTP 200は動作証明ではない。</strong> 切替後に200を返しながら中身が動いていなかったことがある。<strong>切替前に、そのサービスで実際に1往復させる実機検証を入れる。</strong> 利用者が自分以外にもいるなら、ここを飛ばしてはいけない。</p>
+<h2 id="step-4-ログインの入口を1つにする">Step 4: ログインの入口を1つにする</h2>
+<p>各サービスに別々のパスワードを置くのをやめ、入口をひとつにまとめる仕組み(自分はAuthentik)を前に置く。</p>
+<p>ここで実際に踏んだ穴を2つ。</p>
+<p>🔴 <strong>パスワード段を外すときは、多要素の段の「未設定のときどうするか」をセットで見る。</strong> 自分の設定は多要素の段が<code>skip</code>だったので、<strong>認証器を1つも持たないユーザーはユーザー名だけでログインできる</strong>状態になりかけた。<code>deny</code>に変える。</p>
+<p>🔴 <strong>入口を一本化しても、各アプリ独自のログイン扉は別に閉まらない。</strong> 入口側をパスキーに寄せても、アプリ自身が持っている素のログイン画面は生きている。1本ずつ無効化するか、前段で遮断する必要がある。</p>
+<p><strong>退路を2つ以上残す。</strong> 自分はブラウザから入れる経路を作ったが、それは入口サーバーの認証を通る作りなので、<strong>入口が閉じると使えない</strong>(循環する)。退路は入口を経由しないものにする。自分の場合は手元のPCからの直接のSSHと、業者のコンソール経由の画面だ。予備の認証手段のバックアップコードは、パスワード管理サーバーが落ちたときのために<strong>別の場所にも1部持つ。</strong></p>
+<h2 id="step-5-バックアップを工程ごとに成否を言う形で作る">Step 5: バックアップを「工程ごとに成否を言う」形で作る</h2>
+<p>ここが一番書き直した場所だ。</p>
+<p><strong>スクリプトは工程ごとに<code>OK</code>/<code>FAIL</code>を出し、最後に完走マーカーを出す。</strong> <code>set -e</code>で途中で止まる作りだと、何がどこまで終わったのか誰にも分からない。自分の旧スクリプトは<strong>34回の起動中5回しか完走していなかった</strong>(最終段がパスワード要求で止まっていた)。<strong>完走マーカーが1ヶ月出ていないのに誰も気づかない</strong>状態だったので、本当の失敗も検知できない。</p>
+<p>⭐ <strong>「分母」を点検する。</strong> 「33件すべて成功」は「やると決めた33件は全部通った」としか言っていない。<strong>スクリプトに書き忘れたサービスは永久に静かに落ちる。</strong> ログでは絶対に分からない。点検は3方向から同時に見る。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker ps                      <span class="c1"># コンテナ</span>
+</span></span><span class="line"><span class="cl">systemctl list-units --type<span class="o">=</span>service   <span class="c1"># systemdで動いているもの</span>
+</span></span><span class="line"><span class="cl">ls /home/&lt;user&gt;                <span class="c1"># データ置き場</span>
+</span></span></code></pre></div><p><strong>片方からだけ見ると、もう片方は構造的に見えない。</strong> 自分の穴はここだった。アプリの本体の一部がDockerではなくsystemdで動いていたので<code>docker ps</code>には出ず、結果として<strong>systemdのユニット定義・<code>crontab</code>・ファイアウォールのルールが1つもバックアップに入っていなかった</strong>。データは全部戻るのに「どう起動するか」が戻らない状態だ。</p>
+<p>📌 <strong><code>rclone</code>はシンボリックリンクを黙ってスキップする。</strong> <code>/etc/systemd/system</code>は半分がシンボリックリンクなので、<code>cp -aL</code>で実体化してから渡す。踏むと「同期した気になって実は空」になる。</p>
+<p>この点検は月1回の自動実行にして、<strong>対象から漏れているものが出たときだけ</strong>報告させている。</p>
+<h2 id="step-6-復元の鍵をサーバーの外に置く">Step 6: 復元の鍵をサーバーの外に置く</h2>
+<p><strong>復元はサーバー側が保管先から引っ張ってくる方式にする。</strong> 押し込む方式だと、押し込む側の機械が生きている必要がある。サーバーが死んだときに復元したいのに、生きている前提の機械が1台要るのは変だ。これは決定4に書いた。</p>
+<p>そして<strong>その引っ張るための鍵と設定を、サーバーの外へ複製する。</strong> 自分はパスワード管理サーバーのSecure Noteに4件入れている。</p>
+<ol>
+<li>オブジェクトストレージのアクセス鍵を含む<code>rclone</code>の設定</li>
+<li>トンネルの設定と資格情報</li>
+<li><code>docker-compose.yml</code>一式</li>
+<li>環境変数ファイルとsystemdのユニット定義</li>
+</ol>
+<p>パスワード管理のモバイルアプリは一度ログインすればオフラインキャッシュを持つので、サーバーに一切アクセスできなくてもスマートフォンから取り出せる。<strong>保存しただけで終わりにしない。</strong> 「このメモの値だけで保管先の全データが見えるか」を別の端末で実測する。自分はこれをスクリプトにして、<strong>鍵を入れ替えるたびに毎回回している。</strong></p>
+<p><strong>復元テストを1回やる。</strong> 自分は保管先の生ファイルから記憶用のディレクトリを復元し、124ファイルが<code>diff -rq</code>で完全一致することを確認した。<strong>復元したことのないバックアップは、バックアップではない。</strong></p>
+<h2 id="step-7-バックアップを消されない形にする">Step 7: バックアップを消されない形にする</h2>
+<p>サーバーが取られたときにバックアップまで消されるなら、オフサイトにした意味が半分になる。</p>
+<p><strong>① サーバー上の鍵の権限を、実際に使う分まで絞る。</strong> 自分の鍵は18権限を持っていて、<strong>ライフサイクルの改変による即時削除も、複製ルールの停止もできた。</strong> 「30日のバージョン保持があるから安全」は成立していなかった。スクリプトが実際に使うのは一覧・読み・書き・削除の5つだけだった。<strong>Web管理画面の鍵発行UIでは権限を細かく選べない</strong>ので、業者のCLIが必須になる。マスター鍵を扱う作業なのでサーバー上ではなく手元のPCから実行する。</p>
+<p><strong>② 削除が伝播しない複製先を作る。</strong> 自分が使っている業者の複製機能は<strong>削除と論理削除の印を複製しない</strong>仕様なので、複製先が構造的に追記専用のミラーになる。サーバー上の鍵が元のバケットに限定されていれば、複製先には構造的に届かない。</p>
+<p><strong>①と②はセットで、順序は①が先。</strong> ①をやらないと、②の複製ルールをサーバー側から止められてしまう。</p>
+<p><strong>複製先のライフサイクルの設定で2つ間違えやすい。</strong> 「最新版のみ保持」を選んではいけない(上書き攻撃の瞬間に正常な旧版が消え、複製先を用意した意味が消える)。「アップロードから何日で隠すか」の欄は空にする(数字を入れると現役のバックアップ本体が自動削除される)。埋めるのは「隠してから何日で削除するか」の1箇所だけだ。自分は毎晩上書きされるデータベースのダンプが<strong>年80GB積み上がる</strong>ので180日にした。</p>
+<p><strong>鍵を入れ替えたら、旧鍵が本当に死んだかを実測する。</strong> 自分は差し替えスクリプトの中に、読み・書き・削除の全テストに通ってからでなければ設定ファイルを書かない作りを入れた。</p>
+<p>🔴 <strong>ここで一度壊した。</strong> 差し替えスクリプトが設定ファイルを「作り直す」作りだったため、後から足した暗号化用の設定が消え、直後のバックアップで5工程が全滅した。<strong>構成に新しい設定を足したら、それを書き換える既存のスクリプトを洗い出す。</strong> 「鍵の差し替え」という名前から、設定ファイル全体を作り直しているとは読み取れなかった。</p>
+<h2 id="step-8-監視をサーバーの外に置く">Step 8: 監視をサーバーの外に置く</h2>
+<p>死活監視をそのサーバーの上で動かすと、<strong>サーバーごと落ちたら監視も一緒に落ちて通知が飛ばない。一番知りたい障害だけ通報されない。</strong></p>
+<p>二段にする。サーバー上の監視は1分間隔で速いほうを、<strong>サーバーの外で動く監視は遅くてもいいから絶対に黙らないほう</strong>を担当させる。自分は後者をGitHub Actions(GitHubが決めた時刻にスクリプトを自動実行する仕組み)で30分間隔にした。</p>
+<p>判定の設計で効いたこと。</p>
+<ul>
+<li><strong>4xxは「生存」扱いにする。</strong> ログインが必要なサービスは未認証だと302や401を返すのが正常で、これを異常にすると常時誤報になる。異常とみなすのは5xxと、接続不能・時間切れだけ</li>
+<li><strong>3回連続で失敗して初めて異常とみなす。</strong> 回線の瞬断で鳴らないための緩衝。既定が「1回失敗で即異常」になっている監視ソフトは、そこを揃える</li>
+<li><strong>通報は状態が変わった瞬間だけ。</strong> 落ちている間ずっと鳴り続けない。復旧時は停止していた時間を添える。全部が同時に落ちたときは「サーバーごと落ちている可能性が高い」と文面を変える</li>
+</ul>
+<p>🔴 <strong>外部の定時実行には落とし穴がある。</strong> GitHubは<strong>リポジトリに60日間活動がないとスケジュール実行を自動停止する。</strong> 異常が無いとコミットも発生しないので、<strong>無事な期間が続くと監視が黙って止まる。</strong> 変化がなくても7日ごとに観測値を更新してコミットを発生させる。あわせて、<strong>定時実行は大幅に遅れる</strong>(自分の実測で5時間超)ので、時刻を当てにした説明は書かないこと。価値は速さではなく黙らないことだ。</p>
+<h2 id="step-9-容量が足りなくなったらまず単に増やす">Step 9: 容量が足りなくなったら、まず単に増やす</h2>
+<p>決定1のとおり、<strong>最初に見るのは契約している業者の増設ボタン</strong>だ。再インストールなし、移行なし、新しい部品ゼロ。比較表に載っていない退屈な案を1つ探す。</p>
+<p>実務で知っておくこと。</p>
+<ul>
+<li>増えた分は<strong>既存ディスクの拡大として現れる</strong>(別のディスクが増えるのではない)。ただし<strong>パーティションとファイルシステムは自動では広がらない</strong></li>
+<li>自分の環境では<code>growpart</code>と<code>resize2fs</code>の2コマンドで無停止のオンライン拡張ができた。これは「拡大したいパーティションが最後にあり、直後に連続した空き領域がある」ことが前提なので、<strong>先に<code>--dry-run</code>で確認する</strong></li>
+<li><strong>ルートのパーティションテーブルを書き換える操作</strong>なので、直前にバックアップを手動実行して全工程<code>OK</code>を確認するのが必須の作法</li>
+<li>⚠️ <strong>公式ヘルプに「再起動不要」と書かれていても、実際には強制リセットが起きた。</strong> 増設系の作業はダウンタイムを見込む</li>
+</ul>
+<p>単価で見ると、ディスク増設は<strong>一番高い</strong>選択肢だ。自分の規模では差額が月数ドルで、「その数ドルで複雑さを回避する」が正しかった。<strong>規模が変われば答えは裏返る</strong>ので、オフロードしたい古いデータが1TBを超えたら方式を見直す、という目安を書いておいた。</p>
+<h2 id="step-10-成功の主張を外から検証できる形にする">Step 10: 「成功」の主張を外から検証できる形にする</h2>
+<p>最後に、決定3と決定5で残った型を道具にする。</p>
+<p><strong>公開物や成果物に、それがどのソースから作られたかを書き込む。</strong> 自分はサイトの公開物のルートに、ソースのコミットID・ビルドした時刻・参照を書いたファイル(<code>build-id.txt</code>)を置いた。本番のそれとソースの最新を比べれば、「公開が遅れている」のか「中身が落ちている」のかが切り分けられる。この2つは対処が正反対で、片方だと思って待っていると何時間も溶ける。<strong>原因の特定はいらない。切り分けさえできればいい。</strong></p>
+<p>🔴 <strong>切り分けに使う目印は「毎回必ず変わるもの」にする。</strong> 自分は一度、本番とソースで<strong>直近の公開で中身が変わっていなかったファイル</strong>をバイト比較して「配信は健全」と判定した。配信が凍っていても一致するので、<strong>失敗しようのないテスト</strong>だった。</p>
+<p>同じ型をデータの検証にも当てる。<strong>復元やコピーの検証を「件数の一致」でやってはいけない。</strong> 自分の数字は60,525件と60,619件で0.15%差。見逃す水準だった。<strong>データベースに記録されているパスが1件ずつ実在するか</strong>を全件突き合わせる。合計の照合は、打ち消し合う誤りを隠す。</p>
+<p>そして<strong>確認は、作業したのと別の経路でやる。</strong> 同じ経路で確認すると、同じ思い込みを2回通るだけになる。</p>
+<hr>
+<p><em>このページの前半は判断の記録で、後半の手順はClaudeが書いて実機で確かめたものだ。</em></p>
+<p><strong>更新履歴</strong> — 2026-10-07: 初版 / 2026-10-08: 「この構成を一から立てるなら」という形の手順を後半に追記</p>
 ]]></content:encoded></item></channel></rss>

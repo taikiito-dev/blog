@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>バックアップ on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E3%83%90%E3%83%83%E3%82%AF%E3%82%A2%E3%83%83%E3%83%97/</link><description>Recent content in バックアップ on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Wed, 07 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E3%83%90%E3%83%83%E3%82%AF%E3%82%A2%E3%83%83%E3%83%97/index.xml" rel="self" type="application/rss+xml"/><item><title>バックアップを「消されても戻せる」形にする</title><link>https://offgrid.taikiito.com/guides/backup-ransomware-resistant/</link><pubDate>Thu, 01 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/backup-ransomware-resistant/</guid><description>毎晩クラウドへバックアップは取れていた。その穴を見つけたのは自分ではなくClaudeで、指摘を受けてどこまでやるかを決めたのが自分の仕事だった。採った対策と、見送った対策の記録。手順と設定値は後半にまとめた。</description><content:encoded><![CDATA[<p>この回の出発点は自分ではなかった。写真・パスワード・ファイルを自分のサーバーに集めたあと、毎晩クラウドストレージ(Backblaze B2)へバックアップを取る仕組みは動いていて、自分の側に困っていることは何もなかった。穴を見つけたのはClaude(AnthropicのAIアシスタント)で、<strong>サーバーに置いてある鍵の権限を数えてみろ</strong>と言われて初めて、バックアップ本体まで消せる状態だと分かった。</p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>バックアップ on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E3%83%90%E3%83%83%E3%82%AF%E3%82%A2%E3%83%83%E3%83%97/</link><description>Recent content in バックアップ on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Thu, 08 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E3%83%90%E3%83%83%E3%82%AF%E3%82%A2%E3%83%83%E3%83%97/index.xml" rel="self" type="application/rss+xml"/><item><title>バックアップを「消されても戻せる」形にする</title><link>https://offgrid.taikiito.com/guides/backup-ransomware-resistant/</link><pubDate>Thu, 01 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/backup-ransomware-resistant/</guid><description>Backblaze B2への日次バックアップを「鍵を1本持ち出されても消されない」形に作り直した記録。サーバー上の鍵を18権限から5権限へ絞り、削除が伝播しない複製先を作り、サーバーの外に見張りを置いた。採った対策と見送った対策を前半に、手順と設定値を後半にまとめた。</description><content:encoded><![CDATA[<p>この回の出発点は自分ではなかった。写真・パスワード・ファイルを自分のサーバーに集めたあと、毎晩クラウドストレージ(Backblaze B2)へバックアップを取る仕組みは動いていて、自分の側に困っていることは何もなかった。穴を見つけたのはClaude(AnthropicのAIアシスタント)で、<strong>サーバーに置いてある鍵の権限を数えてみろ</strong>と言われて初めて、バックアップ本体まで消せる状態だと分かった。</p>
+<p><strong>この記事でやること</strong> — Backblaze B2への日次バックアップを「鍵を1本持ち出されても消されない」形に作り直す。サーバー上の鍵を18個の権限から実際に使う5個へ絞り、削除が伝播しない複製先を作り、複製が続いているかをサーバーの外から見張る。手順は<a href="/guides/backup-ransomware-resistant/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
 <p>だから正直に役割を書いておく。<strong>穴を見つけたのはClaude、権限の調べ方と対策を組んだのもClaude、自分がやったのは「指摘を受けて、どこまでやるか」を決める側だ。</strong> 提示された案のうち何を採って何を見送ったか、それがこの記事の中身になる。</p>
 <h2 id="前提">前提</h2>
 <ul>
@@ -171,6 +172,7 @@
 <p>そして毎晩のバックアップは、指摘を受ける前も後も変わらず成功していた。<strong>画面に出てくる情報だけ見ていれば、何も問題はなかった。</strong> だから自分の使い方としては、こうなる——<strong>自分では気づけない穴があるという前提で道具を使い、指摘が来たら、そこから先の取捨は自分でやる。</strong> 全部任せるのでも、全部自分で見るのでもなく、その分担でいい。</p>
 <p><strong>更新履歴</strong> — 2026-10-07: 冒頭と構成を全面改稿(出発点がClaudeの指摘だった経緯を明記し、設定値・仕様比較を手順側へ移動)。2026-10-01: 初版</p>
 ]]></content:encoded></item><item><title>バックアップ先を2つから1つに減らした</title><link>https://offgrid.taikiito.com/guides/backup-consolidation/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/backup-consolidation/</guid><description>非公開のGitリポジトリとクラウドストレージの2系統にバックアップしていたが、片方を捨てて1系統に絞った。2系統は「2倍安全」ではなく「壊れたら困るものが2つ」で、どちらも検証されていなかった。一本化に必要だった棚卸しの手順、復元に使う鍵をどこに置くか、実際にやった復元テストまでの記録。</description><content:encoded><![CDATA[<p>自分のサーバーに写真・パスワード・ファイルを集めたあと、バックアップを<strong>2系統</strong>持っていた。GitHubの非公開リポジトリ(自分だけが見られるGitの保管場所)への日次バックアップと、クラウドのオブジェクトストレージ(Backblaze B2)への日次バックアップ。多いほうが安全だと思っていた。</p>
+<p><strong>この記事でやること</strong> — 2系統あったバックアップのうちGitHubの非公開リポジトリ側を廃止し、クラウドのオブジェクトストレージ1系統に絞る。止める前に「止める側にしか無いもの」を1件ずつ突き合わせ、Gitの履歴は1ファイルに固めて逃がし、最後に実際に復元して突き合わせるところまでやる。手順は<a href="/guides/backup-consolidation/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
 <p>調べたら、どちらも完全ではなく、どちらも検証されていなかった。GitHub側を廃止して1系統に絞り、代わりに「本当に戻せるか」を確かめる作業を足した。</p>
 <h2 id="前提">前提</h2>
 <ul>
@@ -257,12 +259,140 @@
 <li><strong>一番大きい穴は、サーバーを乗っ取られた場合</strong>。1系統しかないので、送信に使っている鍵を盗られたらバックアップ本体を消される。これは別テーマとして切り出し、鍵の権限削減・削除が伝播しない複製先・サーバーの外で動く見張りの3層で作り直した。そちらは<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>に書いた</li>
 </ul>
 <p>費用は全バックアップ合計125GBで<strong>月約$0.69</strong>。一本化で減ったのは費用ではなく、<strong>気にかけておく仕組みの数</strong>だった。</p>
-<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
-]]></content:encoded></item><item><title>自前サーバー、14か月の判断記録</title><link>https://offgrid.taikiito.com/guides/self-hosted-server-decisions/</link><pubDate>Wed, 07 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/self-hosted-server-decisions/</guid><description>非エンジニアが自前サーバーを14か月運用した記録。何を動かしているか、採った判断5件、却下した案、後から見た当たり外れを日付つきで残す。</description><content:encoded><![CDATA[<p>私はソフトウェアエンジニアではない。原油の取引を仕事にしていて、コードを書く仕事をしたことは一度もない。</p>
+<hr>
+<h1 id="手順">手順</h1>
+<p>ここから下はClaude（AnthropicのAIアシスタント）が書き、自分の環境で実行して結果を確かめたものだ。</p>
+<p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが着手の前に分かる</strong>こと。見てのとおり10段階で、重い工事ではなく「突き合わせ」と「確認」が大半を占める。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。ゼロから説明するより、動いた実例を見せたほうが早い。</p>
+<p>道具の版は上がるので、オプション名や設定ファイルの書式は実行前に公式ドキュメントで現在の形を確認してほしい。</p>
+<h2 id="前提の環境">前提の環境</h2>
+<ul>
+<li>常時起動しているLinuxサーバー1台（自分の場合はUbuntu 24.04のVPS）</li>
+<li><code>rclone</code>（いろいろなクラウドストレージへファイルを同期するコマンド）が入っていて、オブジェクトストレージへの接続設定が1つ済んでいる状態。自分の送り先はBackblaze B2</li>
+<li><code>cron</code>（決めた時刻にコマンドを自動実行する仕組み）が使える状態。<strong>OSのイメージによっては<code>cron</code>パッケージ自体が入っていない</strong>ことがあり、無いと<code>crontab -</code>が黙って失敗する</li>
+<li>止めるほうの系統（自分の場合はGitの非公開リポジトリへの日次<code>push</code>）が今も動いていること。<strong>止める前に突き合わせるので、動いているうちに始める</strong></li>
+</ul>
+<h2 id="step-1-止める側の中身を実物から列挙する">Step 1: 止める側の中身を、実物から列挙する</h2>
+<p>設計書や自分のメモではなく、<strong>実際のファイル一覧とスクリプト本文</strong>から出す。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 止める側のリポジトリに何が入っているか</span>
+</span></span><span class="line"><span class="cl">git ls-files <span class="p">|</span> awk -F/ <span class="s1">&#39;{print $1&#34;/&#34;$2}&#39;</span> <span class="p">|</span> sort -u
+</span></span><span class="line"><span class="cl">du -sh .git
+</span></span></code></pre></div><ul>
+<li>🔴 <strong>メモの箇条書きだけを読んで判断すると外す。</strong> 自分はここで一度「テキスト類が残す側に入っていない」と誤判断した。同期スクリプトの本文を開いたら既に実装済みだった。<strong>同期スクリプトは必ず本文を開いて読む。</strong></li>
+</ul>
+<h2 id="step-2-残す側の対象リストと突き合わせる">Step 2: 残す側の対象リストと突き合わせる</h2>
+<p>残す側のスクリプトが実際に何を送っているかを、スクリプト本文と送り先の一覧の両方から出す。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 送り先に実在するトップレベルの入れ物を見る</span>
+</span></span><span class="line"><span class="cl">rclone lsf --dirs-only &lt;remote名&gt;:&lt;バケット名&gt;/
+</span></span></code></pre></div><ul>
+<li><strong>容量の大きい入れ物に<code>rclone size</code>を掛けると数分かかる</strong>。全体像を見るだけなら<code>lsf --dirs-only</code>で足りる。</li>
+<li>🔴 <strong><code>sudo rclone</code>は<code>~</code>を<code>root</code>のホームと解釈する</strong>ので、設定ファイルの場所を<code>--config /home/&lt;user&gt;/.config/rclone/rclone.conf</code>のように明示する。しないと「設定が見つからない」で空振りする。</li>
+<li>ここで自分は<strong>本物の穴</strong>を見つけた。環境変数をまとめたファイル（<code>.env</code>。各種サービスのトークンが入っている）が<strong>どちらの系統にも無かった</strong>。2系統あっても、どちらにも無いものは存在する。</li>
+</ul>
+<p><strong>同時に「分母」も点検する。</strong> ログの「33件すべて成功」は「やると決めた33個は通った」としか言っておらず、<strong>スクリプトに書き忘れたものは永久に静かに落ちる</strong>。見落としを構造的に減らすには3方向から同時に見る。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker ps --format <span class="s1">&#39;{{.Names}}&#39;</span>          <span class="c1"># コンテナで動いているもの</span>
+</span></span><span class="line"><span class="cl">systemctl list-units --type<span class="o">=</span>service      <span class="c1"># 常駐サービスで動いているもの</span>
+</span></span><span class="line"><span class="cl">ls /home/&lt;user&gt;                          <span class="c1"># データの置き場</span>
+</span></span></code></pre></div><ul>
+<li>🔴 <strong>片方からだけ見ると、もう片方は構造的に見えない。</strong> 自分の場合、<code>docker ps</code>に出ないsystemd側のサービスを数えていなかったため、<strong>常駐サービスの定義ファイル・<code>crontab</code>・ファイアウォールのルールが1つもバックアップに入っていなかった</strong>。データは全部戻るのに<strong>どう起動するかが戻らない</strong>状態だった。</li>
+<li>🔴 <strong><code>rclone</code>はシンボリックリンクを黙ってスキップする</strong>（<code>Can't follow symlink without -L</code>）。常駐サービスの定義ディレクトリは中身の多くがリンクなので、<code>cp -aL &lt;元&gt; &lt;一時ディレクトリ&gt;</code>で実体化してから送る。これを踏むと「同期した気になって実は空」になる。</li>
+</ul>
+<h2 id="step-3-gitの履歴そのものをファイルとして退避する">Step 3: Gitの履歴そのものを、ファイルとして退避する</h2>
+<p>履歴は普通のファイル同期では運べない。<code>git bundle</code>（リポジトリ全体を1ファイルに固める機能）を使う。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">git bundle create /tmp/history-&lt;日付&gt;.bundle --all
+</span></span><span class="line"><span class="cl">git bundle verify /tmp/history-&lt;日付&gt;.bundle
+</span></span><span class="line"><span class="cl">rclone copy /tmp/history-&lt;日付&gt;.bundle &lt;暗号化remote&gt;:&lt;保存先&gt;/
+</span></span></code></pre></div><ul>
+<li>🔴 <strong><code>root</code>で<code>git</code>を叩くと<code>detected dubious ownership</code>で弾かれる</strong>。ディレクトリの所有者ユーザーで実行する（<code>sudo -u &lt;user&gt;</code> など）。</li>
+<li><strong>履歴に秘密情報が入っている前提で、平文の送り先ではなく暗号化した送り先へ置く</strong>（Step 5）。自分のリポジトリの履歴には、過去に誤って入れたトークン類とサーバーの秘密鍵が残っていた。</li>
+<li><strong>往復まで確認する。</strong> 取り出して<code>md5sum</code>が一致すること、<code>git clone &lt;bundleファイル&gt; &lt;ディレクトリ&gt;</code>でコミット数が復元できること、履歴の中にしか無いファイルを<code>git cat-file -s</code>で元のサイズどおり取り出せること。自分の場合831MB・162コミットで通った。</li>
+<li>🔴 <strong>これは一度きりのスナップショットで、以後履歴が伸びても自動では更新されない。</strong></li>
+</ul>
+<h2 id="step-4-止める前に止める側にしか無いコミットがゼロだと確認する">Step 4: 止める前に「止める側にしか無いコミット」がゼロだと確認する</h2>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">git rev-list --count &lt;リモート名&gt;/main --not --all
+</span></span></code></pre></div><p><code>0</code>であること。ローカルが持っていない版がリモートにある状態で止めると、その分が消える。</p>
+<ul>
+<li><strong>サーバー上から<code>git fetch</code>できない環境では、リモートの現況はホスティング側のAPIで確認する</strong>（自分は<code>gh api</code>でブランチの先頭を取り、ローカルの値と一致することを見た）。</li>
+</ul>
+<h2 id="step-5-送る前に自分で暗号化する経路を1本足す">Step 5: 送る前に自分で暗号化する経路を1本足す</h2>
+<p><code>rclone</code>には<code>crypt</code>という、送信前に暗号化して保存名も不可読にする仕組みがある。既存の平文の送り先の下に<code>enc</code>のような入れ物を1つ作り、そこを指す<code>crypt</code>の設定を足す形にした。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rclone config          <span class="c1"># 新しいremoteを追加し、種別に crypt を選ぶ</span>
+</span></span></code></pre></div><ul>
+<li><strong>対話の項目名と順序は版で変わるので、公式ドキュメントで現在の書式を確認すること。</strong> 確実に押さえるべき点は2つだけ:
+<ul>
+<li><strong>パスワードとsalt（2つ目のパスワード）の両方が必要で、片方だけでは復号できない。</strong></li>
+<li><strong>この2つを失うとバックアップは永久に読めない石になる。</strong> 先にStep 9の金庫へ入れてから使い始める。</li>
+</ul>
+</li>
+<li><strong>対象の選び方。</strong> 自分はテキスト類・秘密情報・データベースのダンプを<code>crypt</code>側にし、写真ライブラリとパスワード管理ソフトのデータは平文のままにした。初回は6,710オブジェクト・69MBで5分43秒、以後は差分で数十秒だった。</li>
+<li>🔴 <strong>パスワード管理ソフトのデータは意図的に平文のまま残した。</strong> 中身はそれ自体が暗号化済みで、何より<strong>暗号化パスワードの保管場所がその金庫なので、暗号化すると循環依存になる</strong>（鍵を取り出すために金庫を復元し、復元するために鍵が要る）。</li>
+<li>🔴 <strong>送り先を変える作業は「移す」だけでは終わらない。古い置き場を消すまでが1セット。</strong> 自分は添付ファイルの送り先を平文側から暗号化側へ移したあと古いコピーを消し忘れ、1,589件・1.23GBが二重保管かつ平文のまま残っていた。消す前に<code>rclone check --one-way</code>で暗号化側に全件あることと、実ファイルを取り出して復号できることを確かめてから<code>rclone purge</code>する。</li>
+<li><strong>事業者側の暗号化（SSE）も、別物として管理画面で有効にしておく</strong>（Buckets → Bucket Settings → Default Encryption 相当の場所）。🔴 <strong>有効にしても遡らず、以後届くファイルにしか効かない。</strong></li>
+</ul>
+<h2 id="step-6-スクリプト本文の平文の秘密を外に出す">Step 6: スクリプト本文の平文の秘密を外に出す</h2>
+<p>データベースのダンプを取る行に管理者パスワードが直書きされていた。権限600のファイルに切り出して読み込む形に変える。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># スクリプト冒頭</span>
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> -uo pipefail
+</span></span><span class="line"><span class="cl"><span class="nv">ENVFILE</span><span class="o">=</span>/root/backup-scripts/.env      <span class="c1"># 600 / root:root</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span> -r <span class="s2">&#34;</span><span class="nv">$ENVFILE</span><span class="s2">&#34;</span> <span class="o">]</span> <span class="o">||</span> <span class="nb">exit</span> <span class="m">1</span>
+</span></span><span class="line"><span class="cl"><span class="nb">set</span> -a<span class="p">;</span> . <span class="s2">&#34;</span><span class="nv">$ENVFILE</span><span class="s2">&#34;</span><span class="p">;</span> <span class="nb">set</span> +a
+</span></span><span class="line"><span class="cl">: <span class="s2">&#34;</span><span class="si">${</span><span class="nv">DB_ROOT_PASSWORD</span><span class="p">:?未設定</span><span class="si">}</span><span class="s2">&#34;</span>
+</span></span></code></pre></div><ul>
+<li><strong>渡し方はコマンドライン引数ではなく環境変数経由にする。</strong> <code>-p'…'</code>のような引数は<code>ps</code>で他のユーザーから見えてしまう。<code>docker exec -i -e MYSQL_PWD=&quot;$DB_ROOT_PASSWORD&quot; …</code> / <code>-e PGPASSWORD=&quot;$…&quot;</code> の形に揃えた。</li>
+<li><strong>変数が空なら<code>: &quot;${VAR:?未設定}&quot;</code>で止める。</strong> 黙って空のパスワードで走らせないため。</li>
+<li>🔴 <strong>平文の秘密はスクリプト本文を直しても消えない。</strong> 自分の場合、過去の退避ファイル（<code>.bak</code>）5本・稼働中のコンテナの環境変数・新設した<code>.env</code>に同じ値が残っていた。<strong>本当に消すにはパスワードの変更が必要。</strong> 変更する場合は①データベース側で<code>ALTER USER</code>を先に打つ ②読み込むファイルを新値にする ③コンテナの定義を新値にする ④コンテナを作り直す（環境変数は再作成しないと更新されない）⑤バックアップを手動実行して完走を確認する ⑥古い退避ファイルを<code>shred -u</code>、の順序を守る。<strong>①を飛ばすとバックアップのダンプが静かに失敗する。</strong></li>
+<li>🔴 <strong>バックアップを取る道具自体がバックアップ対象外になりやすい。</strong> 同期スクリプトを置いたディレクトリ（自分は<code>/root/backup-scripts</code>）はどちらの系統にも入っていなかった。1行足して暗号化側へ送る。</li>
+</ul>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">step <span class="s2">&#34;backup-scripts&#34;</span>  <span class="nv">$RC</span> sync /root/backup-scripts <span class="s2">&#34;</span><span class="si">${</span><span class="nv">ENC</span><span class="si">}</span><span class="s2">backup-scripts&#34;</span> --exclude <span class="s2">&#34;*.log&#34;</span>
+</span></span></code></pre></div><p>（<code>$RC</code>は<code>rclone</code>の呼び出し、<code>${ENC}</code>は暗号化した送り先を指す変数で、どちらも自分のスクリプトで既に定義済みのもの）</p>
+<ul>
+<li><strong>既存の行の書き方を真似る形で足すと、変数名や送り先の指定を推測せずに済む。</strong> これは効いたので毎回そうしている。編集後は<code>bash -n &lt;スクリプト&gt;</code>で文法を見てから手動実行する。</li>
+</ul>
+<h2 id="step-7-途中で失敗してもどこまで通ったかが残る形にする">Step 7: 途中で失敗しても「どこまで通ったか」が残る形にする</h2>
+<ul>
+<li>🔴 <strong><code>set -e</code>だけで組むと、途中で止まったときに何も分からない。</strong> 自分の旧スクリプトは最後の処理で<code>sudo</code>がパスワードを求めて止まり、<strong>34回の起動のうち完走は5回</strong>だった。データ本体の各工程は成功していたので実害は無かったが、「完走しました」のマーカーが1ヶ月出ていないことに気づけなかった。</li>
+<li>直した形は、各処理を<code>step &quot;名前&quot; &lt;コマンド…&gt;</code>という関数で包んでOK/FAILを個別にログへ出し、最後に<code>=== Backup finished OK ===</code>または<code>=== Backup finished WITH FAILURES ===</code>のどちらかを必ず出す構造。<strong>完走マーカーを1行にしておくと、監視する対象がそれ1つになる。</strong></li>
+<li><strong><code>sudo</code>に依存する処理はスクリプトから外す。</strong> 対話的なパスワード要求は自動実行では必ず詰まる。</li>
+<li>🔴 <strong><code>timeout</code>付きの<code>ssh</code>で長時間のスクリプトを走らせると<code>ssh</code>が先に死ぬ</strong>（終了コード137）が、<strong>サーバー側のスクリプトは完走している</strong>。ログを見るまで「途中で止まった」と判断してはいけない。</li>
+</ul>
+<h2 id="step-8-浮いた分を別の軸に回す">Step 8: 浮いた分を、別の軸に回す</h2>
+<p>1系統になったぶんを「頻度」と「保持期間」に回した。</p>
+<pre tabindex="0"><code class="language-cron" data-lang="cron">30 2 * * *          /root/backup-scripts/backup-to-b2.sh         # 全体を1日1回
+0 5,11,17,23 * * *  /root/backup-scripts/backup-workspace-text.sh # テキスト類だけ1日4回
+</code></pre><ul>
+<li>テキスト類だけを対象にした軽い同期にしたので約10秒で完走する（重い写真ライブラリに触らない）。これで<strong>RPO（障害時に失われる最大の時間幅）が最大24時間から最大6時間に縮んだ</strong>。</li>
+<li>加えて、30日を超える長期の記録として<strong>テキスト類のみの日付付き<code>tar.gz</code>スナップショットを週1回</strong>置いた。対象は会話ログ・設定・スキル定義・添付を除いたデータ・画像を除いた生成物で、<strong>実測16MB</strong>。年0.8GBなので費用はほぼゼロ。</li>
+<li>送り先のバージョン保持（上書き・削除された古い版を一定期間取っておく設定）を確認しておく。自分の入れ物は<strong>旧バージョンを30日保持</strong>で、実際にデータベースのダンプは26世代遡れた。<strong>30日の「取り消し」が成立していれば、Gitの履歴機能の大部分は代替できる</strong>という判断の根拠がここ。</li>
+</ul>
+<h2 id="step-9-復元テストを3通りやる">Step 9: 復元テストを3通りやる</h2>
+<p>誰も戻したことのないバックアップはバックアップではない。<strong>止めてからではなく、止める前にやる。</strong></p>
+<p><strong>1. 生のファイルから実際に復元して突き合わせる。</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rclone copy &lt;暗号化remote&gt;:&lt;対象パス&gt; /tmp/restore-test/
+</span></span><span class="line"><span class="cl">diff -rq /tmp/restore-test/ /home/&lt;user&gt;/&lt;元のディレクトリ&gt;
+</span></span></code></pre></div><p>自分の場合124ファイルが完全一致した。暗号化経路でちゃんと復号できることも同時に確かめられる。<strong>復元には<code>copy</code>を使い<code>sync</code>は使わない</strong>（<code>sync</code>は空ディレクトリを消し、過去に別のサービスで障害化した実績がある）。</p>
+<p><strong>2. 週次スナップショットを取り出して展開する。</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rclone copy &lt;暗号化remote&gt;:&lt;保存先&gt;/&lt;スナップショット名&gt;.tar.gz /tmp/
+</span></span><span class="line"><span class="cl">tar xzf /tmp/&lt;スナップショット名&gt;.tar.gz -C /tmp/snap-test/
+</span></span></code></pre></div><p>6,644ファイル・74MBが正常に展開でき、自動処理の定義ファイル16本まで含まれていた。</p>
+<p><strong>3. 全ファイルを照合する。</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rclone check --one-way &lt;ローカル&gt; &lt;暗号化remote&gt;:&lt;対象パス&gt;
+</span></span></code></pre></div><p><code>--one-way</code>はリモートにしかない古い版を差分に数えないので、検証にはこちらを使う。自分の結果は差分19件で、中身を見たら<strong>すべて同期が走った時刻より後に生成されたファイル</strong>。取りこぼしはゼロだった。</p>
+<p><strong>4. 鍵の経路も検証する。</strong> 「サーバーも手元も同時に失った」局面から復元できるかは、<strong>金庫のメモに書かれた値だけで送り先が見えるか</strong>を試さないと分からない。自分はこれをスクリプトにして、鍵を差し替えるたびに回すようにした。</p>
+<h2 id="step-10-再発行できない鍵だけ金庫に入れる">Step 10: 再発行できない鍵だけ金庫に入れる</h2>
+<p><strong>バックアップを復元するための鍵が、バックアップの中にしか無いと、永久に開かない。</strong> 入れるものと入れないものを先に線引きする。</p>
+<ul>
+<li><strong>入れる（再発行不能）</strong>: <code>crypt</code>の暗号化パスワードとsalt、ストレージ事業者のアカウントの2段階認証バックアップコード、復元用の接続情報（<code>rclone</code>の設定ファイルの中身）</li>
+<li><strong>入れない（再発行可能）</strong>: 各種APIトークン、ストレージのアプリケーションキー。上位のアカウントにログインできれば1分で作り直せる</li>
+<li>🔴 <strong>何でも放り込むと、金庫自体が肥大した単一障害点になる。</strong></li>
+<li>置き場所をパスワードマネージャーにする場合、<strong>スマートフォンのアプリは一度ログインすればオフラインのキャッシュが残る</strong>ので、サーバーが全損してもそこから取り出せる。ただし金庫自身がそのサーバー上で動いているなら、<strong>スマートフォンとサーバーを同時に失うと詰む</strong>。対処は「紙でもう1部持つ」。</li>
+<li>🔴 <strong>鍵をチャットやターミナルの貼り付けで露出させないこと。</strong> 自分は作業中にマスクを書き損じて、データベースのパスワードをツール出力に出してしまった。しかもその会話ログは毎晩バックアップに入るので、<strong>平文が送り先のバージョン履歴に数日分載った</strong>。マスクはあとから遡れない。鍵の状態を確認したいだけなら、本体を出さないコマンド（キーの一覧と権限だけを出すもの、設定ファイルのセクション名だけを出す<code>grep &quot;^\[&quot; &lt;ファイル&gt;</code>など）を使う。</li>
+</ul>
+<p><strong>更新履歴</strong> — 2026-10-08: 手順を追記 / 2026-10-05: 初版</p>
+]]></content:encoded></item><item><title>自前サーバー、14か月の判断記録</title><link>https://offgrid.taikiito.com/guides/self-hosted-server-decisions/</link><pubDate>Wed, 07 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/self-hosted-server-decisions/</guid><description>非エンジニアが写真・ファイル・パスワード・予定表・メールを借りたサーバー1台へ集め、14か月運用した記録。採った判断5件、却下した案、後から見た当たり外れを日付つきで残し、この構成を一から立てる手順を後半に置いた。</description><content:encoded><![CDATA[<p>私はソフトウェアエンジニアではない。原油の取引を仕事にしていて、コードを書く仕事をしたことは一度もない。</p>
+<p><strong>この記事でやること</strong> — 借りたサーバー1台に写真・ファイル・パスワード・予定表・そして自分のドメインのメールを集め、14か月動かし続ける。その間に自分が決めたこと5件と、却下した案を日付つきで残す。手順は<a href="/guides/self-hosted-server-decisions/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
 <p>2025年に、それまで大手のクラウドサービスに預けていたものを、自分が月額を払う1台のサーバーへ移し始めた。写真、ファイル、パスワード、予定表、そしてメール。</p>
 <p>理由は単純で、<strong>預け先の都合で中身の扱いが変わるのが嫌だった</strong>からだ。値上げ、仕様変更、規約の改定、アカウントの停止。どれも自分では止められない。止められないものの上に、戻ってこない種類のもの（子どもの頃からの写真や、何年ぶんかのやりとり）を全部置いているのが、ある日から落ち着かなくなった。</p>
 <p>それから14か月、そのサーバーを動かし続けている。利用者は2人。1日も手放していない。</p>
-<p>このページは、その14か月で<strong>自分が決めたこと</strong>の記録だ。何に迷い、どの案を採り、どの案を却下し、それが後から見て当たっていたか外れていたか。日付をつけて残す。手順書ではない。手順を探して来た人は、先に下の「何を動かしているか」だけ読んで、あとは<a href="https://github.com/taikiito-dev">リポジトリ側</a>へ行ったほうが早い。</p>
+<p>このページは、その14か月で<strong>自分が決めたこと</strong>の記録だ。何に迷い、どの案を採り、どの案を却下し、それが後から見て当たっていたか外れていたか。日付をつけて残す。前半が判断、後半が手順だ。<strong>この構成を一から立てるなら何をどの順でやるか</strong>は<a href="/guides/self-hosted-server-decisions/#%e6%89%8b%e9%a0%86">ページ後半</a>に書いた。</p>
 <h2 id="何を動かしているか">何を動かしているか</h2>
 <p>借りているサーバー1台。月に10ドル弱の仮想サーバーだ。外から中へ穴を開けるのではなく、サーバー側から外へ繋ぎに行く方式のトンネルを通して公開している。</p>
 <p>その上に、写真、ファイル、パスワード、予定表と連絡先、ログインの入口をひとつにまとめる仕組み、ソースコードの保管庫、死活監視、そして自分用に作ったチャット＋カレンダーのアプリが動いている。バックアップは毎晩、暗号化して別の場所へ送る。</p>
@@ -345,6 +475,109 @@
 <p><strong>自分がこの5件で勝てたのは、疑ったからなのか、たまたま見ていたからなのか。</strong> 46件の写真は、移行作業中にたまたま両方が目の前にあったから見つかった。メールの6週間ぶんは、ゴミ箱に残っていた書き出しで助かった。どちらも自分の手柄とは言いにくい。</p>
 <p>いま入れている確認の手順は、この「たまたま」を手順に変えようとしたものだ。うまくいっているかは、まだ分からない。次に取りこぼしたときに、ここに書き足す。</p>
 <hr>
-<p><em>実装のコマンド・設定・障害の技術的な原因は、このサイトではなく<a href="https://github.com/taikiito-dev">リポジトリ側</a>に置いている。このページは判断の記録で、手順書ではない。</em></p>
 <p><em>14か月、サーバー1台、利用者2人。打っていないが、決めてはいる。</em></p>
+<h1 id="手順">手順</h1>
+<p>ここから下はClaude（AnthropicのAIアシスタント）が書き、自分の環境で実行して結果を確かめたものだ。置いておく理由は2つある。<strong>(1) 着手する前に作業の全体像と長さが分かる。(2) 読者が自分のAIに「これと同じことをやりたい」と渡す材料になる。</strong></p>
+<p>これは14か月の作業を時系列で並べたものではない。<strong>今の構成を一から立てるなら、どの順でやるか</strong>を書いた。上の5件は、この順序のどこで何に刺されたかの記録になっている。コマンドは2026年9月〜10月時点で動いたものなので、各ソフトの現在の書式は公式ドキュメントで確認してほしい。</p>
+<h2 id="前提の環境">前提の環境</h2>
+<ul>
+<li>借りたサーバー1台(Ubuntu 24.04)。2026年9月時点で6vCPU / 12GB RAM / 200GB SSD / 転送量無制限が月$9.00、初期費用ゼロ、1ヶ月契約</li>
+<li>Docker Engineと<code>docker compose</code>が使える状態</li>
+<li>自分が持っているドメイン1つ</li>
+<li>別会社のオブジェクトストレージ1つ(自分はBackblaze B2)。<strong>サーバーと同じ会社にしない</strong></li>
+<li>手元に、そのサーバーとは別のパソコンが1台。<strong>ファイアウォールの検証はこれが無いと原理的にできない</strong>(Step 2)</li>
+</ul>
+<h2 id="step-1-サーバーとドメインを決める">Step 1: サーバーとドメインを決める</h2>
+<p><strong>プランはメモリとディスクで決まる。</strong> ディスクはデータ実測の1.2〜1.5倍。自分は写真115GB＋ファイル16.6GBに対して、OS・Docker・データベース込みで170〜180GBと見積もって200GBから始めた。</p>
+<p><strong>メモリは写真の量ではなくコンテナの数で決まる。</strong> ここは一度間違えかけた。「古い写真を外へ逃がすならメモリも小さくていい」と考えたが違う。自分は常時14コンテナで、以前メモリ不足で全サービスが繰り返し落ちた実績がある。しかも<strong>借りたサーバーにGPUは無いので、顔認識や画像検索をCPUとメモリでやることになり、必要メモリはむしろ増える。</strong> 下げるのは安定を確認してからでいい。</p>
+<p><strong>リージョンは「近いほう」では決まらない。</strong> 自分の場合、第一候補のリージョンは追加料金がつく上に在庫切れだった。追加料金ゼロのリージョンに変えたら、結果として<strong>バックアップ先との経路が短くなり、復元も日次バックアップも速くなる</strong>という副産物があった。申込画面に出る遅延の数字は<strong>生のネットワーク遅延で、トンネル経由の実構成には当てはまらない。</strong></p>
+<p><strong>年契約の割引は見送った。</strong> 移行先が気に入らなかったときにすぐ降りられないのは本末転倒だから。</p>
+<p><strong>ドメインは自分で取り、メールの配信は業者に任せる。</strong> これが14か月で一番効いた。アドレスが自分のものなので、業者を替えても誰にも「アドレスが変わりました」と言わなくて済む。配信まで自前にしない理由は決定2に書いた。</p>
+<h2 id="step-2-外からポートを開けずに公開する">Step 2: 外からポートを開けずに公開する</h2>
+<p><strong>ルーターやファイアウォールに穴を開ける方式をやめ、サーバー側から外へ繋ぎに行くトンネルを使う。</strong> 自分はCloudflare Tunnelを使っている。入口が1本に絞られ、サーバーのアドレスも外に出ない。</p>
+<p>その上で、<strong>コンテナは最初からループバックに縛る。</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="s1">&#39;2283:2283&#39;</span><span class="w">            </span><span class="c"># 🔴 これは全てのネットワークに向けて開く</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="s1">&#39;127.0.0.1:2283:2283&#39;</span><span class="w">  </span><span class="c"># ✅ 自分自身からしか届かない</span><span class="w">
+</span></span></span></code></pre></div><p>トンネルの常駐プロセスはサーバー上で動いて<code>localhost</code>を叩くので、ループバックに縛っても公開には影響しない。<strong>自宅のルーターの内側では両方とも同じ結果になるが、公開アドレスを持つサーバーでは全く違う。</strong> 自分の守りはファイアウォールではなくこの設計に依存させている。1行消えれば無防備に戻るファイアウォールより、そもそも誰も外向きに待ち受けていない状態のほうが強い。</p>
+<p>棚卸しは<strong>除外方式</strong>で書く。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 🔴 これでは漏れる</span>
+</span></span><span class="line"><span class="cl">ss -tlnp <span class="p">|</span> grep 0.0.0.0
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ✅ 「自分自身以外」を除外方式で全部出す</span>
+</span></span><span class="line"><span class="cl">ss -tlnp <span class="p">|</span> grep -vE <span class="s2">&#34;127\.0\.0\.|\[::1\]&#34;</span>
+</span></span></code></pre></div><p><code>*:PORT</code>(IPv4とIPv6の両方で待ち受け)という表記は<code>0.0.0.0</code>では引っかからない。自分は認証なしのポート19本をこの形で見落とした。<strong>ホスト上で直接動いているプロセスはDocker向けのファイアウォール設定では止まらない</strong>ので、コンテナだけ見ていても足りない。<strong>IPv4を塞いだら必ずIPv6も確認する。</strong> 設定は完全に別物だ。</p>
+<p>検証は<strong>必ず別のパソコンから</strong>やる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">nc -vz &lt;サーバーのアドレス&gt; <span class="m">2283</span>   <span class="c1"># → Operation timed out  が正しい</span>
+</span></span><span class="line"><span class="cl">nc -vz &lt;サーバーのアドレス&gt; <span class="m">22</span>     <span class="c1"># → succeeded!            が正しい</span>
+</span></span><span class="line"><span class="cl">nc -vz -6 &lt;IPv6アドレス&gt; <span class="m">2283</span>      <span class="c1"># IPv6も必ず測る</span>
+</span></span></code></pre></div><p>サーバーの中から自分の公開アドレスに繋ぐと内部の経路を通るので、<strong>塞がっているのに必ず「繋がる」と出る。</strong> これを再起動後・ファイアウォールを触った後・コンテナの設定を触った後に回す定型チェックとして文書にしておく。</p>
+<h2 id="step-3-サービスを1本ずつ足す">Step 3: サービスを1本ずつ足す</h2>
+<p>まとめて足さない。1本動かすたびに、トンネルの経路・バックアップの対象・監視の対象に3点セットで登録してから次へ行く。<strong>後から足した分がどれか1つに入っていない</strong>のが、あとで一番高くつく。</p>
+<p>自分が今動かしているのは、写真・ファイル・パスワード・予定表と連絡先・ログインの入口・ソースコードの保管庫・死活監視・自分用のチャットとカレンダーのアプリ。</p>
+<p><strong>HTTP 200は動作証明ではない。</strong> 切替後に200を返しながら中身が動いていなかったことがある。<strong>切替前に、そのサービスで実際に1往復させる実機検証を入れる。</strong> 利用者が自分以外にもいるなら、ここを飛ばしてはいけない。</p>
+<h2 id="step-4-ログインの入口を1つにする">Step 4: ログインの入口を1つにする</h2>
+<p>各サービスに別々のパスワードを置くのをやめ、入口をひとつにまとめる仕組み(自分はAuthentik)を前に置く。</p>
+<p>ここで実際に踏んだ穴を2つ。</p>
+<p>🔴 <strong>パスワード段を外すときは、多要素の段の「未設定のときどうするか」をセットで見る。</strong> 自分の設定は多要素の段が<code>skip</code>だったので、<strong>認証器を1つも持たないユーザーはユーザー名だけでログインできる</strong>状態になりかけた。<code>deny</code>に変える。</p>
+<p>🔴 <strong>入口を一本化しても、各アプリ独自のログイン扉は別に閉まらない。</strong> 入口側をパスキーに寄せても、アプリ自身が持っている素のログイン画面は生きている。1本ずつ無効化するか、前段で遮断する必要がある。</p>
+<p><strong>退路を2つ以上残す。</strong> 自分はブラウザから入れる経路を作ったが、それは入口サーバーの認証を通る作りなので、<strong>入口が閉じると使えない</strong>(循環する)。退路は入口を経由しないものにする。自分の場合は手元のPCからの直接のSSHと、業者のコンソール経由の画面だ。予備の認証手段のバックアップコードは、パスワード管理サーバーが落ちたときのために<strong>別の場所にも1部持つ。</strong></p>
+<h2 id="step-5-バックアップを工程ごとに成否を言う形で作る">Step 5: バックアップを「工程ごとに成否を言う」形で作る</h2>
+<p>ここが一番書き直した場所だ。</p>
+<p><strong>スクリプトは工程ごとに<code>OK</code>/<code>FAIL</code>を出し、最後に完走マーカーを出す。</strong> <code>set -e</code>で途中で止まる作りだと、何がどこまで終わったのか誰にも分からない。自分の旧スクリプトは<strong>34回の起動中5回しか完走していなかった</strong>(最終段がパスワード要求で止まっていた)。<strong>完走マーカーが1ヶ月出ていないのに誰も気づかない</strong>状態だったので、本当の失敗も検知できない。</p>
+<p>⭐ <strong>「分母」を点検する。</strong> 「33件すべて成功」は「やると決めた33件は全部通った」としか言っていない。<strong>スクリプトに書き忘れたサービスは永久に静かに落ちる。</strong> ログでは絶対に分からない。点検は3方向から同時に見る。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">docker ps                      <span class="c1"># コンテナ</span>
+</span></span><span class="line"><span class="cl">systemctl list-units --type<span class="o">=</span>service   <span class="c1"># systemdで動いているもの</span>
+</span></span><span class="line"><span class="cl">ls /home/&lt;user&gt;                <span class="c1"># データ置き場</span>
+</span></span></code></pre></div><p><strong>片方からだけ見ると、もう片方は構造的に見えない。</strong> 自分の穴はここだった。アプリの本体の一部がDockerではなくsystemdで動いていたので<code>docker ps</code>には出ず、結果として<strong>systemdのユニット定義・<code>crontab</code>・ファイアウォールのルールが1つもバックアップに入っていなかった</strong>。データは全部戻るのに「どう起動するか」が戻らない状態だ。</p>
+<p>📌 <strong><code>rclone</code>はシンボリックリンクを黙ってスキップする。</strong> <code>/etc/systemd/system</code>は半分がシンボリックリンクなので、<code>cp -aL</code>で実体化してから渡す。踏むと「同期した気になって実は空」になる。</p>
+<p>この点検は月1回の自動実行にして、<strong>対象から漏れているものが出たときだけ</strong>報告させている。</p>
+<h2 id="step-6-復元の鍵をサーバーの外に置く">Step 6: 復元の鍵をサーバーの外に置く</h2>
+<p><strong>復元はサーバー側が保管先から引っ張ってくる方式にする。</strong> 押し込む方式だと、押し込む側の機械が生きている必要がある。サーバーが死んだときに復元したいのに、生きている前提の機械が1台要るのは変だ。これは決定4に書いた。</p>
+<p>そして<strong>その引っ張るための鍵と設定を、サーバーの外へ複製する。</strong> 自分はパスワード管理サーバーのSecure Noteに4件入れている。</p>
+<ol>
+<li>オブジェクトストレージのアクセス鍵を含む<code>rclone</code>の設定</li>
+<li>トンネルの設定と資格情報</li>
+<li><code>docker-compose.yml</code>一式</li>
+<li>環境変数ファイルとsystemdのユニット定義</li>
+</ol>
+<p>パスワード管理のモバイルアプリは一度ログインすればオフラインキャッシュを持つので、サーバーに一切アクセスできなくてもスマートフォンから取り出せる。<strong>保存しただけで終わりにしない。</strong> 「このメモの値だけで保管先の全データが見えるか」を別の端末で実測する。自分はこれをスクリプトにして、<strong>鍵を入れ替えるたびに毎回回している。</strong></p>
+<p><strong>復元テストを1回やる。</strong> 自分は保管先の生ファイルから記憶用のディレクトリを復元し、124ファイルが<code>diff -rq</code>で完全一致することを確認した。<strong>復元したことのないバックアップは、バックアップではない。</strong></p>
+<h2 id="step-7-バックアップを消されない形にする">Step 7: バックアップを消されない形にする</h2>
+<p>サーバーが取られたときにバックアップまで消されるなら、オフサイトにした意味が半分になる。</p>
+<p><strong>① サーバー上の鍵の権限を、実際に使う分まで絞る。</strong> 自分の鍵は18権限を持っていて、<strong>ライフサイクルの改変による即時削除も、複製ルールの停止もできた。</strong> 「30日のバージョン保持があるから安全」は成立していなかった。スクリプトが実際に使うのは一覧・読み・書き・削除の5つだけだった。<strong>Web管理画面の鍵発行UIでは権限を細かく選べない</strong>ので、業者のCLIが必須になる。マスター鍵を扱う作業なのでサーバー上ではなく手元のPCから実行する。</p>
+<p><strong>② 削除が伝播しない複製先を作る。</strong> 自分が使っている業者の複製機能は<strong>削除と論理削除の印を複製しない</strong>仕様なので、複製先が構造的に追記専用のミラーになる。サーバー上の鍵が元のバケットに限定されていれば、複製先には構造的に届かない。</p>
+<p><strong>①と②はセットで、順序は①が先。</strong> ①をやらないと、②の複製ルールをサーバー側から止められてしまう。</p>
+<p><strong>複製先のライフサイクルの設定で2つ間違えやすい。</strong> 「最新版のみ保持」を選んではいけない(上書き攻撃の瞬間に正常な旧版が消え、複製先を用意した意味が消える)。「アップロードから何日で隠すか」の欄は空にする(数字を入れると現役のバックアップ本体が自動削除される)。埋めるのは「隠してから何日で削除するか」の1箇所だけだ。自分は毎晩上書きされるデータベースのダンプが<strong>年80GB積み上がる</strong>ので180日にした。</p>
+<p><strong>鍵を入れ替えたら、旧鍵が本当に死んだかを実測する。</strong> 自分は差し替えスクリプトの中に、読み・書き・削除の全テストに通ってからでなければ設定ファイルを書かない作りを入れた。</p>
+<p>🔴 <strong>ここで一度壊した。</strong> 差し替えスクリプトが設定ファイルを「作り直す」作りだったため、後から足した暗号化用の設定が消え、直後のバックアップで5工程が全滅した。<strong>構成に新しい設定を足したら、それを書き換える既存のスクリプトを洗い出す。</strong> 「鍵の差し替え」という名前から、設定ファイル全体を作り直しているとは読み取れなかった。</p>
+<h2 id="step-8-監視をサーバーの外に置く">Step 8: 監視をサーバーの外に置く</h2>
+<p>死活監視をそのサーバーの上で動かすと、<strong>サーバーごと落ちたら監視も一緒に落ちて通知が飛ばない。一番知りたい障害だけ通報されない。</strong></p>
+<p>二段にする。サーバー上の監視は1分間隔で速いほうを、<strong>サーバーの外で動く監視は遅くてもいいから絶対に黙らないほう</strong>を担当させる。自分は後者をGitHub Actions(GitHubが決めた時刻にスクリプトを自動実行する仕組み)で30分間隔にした。</p>
+<p>判定の設計で効いたこと。</p>
+<ul>
+<li><strong>4xxは「生存」扱いにする。</strong> ログインが必要なサービスは未認証だと302や401を返すのが正常で、これを異常にすると常時誤報になる。異常とみなすのは5xxと、接続不能・時間切れだけ</li>
+<li><strong>3回連続で失敗して初めて異常とみなす。</strong> 回線の瞬断で鳴らないための緩衝。既定が「1回失敗で即異常」になっている監視ソフトは、そこを揃える</li>
+<li><strong>通報は状態が変わった瞬間だけ。</strong> 落ちている間ずっと鳴り続けない。復旧時は停止していた時間を添える。全部が同時に落ちたときは「サーバーごと落ちている可能性が高い」と文面を変える</li>
+</ul>
+<p>🔴 <strong>外部の定時実行には落とし穴がある。</strong> GitHubは<strong>リポジトリに60日間活動がないとスケジュール実行を自動停止する。</strong> 異常が無いとコミットも発生しないので、<strong>無事な期間が続くと監視が黙って止まる。</strong> 変化がなくても7日ごとに観測値を更新してコミットを発生させる。あわせて、<strong>定時実行は大幅に遅れる</strong>(自分の実測で5時間超)ので、時刻を当てにした説明は書かないこと。価値は速さではなく黙らないことだ。</p>
+<h2 id="step-9-容量が足りなくなったらまず単に増やす">Step 9: 容量が足りなくなったら、まず単に増やす</h2>
+<p>決定1のとおり、<strong>最初に見るのは契約している業者の増設ボタン</strong>だ。再インストールなし、移行なし、新しい部品ゼロ。比較表に載っていない退屈な案を1つ探す。</p>
+<p>実務で知っておくこと。</p>
+<ul>
+<li>増えた分は<strong>既存ディスクの拡大として現れる</strong>(別のディスクが増えるのではない)。ただし<strong>パーティションとファイルシステムは自動では広がらない</strong></li>
+<li>自分の環境では<code>growpart</code>と<code>resize2fs</code>の2コマンドで無停止のオンライン拡張ができた。これは「拡大したいパーティションが最後にあり、直後に連続した空き領域がある」ことが前提なので、<strong>先に<code>--dry-run</code>で確認する</strong></li>
+<li><strong>ルートのパーティションテーブルを書き換える操作</strong>なので、直前にバックアップを手動実行して全工程<code>OK</code>を確認するのが必須の作法</li>
+<li>⚠️ <strong>公式ヘルプに「再起動不要」と書かれていても、実際には強制リセットが起きた。</strong> 増設系の作業はダウンタイムを見込む</li>
+</ul>
+<p>単価で見ると、ディスク増設は<strong>一番高い</strong>選択肢だ。自分の規模では差額が月数ドルで、「その数ドルで複雑さを回避する」が正しかった。<strong>規模が変われば答えは裏返る</strong>ので、オフロードしたい古いデータが1TBを超えたら方式を見直す、という目安を書いておいた。</p>
+<h2 id="step-10-成功の主張を外から検証できる形にする">Step 10: 「成功」の主張を外から検証できる形にする</h2>
+<p>最後に、決定3と決定5で残った型を道具にする。</p>
+<p><strong>公開物や成果物に、それがどのソースから作られたかを書き込む。</strong> 自分はサイトの公開物のルートに、ソースのコミットID・ビルドした時刻・参照を書いたファイル(<code>build-id.txt</code>)を置いた。本番のそれとソースの最新を比べれば、「公開が遅れている」のか「中身が落ちている」のかが切り分けられる。この2つは対処が正反対で、片方だと思って待っていると何時間も溶ける。<strong>原因の特定はいらない。切り分けさえできればいい。</strong></p>
+<p>🔴 <strong>切り分けに使う目印は「毎回必ず変わるもの」にする。</strong> 自分は一度、本番とソースで<strong>直近の公開で中身が変わっていなかったファイル</strong>をバイト比較して「配信は健全」と判定した。配信が凍っていても一致するので、<strong>失敗しようのないテスト</strong>だった。</p>
+<p>同じ型をデータの検証にも当てる。<strong>復元やコピーの検証を「件数の一致」でやってはいけない。</strong> 自分の数字は60,525件と60,619件で0.15%差。見逃す水準だった。<strong>データベースに記録されているパスが1件ずつ実在するか</strong>を全件突き合わせる。合計の照合は、打ち消し合う誤りを隠す。</p>
+<p>そして<strong>確認は、作業したのと別の経路でやる。</strong> 同じ経路で確認すると、同じ思い込みを2回通るだけになる。</p>
+<hr>
+<p><em>このページの前半は判断の記録で、後半の手順はClaudeが書いて実機で確かめたものだ。</em></p>
+<p><strong>更新履歴</strong> — 2026-10-07: 初版 / 2026-10-08: 「この構成を一から立てるなら」という形の手順を後半に追記</p>
 ]]></content:encoded></item></channel></rss>

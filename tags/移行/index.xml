@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>移行 on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E7%A7%BB%E8%A1%8C/</link><description>Recent content in 移行 on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Mon, 05 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E7%A7%BB%E8%A1%8C/index.xml" rel="self" type="application/rss+xml"/><item><title>自宅サーバーが5.5日止まったので海外VPSへ移った</title><link>https://offgrid.taikiito.com/guides/home-server-to-vps/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/home-server-to-vps/</guid><description>自宅のWindowsノートPCが原因不明のまま5.5日間フリーズし、写真・パスワード・ファイルのサーバーが全部止まった。壊れた機械から転送するのではなく、毎晩取っていたクラウドバックアップからVPS側へ引っ張って復元する方式で、26分の停止で移行した記録。公開IPになって初めて露出した穴とその塞ぎ方も書いた。</description><content:encoded><![CDATA[<p>写真・パスワード・ファイルの置き場を全部自宅のPC1台に集めていた。そのPCが<strong>5.5日間フリーズしたまま</strong>動かなくなり、全部止まった。家を離れていた期間だったので、帰るまで何もできなかった。原因は結局特定できていない。</p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>移行 on Off-Grid</title><link>https://offgrid.taikiito.com/tags/%E7%A7%BB%E8%A1%8C/</link><description>Recent content in 移行 on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Thu, 08 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/tags/%E7%A7%BB%E8%A1%8C/index.xml" rel="self" type="application/rss+xml"/><item><title>自宅サーバーが5.5日止まったので海外VPSへ移った</title><link>https://offgrid.taikiito.com/guides/home-server-to-vps/</link><pubDate>Mon, 05 Oct 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/home-server-to-vps/</guid><description>自宅のWindowsノートPCが原因不明のまま5.5日間フリーズし、写真・パスワード・ファイルのサーバーが全部止まった。壊れた機械から転送するのではなく、毎晩取っていたクラウドバックアップからVPS側へ引っ張って復元する方式で、26分の停止で移行した記録。公開IPになって初めて露出した穴とその塞ぎ方も書いた。</description><content:encoded><![CDATA[<p>写真・パスワード・ファイルの置き場を全部自宅のPC1台に集めていた。そのPCが<strong>5.5日間フリーズしたまま</strong>動かなくなり、全部止まった。家を離れていた期間だったので、帰るまで何もできなかった。原因は結局特定できていない。</p>
+<p><strong>この記事でやること</strong> — 自宅のWindows機で動かしていた14コンテナ(写真・ファイル・パスワード・ログインの入口など)を、海外VPSへ移す。壊れた旧サーバーから直接転送するのではなく、毎晩取っていたBackblaze B2のバックアップからVPS側へ引っ張って復元し、停止時間は26分だった。移行後、公開IPになって初めて露出した6種類の穴も塞ぐ。手順は<a href="/guides/home-server-to-vps/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
 <p>その障害の記録と、そこから海外VPS(レンタルサーバー)へ移った記録。<strong>壊れた機械からデータを転送するのではなく、毎晩取っていたクラウドバックアップからVPS側へ引っ張って復元した</strong>のが一番再利用できる部分だと思う。実際の停止時間は26分だった。そして移行後、<strong>自宅のルーターの内側にいたから気づかずに済んでいた穴</strong>が一気に表に出た。</p>
 <h2 id="前提">前提</h2>
 <ul>
@@ -179,5 +180,126 @@ Phase H  移行後(バックアップの再構築・監視・検証)
 </ul>
 <p><strong>旧サーバーはすぐ捨てずに2週間温存した</strong>。これは正解で、移行翌日に「写真46件が旧サーバーにしか無い」と判明した時に助かった。復元の検証が全部終わるまでは、古い機械を消してはいけない。</p>
 <p>そして<strong>ハングの原因は今も分かっていない</strong>。分からないまま、分からないものに依存する構成をやめた、というのが今回やったことの全部だ。</p>
-<p><strong>更新履歴</strong> — 2026-10-05: 初版</p>
+<h1 id="手順">手順</h1>
+<p>ここから下はClaude（AnthropicのAIアシスタント）が書き、自分の環境で実行して結果を確かめたものだ。置いておく理由は2つある。<strong>(1) 着手する前に作業の全体像と長さが分かる。(2) 読者が自分のAIに「これと同じことをやりたい」と渡す材料になる。</strong></p>
+<p>実際の作業は停止26分・前後の準備と後片付けを含めて数日。コマンドは2026年9月時点で動いたものなので、各ソフトの現在の書式は公式ドキュメントで確認してほしい。</p>
+<h2 id="前提の環境">前提の環境</h2>
+<ul>
+<li>移行元: 常時稼働のLinux環境(自分の場合はWindows機の中のWSL2〈WindowsのなかでLinuxをそのまま動かす仕組み〉)でDockerコンテナを14本動かしている状態</li>
+<li>外部公開はCloudflare Tunnel経由で、ルーターのポート開放はしていない</li>
+<li>毎晩<code>rclone</code>でBackblaze B2へ日次バックアップが回っている(写真の本体＋各データベースのダンプ)</li>
+<li>移行先: Ubuntu 24.04のVPS 1台。ディスクはデータ実測の1.2〜1.5倍を見る(自分は写真115GB＋ファイル16.6GBに対して200GBから始めた)</li>
+<li>手元に、VPSとは別のパソコンが1台あること。<strong>ファイアウォールの検証はこれが無いと原理的にできない</strong>(Step 8)</li>
+</ul>
+<h2 id="step-1-復元に必要な鍵と設定をサーバーの外へ複製する">Step 1: 復元に必要な鍵と設定を、サーバーの外へ複製する</h2>
+<p><strong>これを最初にやる。</strong> B2から引っ張るにはB2のアクセス鍵が要るが、その鍵が旧サーバーの中にしか無ければ、サーバーを失った時点で何も取り出せない。</p>
+<p>自分は4件に分けてVaultwarden(自前のパスワード管理サーバー)のSecure Noteへ複製した。</p>
+<ol>
+<li><code>rclone</code>の設定ファイル(B2のアカウントIDとアプリケーションキー)</li>
+<li>Cloudflare Tunnelの設定と資格情報</li>
+<li><code>docker-compose.yml</code>一式</li>
+<li>各サービスの環境変数ファイルとsystemdのユニット定義</li>
+</ol>
+<p>Vaultwardenのモバイルアプリは一度ログインすればオフラインキャッシュを持つので、サーバーに一切アクセスできなくてもスマートフォンから取り出せる。</p>
+<p><strong>保存しただけで終わりにしない。</strong> 「このメモに書かれた値だけでB2上の全データが見えるか」を別の端末で実測する。自分はこの検証をスクリプトにして、<strong>鍵を入れ替えるたびに毎回回している</strong>。「保存したつもり」で中身が古い、が一番ありそうな事故だから。</p>
+<h2 id="step-2-vpsを契約して初期設定する">Step 2: VPSを契約して初期設定する</h2>
+<p><strong>ユーザー名と数値のUIDを旧サーバーに揃える。</strong> 同じパスを使えるので<code>docker-compose.yml</code>・環境変数ファイル・systemdユニット・スクリプトを無改造で流用できる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 旧サーバーで数値IDを調べる</span>
+</span></span><span class="line"><span class="cl">id -u &lt;ユーザー名&gt;
+</span></span></code></pre></div><p>名前だけ揃えてUIDが1つずれていると、一部のコンテナ内で<code>No user exists for uid &lt;番号&gt;</code>で落ちる。VPSの初期イメージが既にそのUIDを使っていることがあるので(自分の場合は既存ユーザーが1000を取っていた)、<strong>作る前に空いているか確認する。</strong></p>
+<p>次に、<strong>ホスト側のOSパッケージを移す。</strong> ここは「Dockerのデータとワークスペースを移せば終わり」と思って外した。自分の構成で足りなかったのは次の3つ。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo apt install cron ffmpeg fonts-noto-cjk
+</span></span></code></pre></div><p><code>cron</code>が入っていないと<code>crontab -</code>が<strong>黙って失敗する</strong>。バックアップの自動実行が最初から動いていない状態になるので、ここは必ず確認する。何が必要かは構成ごとに違うので、旧サーバーで<strong>コンテナの外から呼んでいるコマンド</strong>を洗い出しておく。</p>
+<p>SSHの堅牢化は、設定ファイルの<strong>読む順番</strong>に注意する。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 自分の設定を置く</span>
+</span></span><span class="line"><span class="cl">sudo tee /etc/ssh/sshd_config.d/99-hardening.conf <span class="s">&lt;&lt;&#39;EOF&#39;
+</span></span></span><span class="line"><span class="cl"><span class="s">PasswordAuthentication no
+</span></span></span><span class="line"><span class="cl"><span class="s">PermitRootLogin without-password
+</span></span></span><span class="line"><span class="cl"><span class="s">EOF</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># VPSの初期設定が置いていったファイルを確認する</span>
+</span></span><span class="line"><span class="cl">grep -r PasswordAuthentication /etc/ssh/sshd_config.d/
+</span></span></code></pre></div><p><strong>SSHのサーバーは「最初に見つけた値」を採用する。</strong> 番号の小さいファイル(自分の場合は<code>50-cloud-init.conf</code>が<code>PasswordAuthentication yes</code>を宣言していた)が勝つので、99番に書いた設定は永遠に効かない。該当ファイルを拡張子を変えて退避して解決した。<strong>鍵でログインできることと、パスワードが本当に拒否されることの両方を実測する。</strong></p>
+<h2 id="step-3-旧サーバーを止めて最終バックアップを取る">Step 3: 旧サーバーを止めて最終バックアップを取る</h2>
+<p>ここから停止時間が始まる。</p>
+<p><strong>稼働中のままコピーしたデータベースは壊れている可能性がある。</strong> パスワード管理サーバーのデータベースファイルは書き込み中にコピーすると不整合になりうるので、<strong>コンテナを止めてから</strong>バックアップを手動実行する。これで「日次バックアップから最大24時間分が欠ける」問題も同時に消える。</p>
+<p><strong>バックアップスクリプトの出力を1行ずつ読む。</strong> 自分はここで刺された。旧スクリプトは工程ごとの成否をログに出していなかったので、<strong>データベースのダンプは成功し、写真の同期ステップが完走しないまま終わっていた</strong>ことに気づかず、写真46件を旧サーバーにしか無い状態で先へ進んだ。工程ごとに<code>OK</code>/<code>FAIL</code>を出し、最後に完走マーカーを出す形になっていないなら、<strong>移行の前にスクリプトを直す。</strong></p>
+<p>同時に、<strong>イメージのバージョンを全部固定する。</strong> データベースのダンプは取得した時点のソフトの構造に紐づいているので、新サーバーで<code>docker compose pull</code>して最新版が来ると構造が合わず壊れる。<code>:latest</code>のままのタグは写真サーバーだけでなく、ファイル同期・データベース・パスワード管理にもあった。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 旧サーバーで実際に動いているイメージの識別子を取る</span>
+</span></span><span class="line"><span class="cl">docker inspect --format <span class="s1">&#39;{{index .RepoDigests 0}}&#39;</span> &lt;イメージ名&gt;
+</span></span></code></pre></div><p><code>docker inspect</code>の<code>.Image</code>は<strong>そのマシンの中だけのID</strong>でダウンロードには使えない。<code>RepoDigests</code>を使う。</p>
+<h2 id="step-4-クラウドのバックアップから引っ張る">Step 4: クラウドのバックアップから引っ張る</h2>
+<p>旧サーバー→新サーバーの直接転送をやめて、<strong>新サーバーがB2からダウンロードする。</strong> VPS↔B2はデータセンター間なので、自分の環境では実測で約30MB/sだった。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">rclone copy b2backup:&lt;バケット名&gt;/immich/library /home/&lt;user&gt;/immich/library
+</span></span></code></pre></div><p><strong><code>copy</code>を使い、<code>sync</code>は使わない。</strong> <code>sync</code>は転送元に無いファイルを転送先から消す。シンボリックリンクは<code>-L</code>無しだとスキップされた上で<strong>宛先の実体が消え、しかも終了コードは0</strong>になる(失敗として検知できない)。過去にこれで必要なディレクトリを消して障害にした。</p>
+<p><strong>クラウドに無いものは旧ホストから直接取る。</strong> 自分はサムネイルと変換済み動画をバックアップ対象から外していたので、そこは別経路になる。「クラウドから引っ張る」という大枠を決めた結果、この当たり前の選択肢を一度忘れた。旧ホストが生きているなら<code>rsync</code>や<code>docker save</code>で直接運ぶのが速い。</p>
+<h2 id="step-5-データベースを戻しコンテナを起動する">Step 5: データベースを戻し、コンテナを起動する</h2>
+<p>公式が推奨する順序は<strong>データベースが先、ファイルが後</strong>。使っているソフトごとにダンプの取得・復元コマンドは違うので、ここは各ソフトの公式ドキュメントで現在の書式を確認すること。</p>
+<p>復元後に必ずやることが2つある。</p>
+<p><strong>① 所有者を直す。</strong> <code>rclone</code>はファイルの所有者情報を保持しないので、復元したファイルは全部実行ユーザーの所有になる。自分はファイル同期サーバーが<code>Cannot write into &quot;config&quot; directory!</code>で503になった。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo chown -R 33:33 /home/&lt;user&gt;/nextcloud/nc-data   <span class="c1"># www-data</span>
+</span></span><span class="line"><span class="cl">sudo chmod <span class="m">770</span> /home/&lt;user&gt;/nextcloud/nc-data/data
+</span></span></code></pre></div><p>数値は使っているソフトの実行ユーザーによる。<strong>クラウド経由の復元では所有者が落ちることを前提に、復元後のチェック項目に入れておく。</strong></p>
+<p><strong>② 整合性チェック用の目印ファイルを作る。</strong> 写真サーバーが<code>Failed to read /data/encoded-video/.immich</code>で起動ループした。サムネイルと変換済み動画のフォルダをバックアップ対象から外していたため、<strong>そのフォルダにある目印ファイルまで一緒に欠けていた</strong>。空のフォルダではなく「目印だけがある」状態が必要だった。</p>
+<p>起動は、Step 3で取ったダイジェストで固定してから。<strong>浮動タグのまま再作成すると勝手に版が上がって壊れる。</strong></p>
+<h2 id="step-6-新しいトンネルを作ってdnsを1本ずつ切り替える">Step 6: 新しいトンネルを作ってDNSを1本ずつ切り替える</h2>
+<p>🔴 <strong>同じトンネルを2台のホストで同時に動かしてはいけない。</strong> リクエストが2台にランダムに振り分けられて、「たまに繋がらない」という一番デバッグしづらい障害になる。<strong>新しいトンネルを別に作って、DNSを1本ずつ向け替える。</strong></p>
+<p>切替順序は決めておく。</p>
+<ol>
+<li>一番軽いサービス(自分はパスワードサーバー)で経路を試す</li>
+<li><strong>ログインの入口</strong> — 最重要。落ちると他のサービスにログインできなくなる</li>
+<li>ファイル → 写真 → 残り</li>
+<li><strong>旧サーバーへのSSH経路は一番最後。</strong> 先に向け替えると旧サーバーに入れなくなって確認作業ができない</li>
+</ol>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ingressに新しいホスト名を足したら必ず再起動する</span>
+</span></span><span class="line"><span class="cl">sudo systemctl restart cloudflared
+</span></span></code></pre></div><p>🔴 <strong>設定の再読込に<code>SIGHUP</code>を使ってはいけない。</strong> <code>cloudflared</code>はSIGHUPで設定を読み直さず<strong>プロセスが終了する</strong>。これで約1分、全サービスが502になった。再起動のログに「新しい設定に更新した」旨と該当ホスト名の行が出ることを目視する。</p>
+<p>設定の検証コマンドにも罠がある。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ✅ --config はサブコマンドより前</span>
+</span></span><span class="line"><span class="cl">cloudflared --config &lt;ファイル&gt; tunnel ingress validate
+</span></span></code></pre></div><p>逆の順序で書くとフラグ未定義エラーなのに<strong>終了コード0を返すため、検証成功と誤読する。</strong></p>
+<p><strong>DNSのTTLを事前に短くする手順は不要だった。</strong> 対象レコードが全部Cloudflareのプロキシを通る設定なら、外に返るアドレスは切替前後で変わらず、振り分けはCloudflare内部で起きる。<strong>書き換えの数秒後に反映され、戻すのも数秒。</strong> TTLを下げる必要があるのは、プロキシを通さずサーバーのアドレスを直接返している場合だけ。</p>
+<h2 id="step-7-公開ipになって開いた口を閉じる">Step 7: 公開IPになって開いた口を閉じる</h2>
+<p><strong>ここが移行そのものより危ない。</strong> 自宅のPCはルーターの内側にいたので、どのサービスが「外から直接届く形」で動いていても外からは届かなかった。VPSは全部のポートが世界中から直接叩ける状態で始まる。</p>
+<p>まず棚卸しする。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 🔴 これでは漏れる</span>
+</span></span><span class="line"><span class="cl">ss -tlnp <span class="p">|</span> grep 0.0.0.0
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ✅ 「自分自身以外」を除外方式で全部出す</span>
+</span></span><span class="line"><span class="cl">ss -tlnp <span class="p">|</span> grep -vE <span class="s2">&#34;127\.0\.0\.|\[::1\]&#34;</span>
+</span></span></code></pre></div><p>待ち受けアドレスの表記は<code>0.0.0.0:PORT</code>だけではない。<strong><code>*:PORT</code>(IPv4とIPv6の両方で待ち受け)もあり、<code>0.0.0.0</code>では引っかからない。</strong> 自分は認証なしのポート19本をこの形で見落とした。<strong>「危ないものを探す」のではなく「安全なものを除外して残り全部を見る」。</strong></p>
+<p>出てきたものを種類で分ける。</p>
+<p><strong>① コンテナが外向きに開いているもの</strong> — 設定ファイルを直す。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ports</span><span class="p">:</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="s1">&#39;2283:2283&#39;</span><span class="w">            </span><span class="c"># 🔴 これは全てのネットワークに向けて開く</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="s1">&#39;127.0.0.1:2283:2283&#39;</span><span class="w">  </span><span class="c"># ✅ 自分自身からしか届かない</span><span class="w">
+</span></span></span></code></pre></div><p><strong>自宅では両方とも同じ結果になる</strong>ので、違いに気づく機会がなかった。トンネル経由で公開する構成なら、外に向けて開く必要は最初から無い。<code>cloudflared</code>はホスト上で動いて<code>localhost</code>を叩くので、ループバックに縛っても影響しない。ポートを環境変数で指定する作りのソフト(自分の場合はログインの入口サーバー)は、そちらの変数にも待ち受けアドレスを書く。</p>
+<p><strong>② ホスト上で直接動いているプロセス</strong> — これはコンテナではないので、<strong>Docker向けのファイアウォール設定(<code>DOCKER-USER</code>チェーン)では止まらない</strong>。ファイアウォールで塞ぐなら<code>INPUT</code>チェーンに入れる必要がある。自分の場合、使っていたソフトに待ち受けアドレスを指定するオプションが存在しなかったので、ソフト側のコードを1行書き換えてループバック以外に出ないようにした。</p>
+<p><strong>応急処置で終わらせない。</strong> ファイアウォールなら数秒で塞げるのでまず塞ぐ。ただし<strong>後日、設定ファイル側を直して「ファイアウォールで塞いでいる」状態をやめる。</strong> ファイアウォールは1行消えれば無防備に戻るが、そもそも誰も外向きに待ち受けていなければ消しようがない。公開IPへ「接続拒否」が返る状態が一番強い。</p>
+<p>🔴 <strong>IPv4を塞いだら必ずIPv6も確認する。</strong> VPSにはIPv6のアドレスも付いていて、コンテナはIPv4とIPv6の両方で待ち受ける。自分は<code>iptables</code>だけで対処し、<code>ip6tables</code>側はルールが空・ポリシーが全通過のままだった。<strong>塞いだつもりのログイン画面がIPv6経由では公開されたまま</strong>だった。設定は完全に別物。</p>
+<p>そして<strong>ルールを永続化する。</strong> ここが抜けると再起動で遮断ルールが消え、さっき塞いだ穴が全部開く。</p>
+<h2 id="step-8-外部から実測し再起動して自力復帰を確かめる">Step 8: 外部から実測し、再起動して自力復帰を確かめる</h2>
+<p>🔴 <strong>ファイアウォールの確認は、そのサーバー自身からでは絶対にできない。</strong> 遮断ルールには「外部インターフェースから来た通信に対して」という条件が付く。<strong>VPSの中から自分の公開アドレスに繋ぐと内部の経路を通るので、必ず「繋がる」と出る。</strong></p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 別のパソコンから実行する(VPS内からでは意味がない)</span>
+</span></span><span class="line"><span class="cl">nc -vz &lt;サーバーのアドレス&gt; <span class="m">2283</span>   <span class="c1"># → Operation timed out  が正しい</span>
+</span></span><span class="line"><span class="cl">nc -vz &lt;サーバーのアドレス&gt; <span class="m">22</span>     <span class="c1"># → succeeded!            が正しい</span>
+</span></span><span class="line"><span class="cl">nc -vz -6 &lt;IPv6アドレス&gt; <span class="m">2283</span>      <span class="c1"># IPv6も必ず測る</span>
+</span></span></code></pre></div><p>この外部からの実測を、<strong>VPSを再起動した後・ファイアウォールを触った後・<code>docker-compose</code>を触った後に回す定型チェック</strong>として文書にしておく。</p>
+<p><strong>移行が完了した状態は、一度も再起動していない状態でもある。</strong> 「今動いている」と「電源が落ちても自分で戻ってくる」は別の話だ。再起動の前に確認する。</p>
+<ul>
+<li>systemdのユニットが全部<code>enabled</code>か。<strong>ファイアウォールのルールを永続化する仕組みも必ず含める</strong></li>
+<li>コンテナの再起動ポリシーが<code>unless-stopped</code>か<code>always</code>か</li>
+<li>自分のアシスタントのようにそのVPS上で動いているものがあると、<strong>再起動で自分との会話も切れる</strong>。<code>shutdown -r +1</code>で1分の猶予を置き、<strong>復旧手順をチャットの外に控えておく</strong></li>
+</ul>
+<p>結果は22秒で起動し、systemd 7件・コンテナ14個すべて稼働、全9サービスがHTTP 200/302、データも再起動前と完全一致だった。外部のパソコンからの<code>nc</code>で遮断が効いていることまで確認して終わり。</p>
+<h2 id="step-9-復元の検証を件数ではなく実在でやる">Step 9: 復元の検証を「件数」ではなく「実在」でやる</h2>
+<p>🔴 <strong>ファイル数の一致で検証してはいけない。</strong> 自分の数字は60,525件と60,619件で<strong>0.15%差</strong>。見逃す水準だった。</p>
+<p>正しくは、<strong>データベースに記録されているパスが1件ずつ実在するか</strong>を全件突き合わせる。</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># B2との差分をファイル単位で照合する(自分の場合は59,000件で約4分)</span>
+</span></span><span class="line"><span class="cl">rclone check /home/&lt;user&gt;/immich/library b2backup:&lt;バケット名&gt;/immich/library <span class="se">\
+</span></span></span><span class="line"><span class="cl">  --exclude <span class="s2">&#34;thumbs/**&#34;</span> --exclude <span class="s2">&#34;encoded-video/**&#34;</span> --size-only --combined -
+</span></span></code></pre></div><p>データベース側の照合は、使っているソフトのスキーマを見ながらSQLを書くことになる。自分の構成では2本必要だった。<strong>ファイルのパスを持つテーブルの全行が実在するか</strong>と、<strong>そのテーブルに行が1件も無いアセットが無いか</strong>。前者だけだと後者を取りこぼす。</p>
+<p><strong>旧サーバーはすぐ捨てない。</strong> 自分は2週間温存した。移行翌日に「写真46件が旧サーバーにしか無い」と判明した時、まだ生きていたので手元から押し出して復旧できた。<strong>復元の検証が全部終わるまでは、古い機械を消してはいけない。</strong></p>
+<hr>
+<p><strong>更新履歴</strong> — 2026-10-05: 初版 / 2026-10-08: 再現できる粒度の手順を後半に追記</p>
 ]]></content:encoded></item></channel></rss>
