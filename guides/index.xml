@@ -1,6 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>ガイド on Off-Grid</title><link>https://offgrid.taikiito.com/guides/</link><description>Recent content in ガイド on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Thu, 08 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/guides/index.xml" rel="self" type="application/rss+xml"/><item><title>自分の「サーバー」を持つとはどういうことか</title><link>https://offgrid.taikiito.com/guides/self-hosting-basics/</link><pubDate>Sun, 13 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/self-hosting-basics/</guid><description>他のガイドが前提にしている『自分のサーバー』をゼロから用意する記録。ドメインの取得からVPSを借りてDockerを入れ、Cloudflare Tunnelで公開するまでの手順と、VPSから自宅のゲーミングPCへ移し替えた判断を書いた。ターミナルもDockerも触ったことがない人向けの、このサイトの本当の出発点。手順の部分はClaude（AnthropicのAIアシスタント）が書き、自分の環境で実行して確かめたもの。</description><content:encoded><![CDATA[<p>正直に告白すると、<a href="/guides/google-photos-to-immich/">写真の移行</a>や<a href="/guides/google-drive-to-nextcloud/">ファイルの移行</a>など、他のガイドはすべて「ImmichやNextcloudが動くサーバーが、自分の手元に既にある」という前提で書かれている。ターミナル(文字を打ち込んで操作する黒い画面)を開いたこともない人がいきなりあの記事を読んでも、何をどこから始めればいいのか分からないはずだ。指摘を受けて、そこが一番の土台なのに書いていなかったことに気づいた。この記事は、その土台の話をする。</p>
-<p>もうひとつ先に書いておく。<strong>このサイトのコマンドを書いたのはClaude(AnthropicのAIアシスタント)で、私は決める側をやった。</strong> 私はエンジニアではないが、この分担にしたことで「どこにサーバーを置くか」「どう公開するか」といった判断だけに集中できた。その分担の中身は、この記事の「自分がどうやってこの作業を進めているか」で説明する。</p>
-<p><strong>この記事でやること</strong> — 他のガイドが前提にしている「自分のサーバー」を、ゼロから用意する。ドメインを取り、VPS(レンタルサーバー)を借りてDockerを入れ、Cloudflare Tunnelでインターネットに公開して動作確認するところまでやる。手順は<a href="/guides/self-hosting-basics/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>ガイド on Off-Grid</title><link>https://offgrid.taikiito.com/guides/</link><description>Recent content in ガイド on Off-Grid</description><generator>Hugo</generator><language>ja-JP</language><lastBuildDate>Thu, 08 Oct 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://offgrid.taikiito.com/guides/index.xml" rel="self" type="application/rss+xml"/><item><title>自分の「サーバー」を持つとはどういうことか</title><link>https://offgrid.taikiito.com/guides/self-hosting-basics/</link><pubDate>Sun, 13 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/self-hosting-basics/</guid><description>自作のAI作業環境を手元のパソコンに入れたら外出先で使えなくなった、という不便から『クラウド上の一台に置く』へ行き着いた記録。そこから他のガイドが前提にしている『自分のサーバー』をゼロから用意するまで——ドメインの取得、VPSを借りてDockerを入れ、公開して動作確認するまでの手順を書いた。ターミナルもDockerも触ったことがない人向けの、このサイトの本当の出発点。手順の部分はClaude（AnthropicのAIアシスタント）が書き、自分の環境で実行して確かめたもの。</description><content:encoded><![CDATA[<h2 id="持ち出せない道具になった">持ち出せない道具になった</h2>
+<p>自分がサーバーを持とうとした始まりは、思想ではなく不便だった。</p>
+<p>自作のAI作業環境「MulmoClaude」を、手元のパソコンの端末に入れた。動くようにはなった。ただしそれは入れた1台の中だけの話で、外出するとその環境には触れなくなる。持ち出せない道具になってしまった。</p>
+<p>次に引っかかったのは、MulmoClaudeを入れる先が最初に入れたMacだけとは限らない、ということだった。<strong>これだったら別に何でも入れるじゃん。</strong> 最初の1台に縛られる理由は、どこにも無かった。</p>
+<p>そこから調べていって行き着いたのが、<strong>クラウド上のパソコンに入れる</strong>という考えだ。手元の機械ではなく、ネットの向こう側にある1台にMulmoClaudeを置く。これが「自分のサーバーを持つ」の出発点になった。データ主権という言葉を自分の話として使うようになったのは、この後からだ。</p>
+<p><a href="/guides/google-photos-to-immich/">写真の移行</a>や<a href="/guides/google-drive-to-nextcloud/">ファイルの移行</a>など、このサイトの他のガイドはすべて「ImmichやNextcloudが動くサーバーが、自分の手元に既にある」という前提で書かれている。ターミナル(文字を打ち込んで操作する黒い画面)を開いたこともない人がいきなりあの記事を読んでも、何をどこから始めればいいのか分からないはずだ。並べてみて、そこが一番の土台なのに書いていないことに気づいた。この記事は、その土台の話をする。</p>
+<p>もうひとつ先に書いておく。<strong>このサイトのコマンドを書いたのはClaude(AnthropicのAIアシスタント)で、私は決める側をやった。</strong> この分担にしたことで「どこにサーバーを置くか」という判断だけに集中できた。その分担の中身は、この記事の「自分がどうやってこの作業を進めているか」で説明する。</p>
+<p><strong>この記事でやること</strong> — 「持ち出せる1台」を手に入れるために、他のガイドが前提にしている「自分のサーバー」をゼロから用意する。ドメインを取り、VPS(レンタルサーバー)を借りてDockerを入れ、インターネットに公開して動作確認するところまでやる。手順は<a href="/guides/self-hosting-basics/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
 <h2 id="そもそもサーバーとは何か">そもそも「サーバー」とは何か</h2>
 <p>普段使っているパソコンやスマホは、使う時だけ電源を入れて、使い終わったら閉じたり寝かせたりする。<strong>サーバーとは、それと逆で、24時間365日ずっと電源が入っていて、インターネットの向こう側からいつでもアクセスできる状態のコンピュータ</strong>のことだ。</p>
 <p>Google Photosも、Gmailも、実態は「Googleが管理する巨大なサーバー群」に自分のデータを預けて、そこに常時アクセスしている状態にすぎない。「データ主権を取り戻す」とは、この「常時アクセスできる置き場所」を、Google任せではなく自分の管理下に置き換える、ということだ。そのためには、自分の管理下にある「常時起動しているコンピュータ」、つまり自分のサーバーが要る。</p>
@@ -8,7 +13,7 @@
 <p>サーバーを持つには、大きく2つの選び方がある。</p>
 <p><strong>① レンタルサーバー(VPS)を借りる</strong> — 月額数百円〜数千円で、どこかのデータセンターにあるコンピュータの一部を間借りする方式。AWS Lightsail、さくらのVPS、カゴヤ CLOUD VPSなどが有名どころ。自分で機械を持たなくていい代わりに、月額費用がずっとかかり続ける。</p>
 <p><strong>② 自分の手元にあるPCを使う(自宅サーバー)</strong> — 使っていない古いPCや、ゲーミングPCのような性能の高いPCを、24時間つけっぱなしにして使う方式。初期投資(電気代はかかる)以外の追加費用がかからない代わりに、電源やネット回線が落ちたらサービスも止まる、という自己責任になる。</p>
-<p>自分は最初①のVPS(AWS Lightsail)を使い、途中で②の自宅サーバーに切り替えた。この経緯は下の「決定1」に書いた。</p>
+<p>自分が最初に選んだのは①だ。手元の1台から離れると使えなくなるのが出発点の不便だったので、「手元ではない場所にある1台」であることが条件だった(下の「決定1」)。その後②の自宅サーバーに切り替えている。この経緯は「決定2」に書いた。</p>
 <h2 id="自分がどうやってこの作業を進めているか">自分がどうやってこの作業を進めているか</h2>
 <p>このサイトのガイドは、自分がターミナルに一つ一つコマンドを手打ちして進めたわけではない。実際には<strong>Claudeに「こうしたい」と会話しながら指示を出し、実際のコマンド実行やファイル編集はClaude側にやってもらう</strong>、という進め方をしている。つまり<strong>コマンドを書く側がClaude、決める側が自分</strong>という分担だ。使っているのはMulmoClaude(自分がGitHub上で公開している、Claudeを使ったAIアシスタントの土台)というソフトで、これ自体の成り立ちは<a href="/posts/">開発日誌</a>に書いている。</p>
 <p>このMulmoClaude自体も、ここまでの話と同じ「自分のサーバー」の上で動いている。<strong>最初はAWS Lightsail(レンタルサーバー)の上で動かしていたが、Immichの顔認識をGPUで速く処理したいという理由で自宅のゲーミングPC(GALLERIA)に切り替えた時、Nextcloud・VaultwardenといったほかのサービスもろともMulmoClaude自体も一緒にGALLERIA側へ引っ越した。</strong> つまり今は、この文章を書いているClaude自身も含めて、全部が同じ自宅の1台のPCの上で動いている状態になっている。</p>
@@ -20,10 +25,18 @@
 <li><strong>Docker(ドッカー)</strong> / <strong>docker-compose(ドッカーコンポーズ)</strong> — サーバー上でソフトを動かすための仕組み。1つ1つのソフトを「コンテナ」という隔離された箱に入れて動かすので、複数のソフトを同じサーバーに入れてもお互いが干渉しにくい。<code>docker-compose</code>は、その箱をいくつか組み合わせて一括で起動・停止するための設定ファイルの書き方。</li>
 <li><strong>ドメイン</strong> — <code>taikiito.com</code>のような、自分のサーバーにつける覚えやすい名前。年間数百円〜数千円で自分の名義で取得できる(自分はCloudflare Registrarで取得した)。</li>
 <li><strong>DNS</strong> — 「<code>taikiito.com</code>というドメインは、実際にはどのサーバーを指すか」をインターネット全体に教えるための、住所録のような仕組み。ドメインを取得したら、DNSの設定でどのサーバーに繋げるかを指定する。</li>
-<li><strong>Cloudflare Tunnel(クラウドフレア・トンネル)</strong> — 自宅のサーバーを、自宅のルーターの設定(ポート開放という、外から直接アクセスできる穴を開ける作業)をいじらずに、安全にインターネットへ公開するための仕組み。自分もこれを使っている(下の「決定2」参照)。</li>
+<li><strong>Cloudflare Tunnel(クラウドフレア・トンネル)</strong> — 自宅のサーバーを、自宅のルーターの設定(ポート開放という、外から直接アクセスできる穴を開ける作業)をいじらずに、安全にインターネットへ公開するための仕組み。自分もこれを使っている(手順の<a href="/guides/self-hosting-basics/#step-4-cloudflare-tunnel%e3%81%a7%e3%82%b5%e3%83%bc%e3%83%90%e3%83%bc%e3%82%92%e5%ae%89%e5%85%a8%e3%81%ab%e5%85%ac%e9%96%8b%e3%81%99%e3%82%8b">Step 4</a>参照)。</li>
 </ul>
 <p>これらのソフト自体は、すべて無料(OSS、オープンソースソフトウェア = 誰でも無料で使える公開されたソフト)で使える。かかる費用は基本的に「サーバー代(自宅の場合は電気代のみ)」と「ドメイン代(年数百円〜)」だけだ。</p>
-<h2 id="決定1--レンタルサーバーvpsから自宅のゲーミングpcに切り替えた">決定1 — レンタルサーバー(VPS)から、自宅のゲーミングPCに切り替えた</h2>
+<h2 id="決定1--手元のパソコンではなくクラウド上の一台に置いた">決定1 — 手元のパソコンではなく、クラウド上の一台に置いた</h2>
+<p><strong>日付</strong> 2026年9月13日(記事執筆時点。判断は記事より前)</p>
+<p><strong>迷ったこと</strong> MulmoClaudeをどこに置くか。手元のパソコンに入れた状態では、外出するとその環境に触れなくなっていた。</p>
+<p><strong>採った案</strong> <strong>クラウド上のパソコンを1台用意して、そこに置く。</strong></p>
+<p><strong>却下した案</strong> 手元のパソコンに入れたまま使い続ける。</p>
+<p><strong>なぜ却下したか</strong> 入れた1台の中でしか使えないから。MulmoClaudeを入れる先がMacだけとは限らないと分かった時点で、最初の1台に置き続ける理由が無くなった。</p>
+<p><strong>残った教訓</strong> <strong>「どの機械に入れるか」ではなく「どこに置けば常に届くか」で考えると、選択肢が一気に変わる。</strong> 手元の機械を数えている限りこの発想は出てこなかった。</p>
+<hr>
+<h2 id="決定2--レンタルサーバーvpsから自宅のゲーミングpcに切り替えた">決定2 — レンタルサーバー(VPS)から、自宅のゲーミングPCに切り替えた</h2>
 <p><strong>日付</strong> 2026年9月13日(記事執筆時点。切り替えは記事より前)</p>
 <p><strong>迷ったこと</strong> サーバーをどこに置くか。最初はAWS LightsailというVPSを使っていた。</p>
 <p><strong>採った案</strong> <strong>自宅のゲーミングPC(GALLERIA)を24時間つけっぱなしの自宅サーバーにし、Nextcloud・Vaultwarden、そしてMulmoClaude自体も一緒に引っ越した。</strong></p>
@@ -31,14 +44,6 @@
 <p><strong>なぜ却下したか</strong> 写真管理ソフト(Immich)の顔認識機能がGPU(画像処理用の高性能な部品)を使うと速く動くのに、一般的なVPSにはGPUオプションが無いか、あっても高額だったため。自宅のゲーミングPCには既にGPUが載っていたので、それをそのまま活用できるほうが合理的だった。加えて、VPSの月額費用も浮いた。</p>
 <p><strong>後から見た当たり外れ</strong> 切り替え自体は目的を果たしたが、タダではなかった。WindowsとLinux(WSL2)の両方の知識が必要になったり、再起動のたびにサービスが自動で立ち上がらない不具合に何度も遭遇したりと、一筋縄ではいかない場面が何度もあった(「正直な難易度感」参照)。</p>
 <p><strong>残った教訓</strong> <strong>どちらが正解ということはない。</strong> GPUを使う予定が無く、自宅に眠っているPCも無いなら、まずは安価なVPSを1つ借りるところから始めるほうが手軽だと思う。自分の場合はたまたま条件が噛み合って自宅サーバーを選んだ、という話として読んでほしい。</p>
-<hr>
-<h2 id="決定2--ルーターのポート開放ではなくcloudflare-tunnelで公開した">決定2 — ルーターのポート開放ではなく、Cloudflare Tunnelで公開した</h2>
-<p><strong>日付</strong> 2026年9月13日(記事執筆時点)</p>
-<p><strong>迷ったこと</strong> 自宅のサーバーを、どうやってインターネットへ公開するか。</p>
-<p><strong>採った案</strong> <strong>Cloudflare Tunnel。ルーター側の設定は一切変更していない。</strong></p>
-<p><strong>却下した案</strong> ルーターのポート開放(外から直接アクセスできる穴を開ける設定)。</p>
-<p><strong>なぜ却下したか</strong> ポート開放は誤って設定すると自宅のネットワーク全体が外部から丸見えになるリスクがあるため、Tunnel方式のほうが安心して扱える。</p>
-<p><strong>残った教訓</strong> 公開のやり方は「できるか」ではなく「事故ったとき何が起きるか」で選ぶ。この方式なら、ルーターを触らないまま<code>https://</code>の自分のドメインでサービスを公開できる。</p>
 <hr>
 <h1 id="手順">手順</h1>
 <p>ここから下は、VPS(レンタルサーバー)でサーバーを1台立てるところまでの手順で、<strong>Claudeが書き、自分の環境で実行して結果を確かめたもの</strong>だ。自分が最初にやった手順そのままになっている。<strong>自宅サーバー(Windows + WSL2)は環境依存が強すぎて万人向けに書き起こせないと判断し、まずは誰でも同じように再現できるVPSの手順に絞った。</strong> 自宅サーバーへの切り替えは、この記事の後半「自宅サーバーに切り替える場合」で触れる。</p>
@@ -56,7 +61,8 @@
 </span></span><span class="line"><span class="cl">sudo usermod -aG docker <span class="nv">$USER</span>
 </span></span></code></pre></div><p>(2行目は、<code>sudo</code>〈管理者権限で実行〉を毎回付けなくてもDockerコマンドが使えるようにするおまじない。一度ログアウトしてから入り直すと反映される。)</p>
 <h2 id="step-4-cloudflare-tunnelでサーバーを安全に公開する">Step 4: Cloudflare Tunnelでサーバーを安全に公開する</h2>
-<p>サーバーは立ったが、まだ<code>taikiito.com</code>のようなドメインからはアクセスできない。ここで前述の<strong>Cloudflare Tunnel</strong>を使う。取得したドメインをCloudflareのネームサーバーに切り替えた上で(Cloudflareのダッシュボードの指示通りに進めれば数クリックで終わる)、サーバー側で次を実行する。</p>
+<p>サーバーは立ったが、まだ<code>taikiito.com</code>のようなドメインからはアクセスできない。公開のやり方として<strong>Claudeが提案したのがCloudflare Tunnel</strong>で、ルーターのポート開放(外から直接アクセスできる穴を開ける設定)は使わない方式だ。ポート開放は誤って設定すると自宅のネットワーク全体が外部から丸見えになるのに対し、Tunnel方式ならルーター側の設定を一切変更せずに<code>https://</code>の自分のドメインで公開できる、という理由だった。自分の環境ではこの提案をそのまま採り、ルーターは触っていない。</p>
+<p>取得したドメインをCloudflareのネームサーバーに切り替えた上で(Cloudflareのダッシュボードの指示通りに進めれば数クリックで終わる)、サーバー側で次を実行する。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># cloudflaredをインストール</span>
 </span></span><span class="line"><span class="cl">curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
 </span></span><span class="line"><span class="cl">sudo dpkg -i cloudflared.deb
@@ -83,13 +89,13 @@
 <h2 id="step-5-動作確認">Step 5: 動作確認</h2>
 <p>具体的に何かソフトを動かして確認したい場合は、このサイトの次のガイド(<a href="/guides/google-photos-to-immich/">写真をGoogle PhotosからImmichに移す</a>)がそのままStep 6以降の実例になる——<code>docker-compose.yml</code>を書いてImmichを起動し、上のingress設定のポート番号をImmichのポートに合わせれば、そのまま公開まで到達できる。</p>
 <h2 id="自宅サーバーに切り替える場合">自宅サーバーに切り替える場合</h2>
-<p>自分は後になって、AWS Lightsail(VPS)から自宅のゲーミングPC(自宅サーバー)に切り替えた。理由は決定1に書いたとおり、GPUを使いたかったのと月額費用を浮かせたかったため。ただしこの切り替えは、Windows PCの中でLinuxを動かす「WSL2」という仕組みや、再起動時の自動起動設定など、環境固有のハマりどころが多く、万人向けの手順としてはまだ書き起こせていない。GPUを使う予定がなければ、上記のVPS構成のままで十分運用できる。自宅サーバーへの興味がある場合は、今後別記事として書く予定。</p>
+<p>自分は後になって、AWS Lightsail(VPS)から自宅のゲーミングPC(自宅サーバー)に切り替えた。理由は決定2に書いたとおり、GPUを使いたかったのと月額費用を浮かせたかったため。ただしこの切り替えは、Windows PCの中でLinuxを動かす「WSL2」という仕組みや、再起動時の自動起動設定など、環境固有のハマりどころが多く、万人向けの手順としてはまだ書き起こせていない。GPUを使う予定がなければ、上記のVPS構成のままで十分運用できる。自宅サーバーへの興味がある場合は、今後別記事として書く予定。</p>
 <h2 id="正直な難易度感">正直な難易度感</h2>
 <p>ここまで読んで「思ったより大変そう」と感じたなら、その感覚は正しい。自分の場合も、自宅サーバーへの切り替えではWindowsとLinux(WSL2)の両方の知識が必要になったり、再起動のたびにサービスが自動で立ち上がらない不具合に何度も遭遇したりと、一筋縄ではいかない場面が何度もあった。上記のVPS手順自体はそこまで難しくないが、初めてターミナルを触る場合は1〜2時間はかかると思っておいてほしい。</p>
 <p>ただし、これは「一度整えてしまえば、あとはほぼ触らなくていい」類の作業でもある。土台さえできてしまえば、その後の<a href="/guides/google-photos-to-immich/">写真の移行</a>や<a href="/guides/1password-to-vaultwarden/">パスワードの移行</a>といった個別の作業は、ここまでの土台よりずっと軽い。</p>
 <h2 id="この先">この先</h2>
 <p>サーバーが立ち、ドメインからアクセスできる状態まで来たら、あとは個別のサービスを動かすだけ。まずは実際に何を移したかの記録から読んでもらえればと思う。→ <a href="/guides/google-photos-to-immich/">写真をGoogle PhotosからImmichに移す</a></p>
-<p><strong>更新履歴</strong> — 2026-09-13: 初版 / 同日: 「自分がどうやってこの作業を進めているか」(MulmoClaude/Claudeの利用、Lightsail→GALLERIA移設)を追記 / 同日: VPS(AWS Lightsail)でのドメイン取得〜Docker〜Cloudflare Tunnelまでの具体的手順を追記 / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記</p>
+<p><strong>更新履歴</strong> — 2026-09-13: 初版 / 同日: 「自分がどうやってこの作業を進めているか」(MulmoClaude/Claudeの利用、Lightsail→GALLERIA移設)を追記 / 同日: VPS(AWS Lightsail)でのドメイン取得〜Docker〜Cloudflare Tunnelまでの具体的手順を追記 / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記 / 2026-10-08: 動機を冒頭に出し、帰属を点検</p>
 ]]></content:encoded></item><item><title>写真をGoogle PhotosからImmichに移す</title><link>https://offgrid.taikiito.com/guides/google-photos-to-immich/</link><pubDate>Mon, 24 Aug 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/google-photos-to-immich/</guid><description>Googleフォト3万2千件を自前サーバーに移した記録。何を決め、何を却下し、1年後に何を取りこぼしたか。コマンドはClaude（AIアシスタント）が書いたので、このページの前半は判断だけを扱う。</description><content:encoded><![CDATA[<p>Google Photosの全データ（32,218件、約119GB）を自前サーバーのImmichへ移した記録。</p>
 <p><strong>この記事でやること</strong> — Google Photosの全データ32,218件・約119GBを、自前サーバーのImmichへ取り込む。元のGoogle Photosは消さず、並行運用のまま残した。手順は<a href="/guides/google-photos-to-immich/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
 <p>先に役割を書いておく。<strong>コマンドを書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> 私はエンジニアではない。それでも32,218件は無事に移ったし、今も毎日見られている。</p>
@@ -400,49 +406,55 @@ Missing metadata: 7
 <p>それでも移したこと自体は無駄になっていない。この後、同じNextcloudに連絡先とカレンダーを集約することになり、土台としてそのまま使えた。事件がなくても先に器を作っておくと、次に事件が起きたときに置き場所を探さなくて済む。そのくらいの効用はあった。</p>
 <p>次は、同じNextcloudに連絡先とカレンダーも集約した話。→ <a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</a></p>
 <p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記 / 2026-10-07: 冒頭を「引き金になった事件がない移行」として書き直し、製品選定を手順側へ移動</p>
-]]></content:encoded></item><item><title>パスワードを1PasswordからVaultwardenに移す</title><link>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</guid><description>1Passwordを解約し、自前ホストのVaultwardenにパスワードを一本化した記録。何を決め、何を選ばなかったか（移行先の選定、パスキーの使い分け、バックアップの鍵の置き場所）を前半に、docker-composeでの構築からパスキー再登録までの手順を後半に置いた。</description><content:encoded><![CDATA[<p>1Passwordで管理していたパスワードとパスキーを、自分のサーバー上で動かすVaultwardenというソフトに移した記録。パスワード15件・パスキー15件、全て移行を終えて1Passwordは解約した。</p>
-<p><strong>この記事でやること</strong> — 1Passwordで管理していたパスワード15件・パスキー15件を、自前サーバーで動かすVaultwardenへ移し、1Passwordを解約する。パスキーは仕組み上コピーできないので、サイトごとに手で登録し直す。手順は<a href="/guides/1password-to-vaultwarden/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
-<p>先に役割を書いておく。<strong>コマンドと設定ファイルを書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> 構築の中身を考えなくていいぶん、「どのパスワードをどこに預けるか」という本題だけを考えられた。だからこのページも、前半に判断、後半に手順という形にしてある。</p>
-<p>パスワード自体の移行はエクスポート・インポートで数分で終わる。時間がかかるのはパスキー(WebAuthnという国際標準規格で実現されている、パスワードの代わりに指紋・顔認証などでログインする仕組み)で、仕組み上コピーができず、サイトごとに手作業で登録し直す必要があった。</p>
+]]></content:encoded></item><item><title>パスワードを1PasswordからVaultwardenに移す</title><link>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/1password-to-vaultwarden/</guid><description>年額の固定費がもったいないと考えて1Passwordを解約し、パスキーを勉強して安全だと納得したうえで、自前ホストのVaultwardenにパスワードを一本化した記録。動機と自分で決めたことを前半に、docker-composeでの構築からパスキー再登録までの手順を後半に置いた。</description><content:encoded><![CDATA[<p>1Passwordを解約した理由は単純で、<strong>年額の固定費が高い、もったいないと思ったからだ。</strong> パスワードマネージャーは毎年黙って引き落とされる類の支出で、使い続けるほど総額が積み上がる。</p>
+<p>やめるだけなら解約すればいい。移す先が見つかったのは、自分のサーバーについて調べていた時期だった。<strong>自前サーバーの典型的な使い道としてパスワード金庫があると知り、それで興味を持った。</strong> 写真や書類を自分の機械に置くのと同じ列に、パスワードも並んでいた。</p>
+<p>ただ、パスワードを自分のサーバーに置くのは怖くないか、という話が残る。そこで<strong>パスキー(WebAuthnという国際標準規格で実現されている、パスワードの代わりに指紋・顔認証などでログインする仕組み)を勉強した。</strong> 仕組みを調べたうえで「これは安全な方法だ」と自信を持てたので、実行した。怖いけれど飛び込んだのではなく、勉強して安全だと納得してから動いた、という順番だ。</p>
+<p><strong>この記事でやること</strong> — 年額の固定費を理由に1Passwordを解約し、そこで管理していたパスワード15件・パスキー15件を自前サーバーで動かすVaultwardenへ移す。パスキーは仕組み上コピーできないので、サイトごとに手で登録し直す。手順は<a href="/guides/1password-to-vaultwarden/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
+<p>先に役割を書いておく。<strong>コマンドと設定ファイルを書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> 構築の中身を考えなくていいぶん、「どのパスワードをどこに預けるか」という本題だけを考えられた。だからこのページも、前半に自分で決めたこと、後半に手順という形にしてある。</p>
+<p>パスワード自体の移行はエクスポート・インポートで数分で終わる。時間がかかるのはパスキーの再登録で、仕組み上コピーができず、サイトごとに手作業で登録し直す必要があった。</p>
 <hr>
-<h2 id="決定1--移行先はvaultwardenにした">決定1 — 移行先はVaultwardenにした</h2>
+<h2 id="決定1--年額の固定費を理由に1passwordを解約した">決定1 — 年額の固定費を理由に1Passwordを解約した</h2>
 <p><strong>日付</strong> 2026年9月12日</p>
-<p><strong>迷ったこと</strong> パスワードマネージャーの自前ホスト選択肢は複数ある。どれにするか。</p>
-<p><strong>採った案</strong> <strong>Vaultwarden</strong> — Bitwardenというサービスの非公式互換サーバー実装。公式のBitwardenアプリ・ブラウザ拡張機能がそのまま使え、UIの完成度も高い。ゼロ知識暗号化(サーバー側もマスターパスワードを知らない設計)。普段使っているNextcloud・Immichと同じサーバー上に同居させられる手軽さと、公式アプリがそのまま使える点が決め手だった。</p>
-<p><strong>却下した案</strong></p>
-<ul>
-<li><strong>KeePassXC</strong> — サーバーを立てず、暗号化されたファイル1つで管理するタイプ。</li>
-<li><strong>Bitwarden公式のクラウド版</strong> — セルフホストではなく、Bitwarden社のサーバーに預ける形。</li>
-</ul>
-<p><strong>なぜ却下したか</strong> KeePassXCはオフラインで完結するが、複数端末間の同期を自分で用意する必要がある(クラウドストレージと組み合わせるのが一般的)。公式クラウド版は1Passwordと似た構図になるため、今回の「自分の手元に取り戻す」という目的には合わない。</p>
-<p><strong>残った教訓</strong> 目的が「自分の手元に取り戻す」なら、<strong>預け先の会社が変わるだけの案は、どれだけ出来が良くても候補から外れる。</strong> 比べるべきは製品の出来ではなく、目的との向きだった。</p>
+<p><strong>迷ったこと</strong> 1Password自体は不満なく動いていた。それでも払い続けるかどうか。</p>
+<p><strong>採った案</strong> <strong>解約する。</strong> 判断の根拠は料金だ。毎年かかる固定費に対して、自分が受け取っているものが釣り合っていないと考えた。製品の出来の話ではなく、支出の話として切った。</p>
+<p><strong>却下した案</strong> 払い続けて現状を維持する。</p>
+<p><strong>なぜ却下したか</strong> 移す先の見当がついた時点で、払い続ける理由が料金分だけ残り、その料金がもったいなかった。自分のサーバーについて調べているうちに、自前サーバーの典型的な使い道としてパスワード金庫があると知り、移せることが分かった。</p>
+<p><strong>残った教訓</strong> <strong>毎年自動で引き落とされる支出は、不満がないぶん点検されない。</strong> 不満の有無ではなく金額で一度数えると、判断が動く。</p>
 <hr>
-<h2 id="決定2--パスキーを全部vaultwardenに寄せなかった">決定2 — パスキーを全部Vaultwardenに寄せなかった</h2>
+<h2 id="決定2--パスキーを勉強して納得したうえで自前に移した">決定2 — パスキーを勉強して納得したうえで、自前に移した</h2>
+<p><strong>日付</strong> 2026年9月12日</p>
+<p><strong>迷ったこと</strong> パスワードを自分のサーバーに置いて本当に大丈夫なのか。会社に預けておくほうが安全なのではないか。</p>
+<p><strong>採った案</strong> <strong>パスキーの仕組みを先に勉強し、安全だと納得したうえで移した。</strong> パスキーはWebAuthnという国際標準規格の上に乗っていて、秘密の側は手元から出ていかない設計になっている。そこを理解できたことが自信になり、移行に踏み切った。</p>
+<p><strong>却下した案</strong> 仕組みを分からないまま、とりあえず移してみる。</p>
+<p><strong>なぜ却下したか</strong> パスワード金庫は失敗したときの損害が大きい領域だ。分からないまま動かして後から学ぶ順番だと、学ぶ前に取り返しのつかない形を作ってしまう。</p>
+<p><strong>残った教訓</strong> <strong>順番が結論の質を決める。</strong> 「怖いけどやる」ではなく「勉強して納得してからやる」にすると、途中で出てくる不安が勘ではなく仕組みの話として処理できる。</p>
+<hr>
+<h2 id="決定3--パスキーを全部vaultwardenに寄せなかった">決定3 — パスキーを全部Vaultwardenに寄せなかった</h2>
 <p><strong>日付</strong> 2026年9月12日</p>
 <p><strong>迷ったこと</strong> 1Passwordを棚卸しして出てきたパスキー全15件を、どこに登録し直すか。</p>
-<p><strong>採った案</strong> <strong>用途によって使い分ける。</strong> 会社PC(Windows)からのログインが必要なアカウントは、ブラウザ拡張機能のインストールが要らずQRコードでのクロスデバイス認証に対応しているiCloud Keychainへ。個人利用でデータ主権の方針に寄せたいアカウントは、パスワードと同じ場所で一元管理できるVaultwardenへ。</p>
+<p><strong>採った案</strong> <strong>用途によって使い分ける。</strong> <strong>ブラウザの拡張機能を自由に入れられない端末から使うアカウント</strong>は、拡張機能のインストールが要らずQRコードでのクロスデバイス認証(手元のスマートフォンで認証を代行する方式)に対応しているiCloud Keychainへ。それ以外の、データ主権の方針に寄せたいアカウントは、パスワードと同じ場所で一元管理できるVaultwardenへ。</p>
 <p><strong>却下した案</strong> 全件をVaultwardenに一本化する。</p>
-<p><strong>なぜ却下したか</strong> 会社PCでは拡張機能を自由に入れられない。そこで使うアカウントまでVaultwardenに寄せると、いざ使う場面でログインできない。</p>
+<p><strong>なぜ却下したか</strong> 拡張機能を自由に入れられない端末が手元にある。そこで使うアカウントまでVaultwardenに寄せると、いざ使う場面でログインできない。</p>
 <p><strong>残った教訓</strong> <strong>「全部を1箇所に」はそれ自体が目的ではない。</strong> 使う場面ごとに成立する置き場所を選ぶほうが、一元管理の見た目の美しさより実用に効く。</p>
-<hr>
-<h2 id="決定3--バックアップの取り出し鍵をvaultwarden自身に預けた">決定3 — バックアップの取り出し鍵を、Vaultwarden自身に預けた</h2>
-<p><strong>日付</strong> 2026年9月13日（バックアップ設定時）</p>
-<p><strong>迷ったこと</strong> バックアップ自体はVaultwardenのフォルダをBackblaze B2へ同期するだけで済む。問題は、そのB2に接続するための鍵(<code>rclone</code>の設定ファイル<code>~/.config/rclone/rclone.conf</code>)がサーバー本体にしか無いこと。サーバーが完全に壊れた時、バックアップを取り出す鍵ごと失われてしまう。</p>
-<p><strong>採った案</strong> この設定ファイルの中身を、<strong>Vaultwarden自身にSecure Note(パスワード以外のメモも安全に保存できる機能)として複製保存した。</strong> Vaultwardenはクライアントアプリに一度ログインしておけばオフラインキャッシュが残るため、サーバーが全損してもスマホから鍵を取り出せる。</p>
-<p><strong>却下した案</strong> 設定ファイルをサーバー本体にだけ置いたままにする(何もしなければこの状態になる)。</p>
-<p><strong>なぜ却下したか</strong> 「鶏と卵」の形になっているから。バックアップがあっても、それを開ける鍵がバックアップ対象の機械の中にしか無いなら、全損時には両方いっぺんに失う。</p>
-<p><strong>残った教訓</strong> <strong>バックアップの取り出し鍵自体も、バックアップしておく。</strong> バックアップの有無だけ見ていると、この一段上の依存関係を見落とす。</p>
 <hr>
 <h1 id="手順">手順</h1>
 <p>ここから下は<strong>Claudeが書き、自分の環境で実行して結果を確かめたもの</strong>だ。2026年9月の版で、実際にこれでパスワード15件・パスキー15件が移った。</p>
 <p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが先に分かる</strong>こと。見てのとおり5段階で、サーバー側は半日もかからない。時間を食うのはパスキーの再登録だけだ。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。ゼロから説明するより、動いた実例を見せたほうが早い。版が新しくなっていれば、そのとき合った形に直してくれる。</p>
+<h2 id="移行先の比較--claudeが提案した選択肢">移行先の比較 — Claudeが提案した選択肢</h2>
+<p>自前ホストのパスワードマネージャーには複数の選択肢がある。<strong>どれを比べるべきかの整理と比較はClaudeが提案したもの</strong>で、以下はその内容だ。</p>
+<ul>
+<li><strong>Vaultwarden</strong> — Bitwardenというサービスの非公式互換サーバー実装。公式のBitwardenアプリ・ブラウザ拡張機能がそのまま使え、UIの完成度も高い。ゼロ知識暗号化(サーバー側もマスターパスワードを知らない設計)。普段使っているNextcloud・Immichと同じサーバー上に同居させられる。</li>
+<li><strong>KeePassXC</strong> — サーバーを立てず、暗号化されたファイル1つで管理するタイプ。オフラインで完結するが、複数端末間の同期を自分で用意する必要がある(クラウドストレージと組み合わせるのが一般的)。</li>
+<li><strong>Bitwarden公式のクラウド版</strong> — セルフホストではなく、Bitwarden社のサーバーに預ける形。</li>
+</ul>
+<p>この整理を見て、公式クラウド版は1Passwordと似た構図になる(預け先の会社が変わるだけになる)ため外し、公式アプリがそのまま使える点と既存サーバーに同居できる点からVaultwardenを採った。</p>
 <h2 id="前提">前提</h2>
 <p>以下がすでに用意できていることを前提にする。まだの場合は先に<a href="/guides/self-hosting-basics/">自分の「サーバー」を持つとはどういうことか</a>を読んでほしい。</p>
 <ul>
 <li>常時起動しているLinux環境(Docker Engineが使える状態)</li>
 <li>自分名義のドメイン、Cloudflare Tunnelが動いている状態(導入手順は<a href="/guides/google-drive-to-nextcloud/">前々回の記事</a>のStep 3と同じ)</li>
 </ul>
-<h2 id="step-1-docker-composeでvaultwardenを構築する">Step 1: docker-composeでVaultwardenを構築する</h2>
+<h2 id="step-1-docker-compose複数のコンテナをまとめて定義起動するdockerの仕組みでvaultwardenを構築する">Step 1: docker-compose(複数のコンテナをまとめて定義・起動するDockerの仕組み)でVaultwardenを構築する</h2>
 <p>Vaultwardenは公式イメージを使えばコンテナ1つで完結し、Nextcloudのようにデータベースを別途用意する必要もない分、今回の中では一番シンプルな部類だった。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">mkdir ~/vaultwarden <span class="o">&amp;&amp;</span> <span class="nb">cd</span> ~/vaultwarden
 </span></span></code></pre></div><p><code>docker-compose.yml</code>:</p>
@@ -480,23 +492,25 @@ Missing metadata: 7
 <p>ブラウザはChrome・Firefoxの両方にBitwarden拡張機能を追加し、接続先の設定(拡張機能アイコン → 設定 → Self-hosted environment)に自分の<code>vault.example.com</code>を入力する。スマートフォン用の公式Bitwardenアプリも同様に接続先を変更するだけで使える。</p>
 <p>パスワード自体の移行は、1Password側でエクスポートしたデータ(CSV形式など)をVaultwardenの「Import data」機能でインポートするだけで数分で終わった。ここは特につまづくところがなかった。</p>
 <h2 id="step-4-パスキーの移行">Step 4: パスキーの移行</h2>
-<p>パスワードと違い、パスキー(WebAuthn)はエクスポート・インポートで移せない仕様になっている。サイトごとに「旧パスキーを削除 → 新しいマネージャーで再登録」という地道な作業が必要だった。どのパスキーをVaultwardenに寄せ、どれをiCloud Keychainに残したかの基準は決定2のとおり。</p>
+<p>パスワードと違い、パスキー(WebAuthn)はエクスポート・インポートで移せない仕様になっている。サイトごとに「旧パスキーを削除 → 新しいマネージャーで再登録」という地道な作業が必要だった。どのパスキーをVaultwardenに寄せ、どれをiCloud Keychainに残したかの基準は決定3のとおり。</p>
 <p>作業中に見つかった落とし穴:</p>
 <ul>
 <li><strong>ブラウザ拡張機能の競合</strong>: 1Password拡張機能を有効にしたままだと、WebAuthnのリクエストを1Password側が横取りしてしまい、Bitwarden/Vaultwarden拡張機能が反応できない。<code>chrome://extensions</code>で1Password拡張機能を完全にOFFにする必要があった。</li>
 <li><strong>スマホ側の割り込み</strong>: モバイル版Bitwardenアプリでパスキーを新規登録する際、Touch ID/Face IDのようなOS標準の認証より先にBitwarden拡張機能側が割り込んでしまい、登録に失敗することがあった。</li>
 <li><strong>iCloud Keychainを使う場合の見落としがちな設定</strong>: macOSでiCloudキーチェーン経由のパスキー登録をするには、システム設定 → 一般 → AutoFill &amp; Passwords の「Passwords」トグルが事前にONになっている必要がある(初期状態はOFF)。</li>
-<li><strong>削除する前に、実際に使っているか確認する</strong>: 「もう使っていないはず」と思っていたサービスのパスキーが、実は仕事の特定システムのログインで現役だと後から判明した件があった。1Password内の一覧だけを見て「使っていなさそう」で判断せず、実際に使う場面があるかを確認してから削除する方が安全だった。</li>
+<li><strong>削除する前に、実際に使っているか確認する</strong>: 「もう使っていないはず」と思っていたサービスのパスキーが、実は現役で使われていると後から判明した件があった。一覧だけを見て「使っていなさそう」で判断せず、実際に使う場面があるかを確認してから削除する方が安全だった。</li>
 </ul>
 <h2 id="step-5-バックアップを設定する">Step 5: バックアップを設定する</h2>
 <p>Nextcloud・Immichと同じく<code>rclone</code>でBackblaze B2へ日次バックアップする。Vaultwardenの場合はデータベース(SQLite、1ファイルにまとまった軽量なデータベース形式)がそのままフォルダの中に入っているので、フォルダごと同期するだけでよい。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo rclone --config /home/&lt;user&gt;/.config/rclone/rclone.conf sync <span class="se">\
 </span></span></span><span class="line"><span class="cl">  ~/vaultwarden/vw-data <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/vaultwarden&#34;</span>
-</span></span></code></pre></div><p>このとき、<code>rclone</code>の設定ファイル(<code>~/.config/rclone/rclone.conf</code>、B2に接続するための鍵が入っている)の複製をVaultwarden自身のSecure Noteに入れておく。理由は決定3に書いた。このバックアップ自体を「乗っ取られても消されない」形にする話は<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>に別途書いた。</p>
+</span></span></code></pre></div><p>ここで<strong>Claudeが提案した</strong>のが、バックアップの取り出し鍵の置き場所だ。バックアップ自体はフォルダを同期するだけで済むが、同期先に接続するための鍵(<code>rclone</code>の設定ファイル<code>~/.config/rclone/rclone.conf</code>)はサーバー本体にしかない。サーバーが完全に壊れた時、バックアップを取り出す鍵ごと失われる「鶏と卵」の形になっている。</p>
+<p>対処は、この設定ファイルの中身をVaultwarden自身にSecure Note(パスワード以外のメモも安全に保存できる機能)として複製保存しておくことだった。Vaultwardenはクライアントアプリに一度ログインしておけばオフラインキャッシュが残るため、サーバーが全損してもスマホから鍵を取り出せる。何もしなければ鍵はサーバー本体にだけ残り、全損時にバックアップと鍵を同時に失う。<strong>バックアップの有無だけを見ていると、この一段上の依存関係を見落とす。</strong></p>
+<p>このバックアップ自体を「乗っ取られても消されない」形にする話は<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>に別途書いた。</p>
 <h2 id="結果">結果</h2>
-<p>パスワード15件・パスキー15件、全て移行完了。1Passwordは解約し、年間の固定費を1本減らせた。パスワードの移行自体は簡単だが、パスキーは仕組み上コピーできないので、サイトごとの再登録作業を見込んでおくとよい。</p>
+<p>パスワード15件・パスキー15件、全て移行完了。1Passwordは解約し、年間の固定費を1本減らせた。これが元々の目的だった。パスワードの移行自体は簡単だが、パスキーは仕組み上コピーできないので、サイトごとの再登録作業を見込んでおくとよい。</p>
 <p>次は、連絡先とカレンダーをNextcloudに集約した話。→ <a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</a></p>
-<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記</p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: docker-compose設定・Cloudflare Tunnel公開手順・バックアップコマンドを追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記 / 2026-10-08: 動機を冒頭に出し、帰属を点検</p>
 ]]></content:encoded></item><item><title>連絡先とカレンダーをiCloud・GoogleからNextcloudに移す</title><link>https://offgrid.taikiito.com/guides/icloud-google-to-nextcloud-contacts-calendar/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-google-to-nextcloud-contacts-calendar/</guid><description>iCloud連絡先81件・Google連絡先553件をNextcloud Contactsへ、Googleカレンダーの個人予定232件をNextcloud Calendarへ移した記録。前半は何を決め、何を選ばなかったか。後半の手順（アプリパスワードの発行からCalDAV/CardDAVへ直接PUTするコマンドまで）はClaudeが書き、実行して確かめたもの。</description><content:encoded><![CDATA[<p>連絡先とカレンダーを、Nextcloudの標準機能(Contacts・Calendar)に一本化した記録。すでにファイル(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)で使っていたNextcloudに機能を足すだけなので、新しいサーバーを立てる作業は無かった。</p>
 <p>先に役割を書いておく。<strong>コマンドを書いたのはClaude(AnthropicのAIアシスタント)で、私は決める側をやった。</strong> 手順を考えなくていいぶん、「どのデータを移し、どれを残すか」だけをじっくり考えられた。だからこのページも、前半に判断、後半に実際の手順という形にしてある。</p>
 <p><strong>この記事でやること</strong> — iCloudとGoogleに分かれていた連絡先633件と、Googleカレンダーの個人予定232件を、CardDAV/CalDAVのエンドポイントへ1件ずつPUTしてNextcloudへ移す。手順は<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
@@ -568,18 +582,21 @@ Missing metadata: 7
 <hr>
 <p>次は、メモをJoplinに移そうとして、結局全部は移さなかった話。→ <a href="/guides/icloud-notes-to-joplin/">メモをiCloud NotesからJoplinに移す</a></p>
 <p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: アプリパスワードの発行手順・実際のcurl PUTコマンドを追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、コマンドをClaudeが書いたことを明記</p>
-]]></content:encoded></item><item><title>メモをiCloud NotesからJoplinに移す(で、結局移さなかった話)</title><link>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</guid><description>iCloud Notes 1,649件をJoplinに一本化しようとして、「過去分は移さず、新規メモだけJoplinで書く」と決めた記録。何を迷い、なぜ完全移行を却下したかを前半に、Nextcloud WebDAV同期の実際の設定手順を後半に置いた。</description><content:encoded><![CDATA[<p>iCloud Notesに溜まっていたメモ1,649件を、自前で管理できるJoplinというソフトに移そうとした記録。結論から書くと、過去の1,649件は移行せず、Joplinは新規メモ専用として運用することにした。「全部きれいに移す」ことにこだわらなかった判断の話でもある。</p>
-<p>先に役割を書いておく。<strong>同期の設定値を調べて書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側をやった。</strong> この記事に限っては、設定より判断のほうがはっきり重い。環境を整えること自体は半日もかからず、本題は「1,649件をどうするか」を決めることだった。だからこのページも、前半に判断、後半に手順という形にしてある。</p>
-<p><strong>この記事でやること</strong> — iCloud Notesに溜まっていた1,649件は移さないと決め、JoplinをNextcloudのWebDAVで手動同期する新規メモ専用の置き場として立ち上げる。手順は<a href="/guides/icloud-notes-to-joplin/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
+]]></content:encoded></item><item><title>メモをiCloud NotesからJoplinに移す(で、結局移さなかった話)</title><link>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/icloud-notes-to-joplin/</guid><description>iCloudのバックアップ容量が大きくなり、古くて見ていないメモを棚卸しした。あわせてMarkdownやテキスト形式の軽さ・履歴に魅力を感じ、Joplinを使い始めた記録。過去の1,649件は移さず新規メモ専用にした判断を前半に、Nextcloud WebDAV同期の実際の設定手順を後半に置いた。</description><content:encoded><![CDATA[<h2 id="なぜメモを動かしたのか">なぜメモを動かしたのか</h2>
+<p>きっかけは容量だった。<strong>iCloudのバックアップの容量が大きくなってきた。</strong> よく考えてみると、<strong>古くて全然見ていないメモがそのまま残っていた。</strong> 使っていないものが容量を食っているのだから、そこを減らそうと考えた。自分のメモアプリを開いて一覧を下まで送れば、たいてい同じものが出てくるはずだ。</p>
+<p>もうひとつは形式のほうだ。<strong>Markdown（見出しや箇条書きなどを簡単な記号だけで書ける、プレーンテキストに近い書き方）やテキスト形式といった、ソフトウェアエンジニアの世界で使われている形式の効率性に気がついた。</strong> 自分のデータもその形式で保管すれば、軽くて速く読み込めて、しかも履歴も残る。そこに魅力を感じた。</p>
+<p>この2つ——<strong>容量の圧迫と、見ていないメモの棚卸し</strong>、そして<strong>テキスト形式そのものへの魅力</strong>——が、iCloud Notesに溜まった1,649件に手をつけた理由だ。</p>
+<p>動機が容量だったことが、このあとの結論に直結する。<strong>目的は1,649件をJoplinへ運ぶことではなく、見ていないメモを抱えるのをやめることだった。</strong> だから結論は、過去の1,649件は移行せず、Joplinを新規メモ専用の置き場として立ち上げる、という形になった。テキスト形式の軽さと履歴は、これから書くメモに対して効く。移すこと自体に価値があるわけではない。</p>
+<p>先に役割も書いておく。<strong>同期の設定値を調べて書いたのはClaude（AnthropicのAIアシスタント）で、自分は決める側をやった。</strong> 環境を整えること自体は半日もかからず、本題は「1,649件をどうするか」を決めることだった。判断に集中できる形になっていたので、このページも前半に判断、後半に手順という順で並べてある。</p>
+<p><strong>この記事でやること</strong> — 容量とテキスト形式の2つの動機からメモを動かし、過去の1,649件は移さないと決め、JoplinをNextcloudのWebDAVで手動同期する新規メモ専用の置き場として立ち上げる。手順は<a href="/guides/icloud-notes-to-joplin/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
 <hr>
 <h2 id="決定1--過去の1649件を移さなかった">決定1 — 過去の1,649件を移さなかった</h2>
 <p><strong>日付</strong> 2026年9月12日</p>
 <p><strong>迷ったこと</strong> 環境は整ったが、肝心の「iCloud Notesの過去メモをどうやってJoplinに移すか」で立ち止まった。エクスポート自体は可能(Macの「メモ」アプリからPDFや個別ファイルとして書き出せる)。</p>
 <p><strong>採った案</strong> <strong>過去の1,649件はiCloud Notes側にそのまま残し、Joplinは今後書く新規メモ専用として運用する。</strong> 「全部を完璧に移してから使い始める」のではなく、「新しい方から始めて、今後蓄積されるものだけを自分の手元で管理する」という割り切り方だ。</p>
 <p><strong>却下した案</strong> 1,649件をエクスポートしてJoplinに取り込む、当初計画どおりの完全移行。</p>
-<p><strong>なぜ却下したか</strong> 実際に中身を見返してみると、大した情報が入っていないメモがほとんどだった。買い物リストの切れ端、一度きりのちょっとしたメモ、すでに用が済んでいる下書きなど。1,649件を一つ一つ精査して移す価値があるかというと、かかる手間に見合わないと判断した。</p>
+<p><strong>なぜ却下したか</strong> 実際に中身を見返してみると、大した情報が入っていないメモがほとんどだった。買い物リストの切れ端、一度きりのちょっとしたメモ、すでに用が済んでいる下書きなど。元々の動機は、古くて見ていないメモを抱えるのをやめることだった。それを1件ずつ精査してJoplinへ運び直すのは、かかる手間に見合わないと判断した。</p>
 <p><strong>後から見た当たり外れ</strong> 運用してみて、iCloud Notesの過去メモを能動的に見返すことはほとんどない。アーカイブとして置いてあれば足りている。</p>
-<p><strong>残った教訓</strong> <strong>「完全移行」にこだわらず、価値のある部分だけを新しい仕組みに乗せる、という判断も移行の一つの形だ。</strong> ファイル移行の時の「移す理由が移さない理由に勝つものだけ移す」という基準の延長線上にある。</p>
 <hr>
 <h2 id="決定2--同期を自動ではなく手動にした">決定2 — 同期を「自動」ではなく「手動」にした</h2>
 <p><strong>日付</strong> 2026年9月12日</p>
@@ -591,11 +608,12 @@ Missing metadata: 7
 <hr>
 <h1 id="手順">手順</h1>
 <p>ここから下は<strong>Claudeが書き、自分の環境で設定して動くことを確かめたもの</strong>だ。2026年9月の版で、実際にこの設定でMac・iPhoneの同期が動いている。</p>
+<p>あわせて書いておくと、前半を「迷ったこと／採った案／却下した案」という決定記録の形に整えたのも、ファイル移行の記事で使った**「移す理由が移さない理由に勝つものだけ移す」という基準を当てはめる書き方も、Claudeが提案した整理の仕方**だ。決めた内容は自分のもので、並べ方のほうは借りている。</p>
 <p>置いておく理由は2つある。ひとつは、<strong>作業の全体像と長さが先に分かる</strong>こと。見てのとおり3段階で、新しいサーバーを立てる作業は無く、既存のNextcloudに設定を足すだけだ。もうひとつは、<strong>自分が使っているAIに「これと同じことをやりたい」と渡す材料になる</strong>こと。ゼロから説明するより、動いた実例を見せたほうが早い。版が新しくなっていれば、そのとき合った形に直してくれる。</p>
 <h2 id="前提">前提</h2>
 <p>すでにNextcloudが動いていることを前提にする。まだの場合は先に<a href="/guides/google-drive-to-nextcloud/">ファイルをGoogle DriveからNextcloudに移す</a>を読んでほしい。Joplin自体は自分でサーバーを用意する必要がなく、既存のNextcloudをファイル置き場として使うだけなので、新しいDockerコンテナを立てる作業は無い。</p>
 <h2 id="step-1-joplinを選ぶ">Step 1: Joplinを選ぶ</h2>
-<p>メモアプリの自前ホスト選択肢もいくつかあるが、Markdown形式(見出しや箇条書きなどを簡単な記号だけで書ける、プレーンテキストに近いメモの書き方)でメモを書けること、Nextcloud WebDAV(ファイルをネットワーク越しにやり取りするための標準規格。専用サーバーソフトを別途用意しなくても、既存のNextcloudがそのまま使える)経由で同期できること、Mac・iPhone両方に公式アプリがあることを決め手にJoplinにした。</p>
+<p>メモアプリの自前ホスト選択肢もいくつかあるが、Markdown形式でメモを書けること、Nextcloud WebDAV(ファイルをネットワーク越しにやり取りするための標準規格。専用サーバーソフトを別途用意しなくても、既存のNextcloudがそのまま使える)経由で同期できること、Mac・iPhone両方に公式アプリがあることを決め手にJoplinにした。</p>
 <h2 id="step-2-nextcloud側にjoplin専用フォルダとアプリパスワードを用意する">Step 2: Nextcloud側にJoplin専用フォルダとアプリパスワードを用意する</h2>
 <p>Nextcloudのブラウザ画面から、Files(ファイル)アプリで新しいフォルダ(例: <code>Joplin</code>)を作成する。</p>
 <p>次に、<a href="/guides/icloud-google-to-nextcloud-contacts-calendar/">前の記事</a>のStep 1と同じ要領で、Joplin専用のアプリパスワードを発行する。個人設定 → セキュリティ → 「新しいアプリパスワードを作成」で、名前を<code>joplin-sync</code>のように分かりやすくしておく。</p>
@@ -612,7 +630,7 @@ Missing metadata: 7
 <h2 id="結果">結果</h2>
 <p>Joplinは新規メモの置き場として運用中。iCloud Notesの過去メモはアーカイブとしてそのまま残しているが、能動的に見返すことはほとんどない。</p>
 <p>次は、メールをGmailから自分のドメインに移した、一番苦労した話。→ <a href="/guides/gmail-to-own-domain/">メールをGmailから自分のドメインに移す</a></p>
-<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: NextcloudのWebDAV同期の実際の設定手順(URL・アプリパスワード)を追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、設定をClaudeが書いたことを明記</p>
+<p><strong>更新履歴</strong> — 2026-09-12: 初版 / 2026-09-13: NextcloudのWebDAV同期の実際の設定手順(URL・アプリパスワード)を追記し、再現可能なレベルに書き直し / 2026-10-07: 構成を「判断」と「手順」に分け、設定をClaudeが書いたことを明記 / 2026-10-08: 動機を冒頭に出し、帰属を点検</p>
 ]]></content:encoded></item><item><title>メールをGmailから自分のドメイン(iCloud+カスタムドメイン)に移す</title><link>https://offgrid.taikiito.com/guides/gmail-to-own-domain/</link><pubDate>Sat, 12 Sep 2026 00:00:00 +0000</pubDate><guid>https://offgrid.taikiito.com/guides/gmail-to-own-domain/</guid><description>Gmailを卒業し、自分のドメインのメールアドレス(iCloud+カスタムドメイン機能)に一本化した記録。何を決め、何を却下したかを前半に、DNSレコードの実際の設定値と移行手順を後半に置いた。復旧作業中に4,293件を誤って喪失し原本から復元した話まで、正直に書く。</description><content:encoded><![CDATA[<p>長年使っていたGmailをやめて、自分のドメインのメールアドレスに主メールを一本化した記録。土台はiCloud+の「カスタムメールドメイン」機能で、既にiPhoneのバックアップ用にiCloud+を契約していたため追加コストはかからなかった。</p>
 <p><strong>この記事でやること</strong> — 長年使っていたGmailから、自分のドメインのメールアドレス(iCloud+のカスタムメールドメイン機能)へ主メールを移す。DNSのSPF/DMARCを<code>p=reject</code>まで締め、過去メール46,544件を移し、Gmailは即削除せず転送を残す。手順は<a href="/guides/gmail-to-own-domain/#%e6%89%8b%e9%a0%86">ページ後半</a>にまとめた。</p>
 <p>先に役割を書いておく。<strong>DNSの設定値や移行スクリプトを書いたのはClaude（AnthropicのAIアシスタント）で、私は決める側と、移ったかどうかを確かめる側をやった。</strong> 作業自体は数日がかりで、途中で本当にメールを失いかけた場面もあったが、46,544件のメールは最終的にほぼ完全に移った。手順を考えなくていいぶん、「どこに移すか」「いつ消すか」という判断に集中できた。</p>
@@ -700,7 +718,7 @@ Missing metadata: 7
 </table>
 <p>iCloud+の設定ウィザードはこの3つだけを要求し、<strong>DMARC(後述、なりすまし対策をさらに強化するレコード)は必須ではなく任意</strong>なので、最初は追加しなくても動く。反映には数分〜数十分かかる。全て緑のチェックマークになれば、そのドメインでメールアドレス(自分の場合は<code>me@example.com</code>)を作成できる。</p>
 <h2 id="step-2-主要な送信先への到達を確認する">Step 2: 主要な送信先への到達を確認する</h2>
-<p>自分の場合、<code>me@example.com</code>からGmailへは問題なく届いたが、会社のメール(Microsoft 365ベース)には<strong>エラーも通知もなく、静かに届かない</strong>という問題が起きた。SPF/DKIMを見直しても直らなかったため、DMARC(TXTレコード)を追加した。</p>
+<p>自分の場合、<code>me@example.com</code>からGmailへは問題なく届いたが、<strong>Microsoft 365を使っている宛先</strong>には<strong>エラーも通知もなく、静かに届かない</strong>という問題が起きた。SPF/DKIMを見直しても直らなかったため、DMARC(TXTレコード)を追加した。</p>
 <pre tabindex="0"><code>_dmarc.example.com  TXT  &#34;v=DMARC1; p=none; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
 </code></pre><p><code>p=none</code>はまず様子見のモード(ポリシー違反があっても何もしない、レポートだけ受け取る)。これでも解決しなかったが、SPF/DKIM/DMARCの設定自体には問題が無いことが確認できたので、<strong>原因は取得したばかりのドメインが「送信履歴の無い新規ドメイン」として受信側のメールフィルタに警戒されていることだと判断し、時間経過で解決するのを待つ方針にした</strong>。実際、数日後には特に追加の変更をしないまま届くようになった。<strong>新しく取ったドメインでメールを送る場合、最初の数日〜1週間は主要な送信先に届かないことがある</strong>と見込んでおくとよい。</p>
 <h2 id="step-3-なりすまし対策を強化するspfdmarcの締め上げ">Step 3: なりすまし対策を強化する(SPF/DMARCの締め上げ)</h2>

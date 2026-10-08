@@ -85,7 +85,7 @@
 </table>
 <p>iCloud+の設定ウィザードはこの3つだけを要求し、<strong>DMARC(後述、なりすまし対策をさらに強化するレコード)は必須ではなく任意</strong>なので、最初は追加しなくても動く。反映には数分〜数十分かかる。全て緑のチェックマークになれば、そのドメインでメールアドレス(自分の場合は<code>me@example.com</code>)を作成できる。</p>
 <h2 id="step-2-主要な送信先への到達を確認する">Step 2: 主要な送信先への到達を確認する</h2>
-<p>自分の場合、<code>me@example.com</code>からGmailへは問題なく届いたが、会社のメール(Microsoft 365ベース)には<strong>エラーも通知もなく、静かに届かない</strong>という問題が起きた。SPF/DKIMを見直しても直らなかったため、DMARC(TXTレコード)を追加した。</p>
+<p>自分の場合、<code>me@example.com</code>からGmailへは問題なく届いたが、<strong>Microsoft 365を使っている宛先</strong>には<strong>エラーも通知もなく、静かに届かない</strong>という問題が起きた。SPF/DKIMを見直しても直らなかったため、DMARC(TXTレコード)を追加した。</p>
 <pre tabindex="0"><code>_dmarc.example.com  TXT  &#34;v=DMARC1; p=none; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
 </code></pre><p><code>p=none</code>はまず様子見のモード(ポリシー違反があっても何もしない、レポートだけ受け取る)。これでも解決しなかったが、SPF/DKIM/DMARCの設定自体には問題が無いことが確認できたので、<strong>原因は取得したばかりのドメインが「送信履歴の無い新規ドメイン」として受信側のメールフィルタに警戒されていることだと判断し、時間経過で解決するのを待つ方針にした</strong>。実際、数日後には特に追加の変更をしないまま届くようになった。<strong>新しく取ったドメインでメールを送る場合、最初の数日〜1週間は主要な送信先に届かないことがある</strong>と見込んでおくとよい。</p>
 <h2 id="step-3-なりすまし対策を強化するspfdmarcの締め上げ">Step 3: なりすまし対策を強化する(SPF/DMARCの締め上げ)</h2>
