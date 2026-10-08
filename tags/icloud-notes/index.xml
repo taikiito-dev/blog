@@ -32,7 +32,7 @@
 <p>Mac・iPhoneの両方に公式Joplinアプリをインストールする。設定画面から以下の通り入力する。</p>
 <ul>
 <li>同期対象: <strong>WebDAV</strong></li>
-<li>WebDAVの URL: <code>https://drive.taikiito.com/remote.php/dav/files/admin/Joplin/</code>(<code>admin</code>の部分はNextcloudのユーザー名、末尾の<code>Joplin/</code>はStep 2で作ったフォルダ名)</li>
+<li>WebDAVの URL: <code>https://drive.example.com/remote.php/dav/files/admin/Joplin/</code>(<code>admin</code>の部分はNextcloudのユーザー名、末尾の<code>Joplin/</code>はStep 2で作ったフォルダ名)</li>
 <li>ユーザー名: Nextcloudのユーザー名(<code>admin</code>)</li>
 <li>パスワード: Step 2で発行したアプリパスワード</li>
 </ul>

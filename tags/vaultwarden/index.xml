@@ -68,13 +68,13 @@
 <h2 id="step-2-cloudflare-tunnelで公開する">Step 2: Cloudflare Tunnelで公開する</h2>
 <p>Nextcloudの時(<a href="/guides/google-drive-to-nextcloud/">前の記事</a>)と同じ要領で、<code>/etc/cloudflared/config.yml</code>にVaultwarden用の行を追記する。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">ingress</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">vault.taikiito.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">vault.example.com</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http://localhost:8082</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span><span class="c"># ...他のサービスの行がここに続く...</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http_status:404</span><span class="w">
 </span></span></span></code></pre></div><p>編集後は<code>cloudflared tunnel ingress validate</code>で文法チェックしてから<code>sudo systemctl restart cloudflared</code>。DNS側もCloudflareの管理画面で<code>vault</code>のCNAMEレコードを<code>&lt;トンネルID&gt;.cfargotunnel.com</code>に向けておく。</p>
 <h2 id="step-3-ブラウザスマホから接続する">Step 3: ブラウザ・スマホから接続する</h2>
-<p>ブラウザはChrome・Firefoxの両方にBitwarden拡張機能を追加し、接続先の設定(拡張機能アイコン → 設定 → Self-hosted environment)に自分の<code>vault.taikiito.com</code>を入力する。スマートフォン用の公式Bitwardenアプリも同様に接続先を変更するだけで使える。</p>
+<p>ブラウザはChrome・Firefoxの両方にBitwarden拡張機能を追加し、接続先の設定(拡張機能アイコン → 設定 → Self-hosted environment)に自分の<code>vault.example.com</code>を入力する。スマートフォン用の公式Bitwardenアプリも同様に接続先を変更するだけで使える。</p>
 <p>パスワード自体の移行は、1Password側でエクスポートしたデータ(CSV形式など)をVaultwardenの「Import data」機能でインポートするだけで数分で終わった。ここは特につまづくところがなかった。</p>
 <h2 id="step-4-パスキーの移行">Step 4: パスキーの移行</h2>
 <p>パスワードと違い、パスキー(WebAuthn)はエクスポート・インポートで移せない仕様になっている。サイトごとに「旧パスキーを削除 → 新しいマネージャーで再登録」という地道な作業が必要だった。どのパスキーをVaultwardenに寄せ、どれをiCloud Keychainに残したかの基準は決定2のとおり。</p>
@@ -87,7 +87,7 @@
 </ul>
 <h2 id="step-5-バックアップを設定する">Step 5: バックアップを設定する</h2>
 <p>Nextcloud・Immichと同じく<code>rclone</code>でBackblaze B2へ日次バックアップする。Vaultwardenの場合はデータベース(SQLite、1ファイルにまとまった軽量なデータベース形式)がそのままフォルダの中に入っているので、フォルダごと同期するだけでよい。</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo rclone --config /home/ito-t/.config/rclone/rclone.conf sync <span class="se">\
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo rclone --config /home/&lt;user&gt;/.config/rclone/rclone.conf sync <span class="se">\
 </span></span></span><span class="line"><span class="cl">  ~/vaultwarden/vw-data <span class="s2">&#34;</span><span class="nv">$B2_REMOTE</span><span class="s2">/vaultwarden&#34;</span>
 </span></span></code></pre></div><p>このとき、<code>rclone</code>の設定ファイル(<code>~/.config/rclone/rclone.conf</code>、B2に接続するための鍵が入っている)の複製をVaultwarden自身のSecure Noteに入れておく。理由は決定3に書いた。このバックアップ自体を「乗っ取られても消されない」形にする話は<a href="/guides/backup-ransomware-resistant/">バックアップを「消されても戻せる」形にする</a>に別途書いた。</p>
 <h2 id="結果">結果</h2>

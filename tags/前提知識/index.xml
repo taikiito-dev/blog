@@ -67,18 +67,18 @@
 </span></span><span class="line"><span class="cl">cloudflared tunnel create my-server
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="c1"># ドメインとトンネルを紐付ける</span>
-</span></span><span class="line"><span class="cl">cloudflared tunnel route dns my-server example.taikiito.com
+</span></span><span class="line"><span class="cl">cloudflared tunnel route dns my-server app.example.com
 </span></span></code></pre></div><p>最後に、どのURLへのアクセスをサーバー内のどのポートに転送するかを設定ファイル(<code>~/.cloudflared/config.yml</code>)に書く。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-yaml" data-lang="yaml"><span class="line"><span class="cl"><span class="nt">tunnel</span><span class="p">:</span><span class="w"> </span><span class="l">my-server</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="nt">credentials-file</span><span class="p">:</span><span class="w"> </span><span class="l">/home/ubuntu/.cloudflared/&lt;トンネルID&gt;.json</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="nt">ingress</span><span class="p">:</span><span class="w">
-</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">example.taikiito.com</span><span class="w">
+</span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">hostname</span><span class="p">:</span><span class="w"> </span><span class="l">app.example.com</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">    </span><span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http://localhost:8080</span><span class="w">
 </span></span></span><span class="line"><span class="cl"><span class="w">  </span>- <span class="nt">service</span><span class="p">:</span><span class="w"> </span><span class="l">http_status:404</span><span class="w">
 </span></span></span></code></pre></div><p>再起動しても自動で動き続けるよう、サービス化しておく。</p>
 <div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo cloudflared service install
-</span></span></code></pre></div><p>ここまでできれば、あとはサーバー内の<code>localhost:8080</code>(上の設定例のポート番号)で何かソフトを動かせば、<code>https://example.taikiito.com</code>からアクセスできるようになる。ルーターのポート開放(外から直接アクセスできる穴を開ける、事故ると危険な設定)を一切いじらずに済むのがこの方式の利点。</p>
+</span></span></code></pre></div><p>ここまでできれば、あとはサーバー内の<code>localhost:8080</code>(上の設定例のポート番号)で何かソフトを動かせば、<code>https://app.example.com</code>からアクセスできるようになる。ルーターのポート開放(外から直接アクセスできる穴を開ける、事故ると危険な設定)を一切いじらずに済むのがこの方式の利点。</p>
 <h2 id="step-5-動作確認">Step 5: 動作確認</h2>
 <p>具体的に何かソフトを動かして確認したい場合は、このサイトの次のガイド(<a href="/guides/google-photos-to-immich/">写真をGoogle PhotosからImmichに移す</a>)がそのままStep 6以降の実例になる——<code>docker-compose.yml</code>を書いてImmichを起動し、上のingress設定のポート番号をImmichのポートに合わせれば、そのまま公開まで到達できる。</p>
 <h2 id="自宅サーバーに切り替える場合">自宅サーバーに切り替える場合</h2>

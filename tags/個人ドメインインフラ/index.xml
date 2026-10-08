@@ -136,7 +136,7 @@
 <h2 id="形式は時系列の日記にした">形式は「時系列の日記」にした</h2>
 <p>最初はテーマ別のハウツー記事にしようかと考えたが、途中で「実際に起きた順番のまま書く日記形式」に変更した。うまくいかなかったこと、迷ったこと、あとから直したことも含めて、そのまま時系列で残す方が実態に近い。</p>
 <h2 id="スタックを決める">スタックを決める</h2>
-<p>静的サイトジェネレータはHugoにした。決め手は多言語対応(i18n)が標準で入っていること。テーマはPaperMod。GitHub Actionsでビルドし、GitHub Pagesにデプロイ、独自ドメイン <code>blog.taikiito.com</code> をCloudflareのCNAMEで割り当てた。</p>
+<p>静的サイトジェネレータはHugoにした。決め手は多言語対応(i18n)が標準で入っていること。テーマはPaperMod。GitHub Actionsでビルドし、GitHub Pagesにデプロイ、独自ドメイン <code>blog.example.com</code> をCloudflareのCNAMEで割り当てた。</p>
 <p>リポジトリは2つに分けた。実際に編集するHugoのソース一式(<code>blog-source</code>)は非公開、ビルド後の静的ファイルだけを別リポジトリ(<code>blog</code>)にforce pushで公開する構成にしている。GitHub Actionsの1ジョブの中で、ビルド→出力先リポジトリへのpushまで完結させた。ソース側の編集履歴や下書きを外に出さずに、成果物だけを公開できるのが気に入っている。</p>
 <h2 id="ついでにユーザー名も変えた">ついでにユーザー名も変えた</h2>
 <p>GitHubのユーザー名も、このタイミングで変えた。もともと登録したときに深く考えず入れた生年月日由来の文字列が入っていて、前から気に入っていなかった。理想の名前は既に他の人に使われていたので、末尾に<code>-dev</code>を足した形に落ち着いた。公開リポジトリがまだ0個の状態だったので、切り替えのコストは低かった。</p>
@@ -149,7 +149,7 @@
 <h2 id="dmarcを足してもまだ届かない">DMARCを足しても、まだ届かない</h2>
 <p>前回の時点ではDMARCを設定していなかったので、まずそこを埋めた。</p>
 <ul>
-<li><strong>DMARC</strong>(TXT、<code>_dmarc.taikiito.com</code>): <code>v=DMARC1; p=none; rua=mailto:(レポート送付先)</code></li>
+<li><strong>DMARC</strong>(TXT、<code>_dmarc.example.com</code>): <code>v=DMARC1; p=none; rua=mailto:(レポート送付先)</code></li>
 </ul>
 <p>外部のDNSチェッカーで反映を確認し、伝播も待って再送してみたが、やはり届かなかった。バウンス(エラー返信)は一切なく、送信が失敗したのかどうかすら分からない状態だった。</p>
 <p>SPF・DKIM・DMARCを教科書通り全部揃えてもこの状態だったので、原因は認証設定ではないと考えた。調べると、<strong>センダーレピュテーション</strong>(そのドメインがどれだけ送信履歴を積んで信頼されているか)の問題だと分かった。フィルタが厳しい受信サーバーほど強く効くらしい。SPF/DKIM/DMARCは「なりすましでないこと」の証明であって、「信頼できる送信元であること」の証明ではない。似ているが別物だ、というのをここで理解した。技術的に打てる手はなく、あとは時間をかけて送信履歴を積み上げるしかない。</p>
@@ -158,7 +158,7 @@
 <ul>
 <li><strong>MX</strong>: <code>mx01.mail.icloud.com</code> / <code>mx02.mail.icloud.com</code></li>
 <li><strong>SPF</strong>(TXT): <code>v=spf1 include:icloud.com ~all</code></li>
-<li><strong>DKIM</strong>(CNAME): <code>sig1._domainkey</code> → <code>sig1.dkim.taikiito.com.at.icloudmailadmin.com</code></li>
+<li><strong>DKIM</strong>(CNAME): <code>sig1._domainkey</code> → <code>sig1.dkim.example.com.at.icloudmailadmin.com</code></li>
 </ul>
 <h2 id="fastmailと迷ったが思い込みが一つ崩れた">Fastmailと迷ったが、思い込みが一つ崩れた</h2>
 <p>有名な対抗馬としてFastmailがある。料金以外の軸で比較してみた: 標準プロトコル対応、Apple以外の端末での使い勝手、ドメイン・エイリアスの上限(iCloud+はApple ID一つにつき数個、Fastmailはほぼ無制限+catch-all)、サーバー側のフィルタルール、送信ドメインとしての評判、データの持ち出しやすさ。</p>
@@ -189,11 +189,11 @@
 <p>このドメインの下に、MulmoClaude用の2つ目の入り口と、デジタル名刺用のサブドメインを追加した(どちらも実在のURLはここには書かない。前者はCloudflare Access越しとはいえサブドメイン名自体を晒したくないし、後者は名刺ページに連絡先が載っている)。</p>
 <p>2つ目の入り口のDNS(Aレコード)とCloudflare Accessのポリシーを設定した直後、アクセスするとCloudflareの <strong>522エラー(オリジンへの接続タイムアウト)</strong> が出た。原因は、SSL/TLSの暗号化モードがゾーン(ドメイン)ごとに個別管理されていること。新しい <code>taikiito.com</code> ゾーンはデフォルトの <strong>Full</strong> モードになっていて、Cloudflareがオリジンの443番ポートへHTTPS接続を試みるが、nginx側は80番しか listen していなかった。既存のドメインと同じ <strong>Flexible</strong> モードに変更したら、即座に解消した。</p>
 <h2 id="spfdkimdmarcを設定してメールも作った">SPF/DKIM/DMARCを設定してメールも作った</h2>
-<p>ドメインを持ったので、iCloud+の <strong>Custom Email Domain</strong> 機能を使って <code>me@taikiito.com</code> を作った。追加契約は不要で、案内された通りにDNSレコードを3つ登録するだけだった。</p>
+<p>ドメインを持ったので、iCloud+の <strong>Custom Email Domain</strong> 機能を使って <code>me@example.com</code> を作った。追加契約は不要で、案内された通りにDNSレコードを3つ登録するだけだった。</p>
 <ul>
 <li><strong>MX</strong>: <code>mx01.mail.icloud.com</code> / <code>mx02.mail.icloud.com</code></li>
 <li><strong>SPF</strong>(TXT): <code>v=spf1 include:icloud.com ~all</code></li>
-<li><strong>DKIM</strong>(CNAME): <code>sig1._domainkey</code> → <code>sig1.dkim.taikiito.com.at.icloudmailadmin.com</code></li>
+<li><strong>DKIM</strong>(CNAME): <code>sig1._domainkey</code> → <code>sig1.dkim.example.com.at.icloudmailadmin.com</code></li>
 </ul>
 <p>これらは「このメールは、なりすましではなく本当に自分のドメインから送られている」ことを証明する仕組みで、値をコピーして貼り付けるだけの単純作業だった。</p>
 <h2 id="一部の宛先にだけ届かない">一部の宛先にだけ届かない</h2>

@@ -48,12 +48,12 @@
 </span></span></span><span class="line"><span class="cl">  -X PUT <span class="se">\
 </span></span></span><span class="line"><span class="cl">  --data-binary @contact-001.vcf <span class="se">\
 </span></span></span><span class="line"><span class="cl">  -H <span class="s2">&#34;Content-Type: text/vcard; charset=utf-8&#34;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.taikiito.com/remote.php/dav/addressbooks/users/admin/contacts/contact-001.vcf&#34;</span>
+</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.example.com/remote.php/dav/addressbooks/users/admin/contacts/contact-001.vcf&#34;</span>
 </span></span></code></pre></div><p>これを633件分、シェルスクリプトの<code>for</code>ループなどで繰り返す。1件ずつリソースとしてサーバーに送り込む地道なやり方だが、Web UIのインポートより確実に反映される。</p>
 <h2 id="step-4-macで連絡先を同期する">Step 4: Macで連絡先を同期する</h2>
 <p>Macの「連絡先」アプリ → 環境設定 → アカウント → 「アカウントを追加」→「他のアカウント」→「CardDAVアカウントを追加」。</p>
-<p>ここで前述の<code>.well-known/carddav</code>の件にハマった。<strong>解決策</strong>: サーバーアドレスの欄に、自動検出用の短いURL(<code>drive.taikiito.com</code>)ではなく、以下のフルパスを直接入力する。</p>
-<pre tabindex="0"><code>https://drive.taikiito.com/remote.php/dav/principals/users/admin/
+<p>ここで前述の<code>.well-known/carddav</code>の件にハマった。<strong>解決策</strong>: サーバーアドレスの欄に、自動検出用の短いURL(<code>drive.example.com</code>)ではなく、以下のフルパスを直接入力する。</p>
+<pre tabindex="0"><code>https://drive.example.com/remote.php/dav/principals/users/admin/
 </code></pre><p>ユーザー名は<code>admin</code>(Nextcloudのユーザー名)、パスワードはStep 1で発行したアプリパスワードを使う。iPhoneの「連絡先」アプリでも同じ設定項目がある。</p>
 <h2 id="step-5-カレンダーの移行232件">Step 5: カレンダーの移行(232件)</h2>
 <p>個人用のGoogleカレンダーに入っていた予定(2019〜2029年、232件)をNextcloud Calendarの「Personal」カレンダーへ移す。</p>
@@ -63,7 +63,7 @@
 </span></span></span><span class="line"><span class="cl">  -X PUT <span class="se">\
 </span></span></span><span class="line"><span class="cl">  --data-binary @event-001.ics <span class="se">\
 </span></span></span><span class="line"><span class="cl">  -H <span class="s2">&#34;Content-Type: text/calendar; charset=utf-8&#34;</span> <span class="se">\
-</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.taikiito.com/remote.php/dav/calendars/users/admin/personal/event-001.ics&#34;</span>
+</span></span></span><span class="line"><span class="cl">  <span class="s2">&#34;https://drive.example.com/remote.php/dav/calendars/users/admin/personal/event-001.ics&#34;</span>
 </span></span></code></pre></div><p>232件全てこの方式でアップロードしたところ、全て成功した。反映の確認後にGoogle側の元データをどう扱ったかは決定2に書いた。</p>
 <hr>
 <p>次は、メモをJoplinに移そうとして、結局全部は移さなかった話。→ <a href="/guides/icloud-notes-to-joplin/">メモをiCloud NotesからJoplinに移す</a></p>

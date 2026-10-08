@@ -26,7 +26,7 @@
 <p><strong>迷ったこと</strong> 移行が終わったGmail側のメールと、Googleアカウント自体をどうするか。</p>
 <p><strong>採った案</strong> バックアップ済み・移行件数の整合性確認済み・新着メールの転送設定済みの3点を確認したうえで、指定日より前の全メール(49,755件)を<strong>Gmailの「ゴミ箱」フォルダへ移動</strong>した。Gmailのゴミ箱は30日後に自動で完全削除される仕組みなので、<strong>即座に完全削除したわけではなく、猶予期間を残した状態</strong>にしてある。</p>
 <p><strong>却下した案</strong> 即時の完全削除、およびGoogleアカウント自体の削除。</p>
-<p><strong>なぜ却下したか</strong> しばらく<code>me@taikiito.com</code>側の運用が安定するのを見届けてから、次の判断(アカウント自体を消すかどうか)をするつもりでいるため。この記事を書いている時点で、Googleアカウント自体はまだ削除していない。</p>
+<p><strong>なぜ却下したか</strong> しばらく<code>me@example.com</code>側の運用が安定するのを見届けてから、次の判断(アカウント自体を消すかどうか)をするつもりでいるため。この記事を書いている時点で、Googleアカウント自体はまだ削除していない。</p>
 <p><strong>残った教訓</strong> 消すのは最後で、しかも猶予をはさむ。移行元の生データ(Google Takeoutの原本)も、移行作業が完全に終わるまで絶対に消さない。これは下の「当時ハマったこと」の3件目で身をもって学んだ。</p>
 <hr>
 <h2 id="当時ハマったこと3つ">当時ハマったこと（3つ）</h2>
@@ -47,7 +47,7 @@
 <p>Message-ID(メール1通ごとの一意な識別子、ヘッダーに必ず含まれる)単位で「Takeoutの原本」と「今iCloud側にあるメール」を突き合わせる復旧スクリプトをClaudeが書き、欠落していたメールを復元した。最終的に、iCloudの1通あたりのサイズ上限を超えている(添付ファイルが大きい)ため原理的に復元不可能な2〜3件を除いて、ほぼ完全に復旧できた。</p>
 <p><strong>このとき得た一番の教訓</strong>: 大量データの移行を「件数がだいたい合っている」だけで完了と判断しない。Message-IDで突き合わせる方式が、確実に検証する唯一の方法だった。<strong>そしてGoogle Takeoutのような「移行元の公式エクスポート」は、移行作業が終わるまで絶対に消さないこと。</strong></p>
 <h2 id="結果">結果</h2>
-<p><code>me@taikiito.com</code>が主メールとして定着し、日常的に使っている。途中でメールを実際に失いかけた一件は、この移行作業の中で一番肝を冷やした部分だったが、Google Takeoutで原本のバックアップを取っておいたことが最終的に救いになった。<strong>大量データを移す時は、移行先だけでなく移行元の生データも別途バックアップしておく</strong>、というのが今回一番強く実感した教訓だった。</p>
+<p><code>me@example.com</code>が主メールとして定着し、日常的に使っている。途中でメールを実際に失いかけた一件は、この移行作業の中で一番肝を冷やした部分だったが、Google Takeoutで原本のバックアップを取っておいたことが最終的に救いになった。<strong>大量データを移す時は、移行先だけでなく移行元の生データも別途バックアップしておく</strong>、というのが今回一番強く実感した教訓だった。</p>
 <hr>
 <h1 id="手順">手順</h1>
 <p>ここから下は<strong>Claudeが書き、自分の環境で実行して結果を確かめたもの</strong>だ。2026年9月の版で、実際にこれで46,544件のメールが移った。</p>
@@ -78,18 +78,18 @@
 			</tr>
 			<tr>
 					<td>DKIM (CNAMEレコード)</td>
-					<td><code>sig1._domainkey</code> → <code>sig1.dkim.taikiito.com.at.icloudmailadmin.com</code>(メールが改ざんされていないことを証明する電子署名の仕組み)</td>
+					<td><code>sig1._domainkey</code> → <code>sig1.dkim.example.com.at.icloudmailadmin.com</code>(メールが改ざんされていないことを証明する電子署名の仕組み)</td>
 			</tr>
 	</tbody>
 </table>
-<p>iCloud+の設定ウィザードはこの3つだけを要求し、<strong>DMARC(後述、なりすまし対策をさらに強化するレコード)は必須ではなく任意</strong>なので、最初は追加しなくても動く。反映には数分〜数十分かかる。全て緑のチェックマークになれば、そのドメインでメールアドレス(自分の場合は<code>me@taikiito.com</code>)を作成できる。</p>
+<p>iCloud+の設定ウィザードはこの3つだけを要求し、<strong>DMARC(後述、なりすまし対策をさらに強化するレコード)は必須ではなく任意</strong>なので、最初は追加しなくても動く。反映には数分〜数十分かかる。全て緑のチェックマークになれば、そのドメインでメールアドレス(自分の場合は<code>me@example.com</code>)を作成できる。</p>
 <h2 id="step-2-主要な送信先への到達を確認する">Step 2: 主要な送信先への到達を確認する</h2>
-<p>自分の場合、<code>me@taikiito.com</code>からGmailへは問題なく届いたが、会社のメール(Microsoft 365ベース)には<strong>エラーも通知もなく、静かに届かない</strong>という問題が起きた。SPF/DKIMを見直しても直らなかったため、DMARC(TXTレコード)を追加した。</p>
-<pre tabindex="0"><code>_dmarc.taikiito.com  TXT  &#34;v=DMARC1; p=none; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
+<p>自分の場合、<code>me@example.com</code>からGmailへは問題なく届いたが、会社のメール(Microsoft 365ベース)には<strong>エラーも通知もなく、静かに届かない</strong>という問題が起きた。SPF/DKIMを見直しても直らなかったため、DMARC(TXTレコード)を追加した。</p>
+<pre tabindex="0"><code>_dmarc.example.com  TXT  &#34;v=DMARC1; p=none; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
 </code></pre><p><code>p=none</code>はまず様子見のモード(ポリシー違反があっても何もしない、レポートだけ受け取る)。これでも解決しなかったが、SPF/DKIM/DMARCの設定自体には問題が無いことが確認できたので、<strong>原因は取得したばかりのドメインが「送信履歴の無い新規ドメイン」として受信側のメールフィルタに警戒されていることだと判断し、時間経過で解決するのを待つ方針にした</strong>。実際、数日後には特に追加の変更をしないまま届くようになった。<strong>新しく取ったドメインでメールを送る場合、最初の数日〜1週間は主要な送信先に届かないことがある</strong>と見込んでおくとよい。</p>
 <h2 id="step-3-なりすまし対策を強化するspfdmarcの締め上げ">Step 3: なりすまし対策を強化する(SPF/DMARCの締め上げ)</h2>
 <p>ドメインの送信環境が安定してきたら、なりすまし対策を強める。判断の経緯は決定2に書いた。最終的には以下の設定にした。</p>
-<pre tabindex="0"><code>_dmarc.taikiito.com  TXT  &#34;v=DMARC1; p=reject; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
+<pre tabindex="0"><code>_dmarc.example.com  TXT  &#34;v=DMARC1; p=reject; rua=mailto:&lt;自分のメールアドレス&gt;&#34;
 </code></pre><p>SPFも<code>~all</code>から<code>-all</code>へ強化した。</p>
 <p><strong>注意</strong>: <code>p=reject</code>にすると、このドメインからのメールを送るときに使う経路(自分の場合はiCloudのみ)以外からは一切メールが届かなくなる。今後、別のメールサービスを追加で使う場合は、SPFレコードに新しい送信元を<code>include:</code>で追加し忘れないこと。</p>
 <h2 id="step-4-過去メールを移す">Step 4: 過去メールを移す</h2>
@@ -123,7 +123,7 @@
 <p>ユーザー名欄に何を入れるかで何度も認証エラーになった経緯は「当時ハマったこと」の1に書いた。</p>
 <p>接続できたら、Gmailの全メールをThunderbird経由でiCloud側へ移すスクリプトで移行する。<strong>完了の判定は「件数がだいたい合っている」ではなく、Message-ID単位でGoogle Takeoutの原本と突き合わせること。</strong> 件数だけで判断して起きたことは「当時ハマったこと」の2と3に書いた。そして<strong>Takeoutの原本zipは、移行作業が完全に終わるまで絶対に消さない。</strong></p>
 <h2 id="step-5-移行後の後片付け">Step 5: 移行後の後片付け</h2>
-<p>Gmail側に<code>me@taikiito.com</code>への自動転送(Forwarding、Gmailの設定 → 「メール転送とPOP/IMAP」から設定できる)を設定し、移行後にGmail宛へ届く新着メールも自動的に新しいアドレスへ流れるようにした。Google Takeoutのバックアップzipは、Backblaze B2とNextcloudの両方に保存。この3点(バックアップ済み・移行件数の整合性確認済み・新着メールの転送設定済み)を確認したうえで、Gmail側の整理に着手した。</p>
+<p>Gmail側に<code>me@example.com</code>への自動転送(Forwarding、Gmailの設定 → 「メール転送とPOP/IMAP」から設定できる)を設定し、移行後にGmail宛へ届く新着メールも自動的に新しいアドレスへ流れるようにした。Google Takeoutのバックアップzipは、Backblaze B2とNextcloudの両方に保存。この3点(バックアップ済み・移行件数の整合性確認済み・新着メールの転送設定済み)を確認したうえで、Gmail側の整理に着手した。</p>
 <p>整理は、GmailのAPI(他のプログラムからGmailを操作するための窓口)や管理画面からではなく、IMAP(前述の受信用の通信規格)を直接操作するスクリプト(これもClaudeが書いたもの)で、指定日より前の全メール(49,755件)をGmailの「ゴミ箱」フォルダへ移動する処理を実行した。即時の完全削除ではなく30日の猶予を残した理由と、Googleアカウント自体をまだ消していない理由は決定3に書いた。</p>
 <hr>
 <p>この構成をさらに一周考え直して、メールボックスをFastmailへ移した続きがある。→ <a href="/guides/own-domain-mail-to-fastmail/">自分のドメインのメールをどこに置くか、一周して決め直した</a></p>

@@ -93,7 +93,7 @@
 <h2 id="choosing-a-diary-format">Choosing a diary format</h2>
 <p>I first considered topic-organized how-to posts, then switched partway through to a chronological diary - writing things in the order they actually happened, mistakes and detours included. It&rsquo;s closer to how it actually went.</p>
 <h2 id="picking-the-stack">Picking the stack</h2>
-<p>I went with Hugo as the static site generator, mainly because multi-language support (i18n) is built in. Theme: PaperMod. Deploy is GitHub Actions building the site and pushing it to GitHub Pages, with a custom domain (<code>blog.taikiito.com</code>) pointed at it via a Cloudflare CNAME.</p>
+<p>I went with Hugo as the static site generator, mainly because multi-language support (i18n) is built in. Theme: PaperMod. Deploy is GitHub Actions building the site and pushing it to GitHub Pages, with a custom domain (<code>blog.example.com</code>) pointed at it via a Cloudflare CNAME.</p>
 <p>I split it into two repos: the actual Hugo source I edit (<code>blog-source</code>) stays private, and a single Actions job builds it and force-pushes only the built static output to a separate public repo (<code>blog</code>). Editing history and drafts never leave the private repo - only the finished output is public, which I like.</p>
 <h2 id="renamed-my-username-while-i-was-at-it">Renamed my username while I was at it</h2>
 <p>I also renamed my GitHub username at this point. The old one had a string based on my birthdate in it, added without much thought when I first signed up, and I&rsquo;d wanted to change it for a while. My first choice was already taken, so I landed on a <code>-dev</code> suffix instead. With zero public repos at the time, the switching cost was basically nothing.</p>
@@ -132,11 +132,11 @@
 <p>Under this domain, I added a second entry point for MulmoClaude and a subdomain for a digital business card (neither URL is published here - the MulmoClaude one sits behind Cloudflare Access but I&rsquo;d still rather not expose the subdomain name itself, and the card page has my personal contact details on it).</p>
 <p>Right after setting up the DNS (A record) and the Cloudflare Access policy for the second entry point, hitting it returned Cloudflare&rsquo;s <strong>522 error (connection timed out to origin)</strong>. The cause: SSL/TLS encryption mode is managed per zone (per domain), not globally. The new <code>taikiito.com</code> zone had defaulted to <strong>Full</strong> mode, so Cloudflare tried HTTPS to the origin on port 443, but nginx there was only listening on port 80. Switching it to <strong>Flexible</strong> mode, matching the existing domain, fixed it immediately.</p>
 <h2 id="went-ahead-and-set-up-spfdkimdmarc-for-email-too">Went ahead and set up SPF/DKIM/DMARC for email too</h2>
-<p>Since I had the domain, I used iCloud+&rsquo;s <strong>Custom Email Domain</strong> feature to set up <code>me@taikiito.com</code>. No extra subscription - just three DNS records, exactly as instructed:</p>
+<p>Since I had the domain, I used iCloud+&rsquo;s <strong>Custom Email Domain</strong> feature to set up <code>me@example.com</code>. No extra subscription - just three DNS records, exactly as instructed:</p>
 <ul>
 <li><strong>MX</strong>: <code>mx01.mail.icloud.com</code> / <code>mx02.mail.icloud.com</code></li>
 <li><strong>SPF</strong> (TXT): <code>v=spf1 include:icloud.com ~all</code></li>
-<li><strong>DKIM</strong> (CNAME): <code>sig1._domainkey</code> → <code>sig1.dkim.taikiito.com.at.icloudmailadmin.com</code></li>
+<li><strong>DKIM</strong> (CNAME): <code>sig1._domainkey</code> → <code>sig1.dkim.example.com.at.icloudmailadmin.com</code></li>
 </ul>
 <p>These prove, through a few different mechanisms, that mail is genuinely coming from my domain and not being spoofed. Simple copy-paste work.</p>
 <h2 id="still-didnt-reach-one-particular-inbox">Still didn&rsquo;t reach one particular inbox</h2>
