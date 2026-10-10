@@ -39,15 +39,15 @@
 <hr>
 <h2 id="decision-3--i-stopped-believing-backups-are-running">Decision 3 — I stopped believing &ldquo;backups are running&rdquo;</h2>
 <p><strong>Date.</strong> August–September 2026, several times</p>
-<p><strong>What I was torn between.</strong> The nightly backup had been reporting success for months. No alerts. Was that good enough?</p>
+<p><strong>What I was torn between.</strong> The nightly backup had been reporting success for weeks. No alerts. Was that good enough?</p>
 <p><strong>What I chose.</strong> <strong>Count it myself.</strong> During a server migration I compared photo counts between the old and new machines by hand.</p>
-<p><strong>What came out.</strong> <strong>Forty-six files existed only on the machine I was about to decommission.</strong> The backup script had been stopping at one step partway through, and everything after that step had not run for months. Silently. &ldquo;Success&rdquo; had only ever meant &ldquo;it did not break in a way I would notice.&rdquo;</p>
+<p><strong>What came out.</strong> <strong>Forty-six files existed only on the machine I was about to decommission.</strong> The backup script had been stopping at one step partway through, and everything after that step had not run for weeks. Silently. &ldquo;Success&rdquo; had only ever meant &ldquo;it did not break in a way I would notice.&rdquo;</p>
 <p><strong>Right or wrong in hindsight.</strong> <strong>Right — and I only just made it.</strong> If I had not counted, those forty-six were gone. My reason for counting was not even principled: I was mid-migration and both machines happened to be in front of me.</p>
 <p><strong>Three more wins of the same shape</strong></p>
 <ul>
 <li><strong>A mail client migration.</strong> Reported complete. It was not complete.</li>
 <li><strong>A mail tooling integration.</strong> Reported solved three times. Not solved, three times.</li>
-<li><strong>A 53,000-message mail migration.</strong> Source and destination counts were &ldquo;roughly equal&rdquo;, and I nearly called it done. <strong>Six weeks of mail had not transferred at all.</strong> The gap happened to sit just inside my personal tolerance for &ldquo;roughly&rdquo;. I recovered 7,536 messages only because an export I had made months earlier for an unrelated reason was still sitting in a trash folder. <strong>That is not a restore procedure. That is luck.</strong></li>
+<li><strong>A 53,000-message mail migration.</strong> Source and destination counts were &ldquo;roughly equal&rdquo;, and I nearly called it done. <strong>Six weeks of mail had not transferred at all.</strong> The gap happened to sit just inside my personal tolerance for &ldquo;roughly&rdquo;. I recovered 7,536 messages only because an export I had made earlier in the migration for an unrelated reason was still sitting in a trash folder. <strong>That is not a restore procedure. That is luck.</strong></li>
 </ul>
 <p><strong>What stuck.</strong> Three things.</p>
 <p><strong>Treat &ldquo;success&rdquo; as a claim, not a result.</strong> Exit code 0, 200 OK, &ldquo;no alerts&rdquo;, &ldquo;done&rdquo; — every one of them answers a narrower question than the one I am asking.</p>
